@@ -23,14 +23,13 @@
 ├── utils     工具类
 ├── config.yaml.template    配置文件模板
 ├── go.mod
-└── go.sum
 ```
 ## 开发前
 
 ### 1. **设置git hook**
 ```shell
 git config core.hooksPath .githooks 
-chmod -R -x .githooks 
+chmod -R -x .githooks
 ```
 
 ### 2. **阅读以下开发规范**
