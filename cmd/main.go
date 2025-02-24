@@ -11,7 +11,6 @@ import (
 // @Create       XdpCs 2025-02-01 下午7:10
 // @Update       XdpCs 2025-02-01 下午7:10
 func main() {
-
 	initalize.Init()
 	// 工程进入前夕，释放资源
 	defer initalize.Eve()

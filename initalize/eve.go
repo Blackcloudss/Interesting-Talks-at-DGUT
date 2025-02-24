@@ -2,6 +2,7 @@ package initalize
 
 import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"runtime"
 )
 

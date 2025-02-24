@@ -1,9 +1,9 @@
 package router
 
 import (
+	"Interesting-Talks-at-DGUT/configs"
+	"Interesting-Talks-at-DGUT/manager"
 	"fmt"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/manager"
 	"github.com/gin-gonic/gin"
 )
 

@@ -3,6 +3,7 @@ package initalize
 import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 )
 
 // @Title        init_log.go

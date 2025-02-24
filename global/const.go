@@ -1,6 +1,9 @@
 package global
 
-import "time"
+import (
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/snowflake"
+	"time"
+)
 
 // @Title        const.go
 // @Description
@@ -20,7 +23,7 @@ const (
 	TOKEN_USER_ID            = "UserId"
 )
 
-//var Node, _ = snowflake.NewNode(DEFAULT_NODE_ID)
+var Node, _ = snowflake.NewNode(DEFAULT_NODE_ID)
 
 var NORMAL_ADMIN_URLS = []string{}
 

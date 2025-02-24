@@ -6,7 +6,6 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/logic"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/gin-gonic/gin"
 	"io"

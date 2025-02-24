@@ -1,6 +1,9 @@
 package repo
 
-import "github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
+import (
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
+)
 
 // @Title        test.go
 // @Description

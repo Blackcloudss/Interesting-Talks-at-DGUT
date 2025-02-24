@@ -1,4 +1,4 @@
-package log
+package zlog
 
 import (
 	"context"
@@ -14,8 +14,7 @@ import (
 type logKey string
 
 const (
-	loggerKey     logKey = "logger"
-	LogKeyTraceId        = "trace-id"
+	loggerKey logKey = "logger"
 )
 
 var logger *zap.Logger

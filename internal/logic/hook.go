@@ -1,6 +1,9 @@
 package logic
 
-import "gorm.io/gorm"
+import (
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
+	"gorm.io/gorm"
+)
 
 // @Title        hook.go
 // @Description
