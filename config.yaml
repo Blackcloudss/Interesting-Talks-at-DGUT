@@ -12,8 +12,8 @@ log:
 
 redis:
   enable: true
-  host: 117.50.46.248
-  port: 6379
+  host: *
+  port:
   password:
   db: 0
 
@@ -21,4 +21,4 @@ database:
   driver: mysql
   migrate: true
   # use dsn
-  dsn: root:123456@tcp(117.50.46.248:3306)/Interesting-Talks?charset=utf8mb4&parseTime=True&loc=Local&timeout=1000ms
+  dsn: root:****@tcp(******)/Interesting-Talks?charset=utf8mb4&parseTime=True&loc=Local&timeout=1000ms
