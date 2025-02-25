@@ -1,6 +1,8 @@
 package model
 
 import (
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/snowflake"
 	"gorm.io/gorm"
 	"time"
 )

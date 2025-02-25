@@ -1,0 +1,24 @@
+app:
+  port: 8080
+  host: 0.0.0.0
+  env: dev
+  logfiles: /logs
+
+log:
+  level: 0
+  format: plain
+  director: /logs
+  show-line: true
+
+redis:
+  enable: true
+  host: xx.xxx.xxx.xx
+  port: xxxx
+  password:
+  db: 0
+
+database:
+  driver: mysql
+  migrate: true
+  # use dsn
+  dsn: root:xxxxx@tcp(xxxxx:xxxxx)/xxxxx?charset=utf8mb4&parseTime=True&loc=Local&timeout=1000ms

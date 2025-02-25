@@ -6,6 +6,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/fsnotify/fsnotify"
+	"github.com/spf13/viper"
 	"time"
 )
 

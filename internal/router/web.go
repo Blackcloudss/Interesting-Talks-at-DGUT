@@ -1,9 +1,10 @@
 package router
 
 import (
-	"Interesting-Talks-at-DGUT/configs"
-	"Interesting-Talks-at-DGUT/manager"
 	"fmt"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/manager"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/gin-gonic/gin"
 )
 
@@ -36,7 +37,7 @@ func listen() (*gin.Engine, error) {
 
 func registerRoutes(routeManager *manager.RouteManager) {
 	//通用功能相关路由
-	routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
-		rg.POST("/rtoken", api.ReflashRtoken)
-	})
+	//routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
+	//rg.POST("/rtoken", api.ReflashRtoken)
+	//})
 }

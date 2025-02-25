@@ -14,7 +14,8 @@ import (
 type logKey string
 
 const (
-	loggerKey logKey = "logger"
+	loggerKey     logKey = "logger"
+	LogKeyTraceId        = "trace-id"
 )
 
 var logger *zap.Logger

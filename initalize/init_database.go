@@ -3,6 +3,9 @@ package initalize
 import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/pkg/database"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/pkg/mysqlx"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/pkg/redisx"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 )
 

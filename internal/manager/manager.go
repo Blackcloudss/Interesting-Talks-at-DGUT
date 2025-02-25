@@ -34,7 +34,7 @@ func (rm *RouteManager) RegisterMiddleware(group string, middleware Middleware) 
 
 // RequestGlobalMiddleware 注册全局中间件，应用于所有路由
 func RequestGlobalMiddleware(r *gin.Engine) {
-	r.Use(requestid.New())
+	//r.Use(requestid.New())
 	r.Use(middleware.AddTraceId())
 	r.Use(middleware.Cors())
 }

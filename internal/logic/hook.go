@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"gorm.io/gorm"
 )
