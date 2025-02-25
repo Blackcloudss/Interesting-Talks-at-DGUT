@@ -9,7 +9,6 @@ log:
   format: plain
   director: /logs
   show-line: true
-
 redis:
   enable: true
   host: xx.xxx.xxx.xx
