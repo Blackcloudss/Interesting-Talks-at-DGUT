@@ -25,8 +25,11 @@ func NewTestLogic() *TestLogic {
 
 // 这里定义我们内部logic的错误（非公有的常见类型的错误）
 var (
-	codeUserFoundField = response.MsgCode{Code: 40013, Msg: "用户查询失败"}
-	codeUserNotFound   = response.MsgCode{Code: 40014, Msg: "用户不存在"}
+	codeUserFoundField         = response.MsgCode{Code: 40013, Msg: "用户查询失败"}
+	codeUserNotFound           = response.MsgCode{Code: 40014, Msg: "用户不存在"}
+	codeBlogNotFound           = response.MsgCode{Code: 40020, Msg: "帖子不存在"}
+	codeTransactionFailed      = response.MsgCode{Code: 40025, Msg: "事务处理失败"}
+	codeInsufficientPermission = response.MsgCode{Code: 40034, Msg: "权限不足"}
 )
 
 // TestLogic 逻辑层 用做逻辑处理相关操作
