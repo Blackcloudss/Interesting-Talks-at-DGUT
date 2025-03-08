@@ -1,0 +1,22 @@
+name: Docker Images CI
+
+on:
+  push:
+    branches: ["test"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Write config file
+        run: echo "${{ secrets.CONFIG_YAML }}" > config.yaml
+      - name: Build the Docker image
+        env:
+          DOCKER_CLI_EXPERIMENTAL: enabled
+        run: | 
+          docker login -u qinsikai -p ${{ secrets.DOCKER_HUB_PASSWORD }}
+          docker buildx create --use
+          docker buildx build .  --push --tag qinsikai/interesting-talks:test
