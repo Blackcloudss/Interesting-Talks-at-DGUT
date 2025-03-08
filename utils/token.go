@@ -81,7 +81,7 @@ func IdentifyToken(ctx context.Context, Token string) (TokenData, error) {
 }
 
 func FullToken(class, issuer string, user_id int64) (data TokenData) {
-	//后期这两个都由雪花算法生成
+	//雪花算法生成
 	data.Issuer = issuer
 	data.Userid = user_id
 	if class == global.AUTH_ENUMS_ATOKEN {

@@ -9,6 +9,8 @@ import (
 // @Description
 // @Create       XdpCs 2025-02-24 下午4:06
 // @Update       XdpCs 2025-02-24 下午4:06
+
+// 解决跨域问题
 func Cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		method := c.Request.Method
