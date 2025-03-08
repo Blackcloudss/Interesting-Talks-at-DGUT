@@ -7,10 +7,12 @@ package configs
 var Conf = new(Config)
 
 type Config struct {
-	App   ApplicationConfig `mapstructure:"app"`
-	Log   LoggerConfig      `mapstructure:"log"`
-	DB    DBConfig          `mapstructure:"database"`
-	Redis RedisConfig       `mapstructure:"redis"`
+	App    ApplicationConfig `mapstructure:"app"`
+	Log    LoggerConfig      `mapstructure:"log"`
+	DB     DBConfig          `mapstructure:"database"`
+	Redis  RedisConfig       `mapstructure:"redis"`
+	Wechat WechatConfig      `mapstructure:"wechat"`
+	AI     AIConfig          `mapstructure:"ai"`
 }
 
 type ApplicationConfig struct {
@@ -37,4 +39,15 @@ type RedisConfig struct {
 	Port     int    `mapstructure:"port"`
 	Password string `mapstructure:"password"`
 	DB       int    `mapstructure:"db"`
+}
+
+type WechatConfig struct {
+	AppID        string `mapstructure:"app_id"`
+	AppSecret    string `mapstructure:"app_secret"`
+	redirect_url string `mapstructure:"redirect_url"`
+}
+
+type AIConfig struct {
+	AppID     string `mapstructure:"app_id"`
+	AppSecret string `mapstructure:"api_URL"`
 }
