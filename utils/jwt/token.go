@@ -1,10 +1,11 @@
-package utils
+package jwt
 
 import (
 	"context"
 	"errors"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"time"
 )
@@ -13,20 +14,19 @@ import (
 // @Description
 // @Create       XdpCs 2025-02-24 下午11:06
 // @Update       XdpCs 2025-02-24 下午11:06
+type TokenData struct {
+	Userid int64         //用户ID
+	Class  string        //类别
+	Time   time.Duration //过期时间
+}
+
 type MyClaims struct {
-	Userid int64  `json:"userid"`
-	Type   string `json:"type"`
+	Userid int64  `json:"userid"` //用户ID
+	Type   string `json:"type"`   // 类型
 	jwt.RegisteredClaims
 }
 
-var mySecret = []byte("AchoBeta")
-
-type TokenData struct {
-	Userid int64
-	Class  string
-	Issuer string
-	Time   time.Duration
-}
+var mySecret = []byte("InterestingTalk")
 
 func GenToken(data TokenData) (string, error) {
 	// 创建一个我们自己的声明
@@ -36,7 +36,6 @@ func GenToken(data TokenData) (string, error) {
 		jwt.RegisteredClaims{
 			NotBefore: jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(data.Time)), // 过期时间
-			Issuer:    data.Issuer,                                   // 签发人
 		},
 	}
 	// 使用指定的签名方法创建签名对象
@@ -70,7 +69,6 @@ func IdentifyToken(ctx context.Context, Token string) (TokenData, error) {
 		return TokenData{}, err
 	}
 	data.Userid = claim.Userid
-	data.Issuer = claim.Issuer
 	data.Class = claim.Type
 	if claim.Type == global.AUTH_ENUMS_RTOKEN {
 		data.Time = global.RTOKEN_EFFECTIVE_TIME - time.Duration(time.Now().Unix()-claim.RegisteredClaims.NotBefore.Unix())
@@ -80,9 +78,7 @@ func IdentifyToken(ctx context.Context, Token string) (TokenData, error) {
 	return data, nil
 }
 
-func FullToken(class, issuer string, user_id int64) (data TokenData) {
-	//雪花算法生成
-	data.Issuer = issuer
+func FullToken(class string, user_id int64) (data TokenData) {
 	data.Userid = user_id
 	if class == global.AUTH_ENUMS_ATOKEN {
 		data.Time = global.ATOKEN_EFFECTIVE_TIME
@@ -92,4 +88,19 @@ func FullToken(class, issuer string, user_id int64) (data TokenData) {
 		data.Class = global.AUTH_ENUMS_RTOKEN
 	}
 	return
+}
+
+// GetUserId
+//
+//	@Description:
+//	@param c
+//	@return int64
+func GetUserId(c *gin.Context) int64 {
+	if data, exists := c.Get(global.TOKEN_USER_ID); exists {
+		user_id, ok := data.(int64)
+		if ok {
+			return user_id
+		}
+	}
+	return 0
 }
