@@ -42,12 +42,12 @@ type RedisConfig struct {
 }
 
 type WechatConfig struct {
-	AppID        string `mapstructure:"app_id"`
-	AppSecret    string `mapstructure:"app_secret"`
-	redirect_url string `mapstructure:"redirect_url"`
+	AppID     string `mapstructure:"app_id"`
+	AppSecret string `mapstructure:"app_secret"`
+	BaseUrl   string `mapstructure:"base_url"`
 }
 
 type AIConfig struct {
-	AppID     string `mapstructure:"app_id"`
-	AppSecret string `mapstructure:"api_URL"`
+	AppKey string `mapstructure:"app_key"`
+	AppUrl string `mapstructure:"api_URL"`
 }

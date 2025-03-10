@@ -12,15 +12,17 @@ import (
 
 // 所有常量文件读取位置
 const (
-	DEFAULT_CONFIG_FILE_PATH = "/config.yaml"
-	REDIS_PHONE_CODE         = "Achobeta:phone.login.code:%s:string"
-	REDIS_PHONE              = "Achobeta:phone.login.effective:%s:string"
-	ATOKEN_EFFECTIVE_TIME    = time.Hour * 12
-	RTOKEN_EFFECTIVE_TIME    = time.Hour * 24 * 30
-	AUTH_ENUMS_ATOKEN        = "atoken"
-	AUTH_ENUMS_RTOKEN        = "rtoken"
-	DEFAULT_NODE_ID          = 1
-	TOKEN_USER_ID            = "UserId"
+	DEFAULT_CONFIG_FILE_PATH  = "/config.yaml"
+	REDIS_PHONE_CODE          = "ITAD:phone.login.code:%s:string"
+	REDIS_PHONE               = "ITAD:phone.login.effective:%s:string"
+	REDIS_SESSION_KEY         = "ITAD:openid.login:%s:string"
+	SESSIONKEY_EFFECTIVE_TIME = time.Hour * 24 * 2
+	ATOKEN_EFFECTIVE_TIME     = time.Hour * 12
+	RTOKEN_EFFECTIVE_TIME     = time.Hour * 24 * 30
+	AUTH_ENUMS_ATOKEN         = "atoken"
+	AUTH_ENUMS_RTOKEN         = "rtoken"
+	DEFAULT_NODE_ID           = 1
+	TOKEN_USER_ID             = "UserId"
 )
 
 var Node, _ = snowflake.NewNode(DEFAULT_NODE_ID)

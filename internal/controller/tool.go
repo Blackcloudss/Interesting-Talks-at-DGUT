@@ -12,13 +12,13 @@ var (
 )
 
 // getCurrentUserID 获取当前登录用户ID
-func getCurrentUserID(c *gin.Context) (userID uint64, err error) {
+func getCurrentUserID(c *gin.Context) (userID int64, err error) {
 	_userID, ok := c.Get("user_id")
 	if !ok {
 		err = ErrorUserNotLogin
 		return
 	}
-	userID, ok = _userID.(uint64)
+	userID, ok = _userID.(int64)
 	if !ok {
 		err = ErrorUserNotLogin
 		return
