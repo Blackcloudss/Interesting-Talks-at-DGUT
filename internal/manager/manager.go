@@ -16,17 +16,23 @@ type PathHandler func(rg *gin.RouterGroup)
 
 // RouteManager 管理不同的路由组，按业务功能分组
 type RouteManager struct {
-	LoginRoutes *gin.RouterGroup // 登录相关的路由组
+	CommonRoutes *gin.RouterGroup //通用的路由组
+	LoginRoutes  *gin.RouterGroup // 登录相关的路由组
 }
 
 // NewRouteManager 创建一个新的 RouteManager 实例，包含各业务功能的路由组
 func NewRouteManager(router *gin.Engine) *RouteManager {
 	return &RouteManager{
-		LoginRoutes: router.Group("/api/wxlogin"), // 初始化登录路由组
+		CommonRoutes: router.Group("/api/common"),  // 初始化通用路由组
+		LoginRoutes:  router.Group("/api/wxlogin"), // 初始化登录路由组
 	}
 }
 
-func (rm *RouteManager) RegisterRoutes(handler PathHandler) {
+func (rm *RouteManager) RegisterCommonRoutes(handler PathHandler) {
+	handler(rm.LoginRoutes)
+}
+
+func (rm *RouteManager) RegisterLoginRoutes(handler PathHandler) {
 	handler(rm.LoginRoutes)
 }
 

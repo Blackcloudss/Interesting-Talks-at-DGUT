@@ -38,11 +38,11 @@ func listen() (*gin.Engine, error) {
 
 func registerRoutes(routeManager *manager.RouteManager) {
 	//通用功能相关路由
-	//routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
-	//rg.POST("/rtoken", api.ReflashRtoken)
-	//})
+	routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
+		rg.POST("/rtoken", api.RefreshToken) //用rtoken刷新atoken和rtoken
+	})
 
-	routeManager.RegisterRoutes(func(rg *gin.RouterGroup) {
+	routeManager.RegisterLoginRoutes(func(rg *gin.RouterGroup) {
 		rg.GET("/login", api.WechatLogin)
 	})
 
