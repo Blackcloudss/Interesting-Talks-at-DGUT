@@ -1,4 +1,4 @@
-package controller
+package api
 
 import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
@@ -34,7 +34,7 @@ func CreateBlogHandler(c *gin.Context) {
 
 	// 3. 使用雪花算法生成帖子ID
 	blogID := global.Node.Generate().Int64()
-	blog.ID = uint64(blogID)
+	blog.ID = blogID
 
 	// 4. 创建帖子
 	if err := logic.NewBlogLogic().CreateBlog(ctx, &blog); err != nil {
@@ -69,7 +69,7 @@ func UpdateBlogHandler(c *gin.Context) {
 		response.NewResponse(c).Error(response.PARAM_NOT_VALID) // 参数无效
 		return
 	}
-	blog.ID = blogID
+	blog.ID = int64(blogID)
 
 	// 3. 检查权限
 	userID, err := getCurrentUserID(c)
@@ -291,4 +291,174 @@ func GetMyBlogsHandler(c *gin.Context) {
 		"page":     page,
 		"pageSize": pageSize,
 	}) // 获取成功
+}
+
+// CollectBlogHandler 收藏帖子
+func CollectBlogHandler(c *gin.Context) {
+	// 从 Gin 中获取上下文
+	ctx := zlog.GetCtxFromGin(c)
+
+	// 获取当前用户ID
+	userID, err := getCurrentUserID(c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Failed to get current user ID: %v", err)
+		response.NewResponse(c).Error(response.USER_NOT_LOGIN) // 用户未登录
+		return
+	}
+
+	// 获取帖子ID并校验
+	blogID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Invalid blog ID: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID) // 帖子ID无效
+		return
+	}
+
+	// 尝试收藏帖子
+	if err = logic.CollectBlog(ctx, userID, int64(blogID)); err != nil {
+		if err.Error() == "already collected this blog" {
+			zlog.CtxWarnf(ctx, "User already collected this blog (blogID: %d)", blogID)
+			response.NewResponse(c).Error(response.PARAM_NOT_VALID) // 已经收藏过该帖子
+			return
+		}
+		zlog.CtxErrorf(ctx, "Failed to collect blog (blogID: %d): %v", blogID, err)
+		response.NewResponse(c).Error(response.INTERNAL_ERROR) // 收藏失败
+		return
+	}
+
+	// 收藏成功
+	zlog.CtxInfof(ctx, "Blog collected successfully (blogID: %d)", blogID)
+	response.NewResponse(c).Success(nil) // 收藏成功
+}
+
+// UncollectBlogHandler 取消收藏帖子
+func UncollectBlogHandler(c *gin.Context) {
+	// 从 Gin 中获取上下文
+	ctx := zlog.GetCtxFromGin(c)
+
+	// 获取当前用户ID
+	userID, err := getCurrentUserID(c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Failed to get current user ID: %v", err)
+		response.NewResponse(c).Error(response.USER_NOT_LOGIN) // 用户未登录
+		return
+	}
+
+	// 获取帖子ID并校验
+	blogID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Invalid blog ID: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID) // 帖子ID无效
+		return
+	}
+
+	// 尝试取消收藏帖子
+	if err = logic.UncollectBlog(ctx, userID, int64(blogID)); err != nil {
+		zlog.CtxErrorf(ctx, "Failed to uncollect blog (blogID: %d): %v", blogID, err)
+		response.NewResponse(c).Error(response.INTERNAL_ERROR) // 取消收藏失败
+		return
+	}
+
+	// 取消收藏成功
+	zlog.CtxInfof(ctx, "Blog uncollected successfully (blogID: %d)", blogID)
+	response.NewResponse(c).Success(nil) // 取消收藏成功
+}
+
+// GetCollectedBlogsHandler 获取用户收藏的帖子
+func GetCollectedBlogsHandler(c *gin.Context) {
+	// 从 Gin 中获取上下文
+	ctx := zlog.GetCtxFromGin(c)
+
+	// 获取当前用户ID
+	userID, err := getCurrentUserID(c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Failed to get current user ID: %v", err)
+		response.NewResponse(c).Error(response.USER_NOT_LOGIN) // 用户未登录
+		return
+	}
+
+	// 获取用户收藏的帖子列表
+	blogs, err := logic.GetCollectedBlogs(ctx, userID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Failed to get collected blogs for user (userID: %d): %v", userID, err)
+		response.NewResponse(c).Error(response.INTERNAL_ERROR) // 获取失败
+		return
+	}
+
+	// 获取成功
+	zlog.CtxInfof(ctx, "Collected blogs retrieved successfully (userID: %d)", userID)
+	response.NewResponse(c).Success(gin.H{
+		"list": blogs,
+	})
+}
+
+// LikeBlogHandler 点赞帖子
+func LikeBlogHandler(c *gin.Context) {
+	// 从 Gin 中获取上下文
+	ctx := zlog.GetCtxFromGin(c)
+
+	// 获取当前用户ID
+	userID, err := getCurrentUserID(c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Failed to get current user ID: %v", err)
+		response.NewResponse(c).Error(response.USER_NOT_LOGIN) // 用户未登录
+		return
+	}
+
+	// 获取帖子ID并校验
+	blogID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Invalid blog ID: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID) // 帖子ID无效
+		return
+	}
+
+	//点赞帖子
+	if err := logic.LikeBlog(ctx, userID, blogID); err != nil {
+		if err.Error() == "already liked this blog" {
+			zlog.CtxWarnf(ctx, "User already liked this blog (blogID: %d)", blogID)
+			response.NewResponse(c).Error(response.PARAM_NOT_VALID) // 已经点赞过该帖子
+			return
+		}
+		zlog.CtxErrorf(ctx, "Failed to like blog (blogID: %d): %v", blogID, err)
+		response.NewResponse(c).Error(response.INTERNAL_ERROR) // 点赞失败
+		return
+	}
+
+	// 点赞成功
+	zlog.CtxInfof(ctx, "Blog liked successfully (blogID: %d)", blogID)
+	response.NewResponse(c).Success(nil) // 点赞成功
+}
+
+// UnlikeBlogHandler 取消点赞
+func UnlikeBlogHandler(c *gin.Context) {
+	// 从 Gin 中获取上下文
+	ctx := zlog.GetCtxFromGin(c)
+
+	// 获取当前用户ID
+	userID, err := getCurrentUserID(c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Failed to get current user ID: %v", err)
+		response.NewResponse(c).Error(response.USER_NOT_LOGIN) // 用户未登录
+		return
+	}
+
+	// 获取帖子ID并校验
+	blogID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Invalid blog ID: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID) // 帖子ID无效
+		return
+	}
+
+	//取消点赞
+	if err := logic.UnlikeBlog(ctx, userID, blogID); err != nil {
+		zlog.CtxErrorf(ctx, "Failed to unlike blog (blogID: %d): %v", blogID, err)
+		response.NewResponse(c).Error(response.INTERNAL_ERROR) // 取消点赞失败
+		return
+	}
+
+	// 取消点赞成功
+	zlog.CtxInfof(ctx, "Blog unliked successfully (blogID: %d)", blogID)
+	response.NewResponse(c).Success(nil) // 取消点赞成功
 }
