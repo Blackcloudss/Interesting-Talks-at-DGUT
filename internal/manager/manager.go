@@ -22,7 +22,7 @@ type RouteManager struct {
 // NewRouteManager 创建一个新的 RouteManager 实例，包含各业务功能的路由组
 func NewRouteManager(router *gin.Engine) *RouteManager {
 	return &RouteManager{
-		LoginRoutes: router.Group("/api/login"), // 初始化登录路由组
+		LoginRoutes: router.Group("/api/wxlogin"), // 初始化登录路由组
 	}
 }
 

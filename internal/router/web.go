@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/api"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/manager"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/gin-gonic/gin"
@@ -40,4 +41,9 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	//routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
 	//rg.POST("/rtoken", api.ReflashRtoken)
 	//})
+
+	routeManager.RegisterRoutes(func(rg *gin.RouterGroup) {
+		rg.GET("/login", api.WechatLogin)
+	})
+
 }

@@ -8,14 +8,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// @Title        wechat.go
+var CODE_NOT_VALID = response.MsgCode{10007, "code值无效"}
+
+// @Title        login.go
 // @Description
 // @Create       XdpCs 2025-03-06 上午1:23
 // @Update       XdpCs 2025-03-06 上午1:23
 func WechatLogin(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.WechatLoginReq](c) // 修改请求结构体
-
+	if err != nil {
+		zlog.CtxErrorf(ctx, "WechatLogin request error: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
+		return
+	}
+	zlog.CtxInfof(ctx, "WechatLogin request: %v", req)
 	resp, err := logic.NewWechatLoginLogic().WechatLogin(ctx, req)
 	response.Response(c, resp, err)
+	return
 }
