@@ -36,7 +36,7 @@ func (l *BlogLogic) CreateBlog(ctx context.Context, blog *model.Blog) error {
 
 	// 生成帖子ID（雪花算法）
 	blogID := global.Node.Generate().Int64()
-	blog.ID = uint64(blogID)
+	blog.ID = int64(blogID)
 
 	// 创建帖子
 	if err := repo.CreateBlog(tx, blog); err != nil {
@@ -108,7 +108,7 @@ func (l *BlogLogic) DeleteBlog(ctx context.Context, blogID uint64) error {
 }
 
 // GetBlogByID 获取帖子详情
-func (l *BlogLogic) GetBlogByID(ctx context.Context, blogID uint64, userID uint64) (*model.Blog, error) {
+func (l *BlogLogic) GetBlogByID(ctx context.Context, blogID int64, userID int64) (*model.Blog, error) {
 	blog, err := repo.GetBlogByID(blogID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -130,7 +130,7 @@ func (l *BlogLogic) GetBlogByID(ctx context.Context, blogID uint64, userID uint6
 }
 
 // GetBlogs 分页获取帖子列表
-func (l *BlogLogic) GetBlogs(ctx context.Context, page, pageSize int, userID uint64) ([]model.Blog, int64, error) {
+func (l *BlogLogic) GetBlogs(ctx context.Context, page, pageSize int, userID int64) ([]model.Blog, int64, error) {
 	blogs, total, err := repo.GetBlogs(page, pageSize)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "repo.GetBlogs failed: %v", err)
@@ -150,7 +150,7 @@ func (l *BlogLogic) GetBlogs(ctx context.Context, page, pageSize int, userID uin
 }
 
 // GetBlogsAfterID 获取比指定 ID 更新的帖子
-func (l *BlogLogic) GetBlogsAfterID(ctx context.Context, latestID uint64, pageSize int) ([]model.Blog, error) {
+func (l *BlogLogic) GetBlogsAfterID(ctx context.Context, latestID int64, pageSize int) ([]model.Blog, error) {
 	blogs, err := repo.GetBlogsAfterID(latestID, pageSize)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Failed to get blogs after ID: %v", err)
@@ -171,7 +171,7 @@ func (l *BlogLogic) GetBlogsByTag(ctx context.Context, tag string, page, pageSiz
 }
 
 // GetBlogsByUserID 根据用户ID分页获取帖子列表
-func (l *BlogLogic) GetBlogsByUserID(ctx context.Context, userID uint64, page, pageSize int) ([]model.Blog, int64, error) {
+func (l *BlogLogic) GetBlogsByUserID(ctx context.Context, userID int64, page, pageSize int) ([]model.Blog, int64, error) {
 	blogs, total, err := repo.GetBlogsByUserID(userID, page, pageSize)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "repo.GetBlogsByUserID failed: %v", err)
@@ -182,7 +182,7 @@ func (l *BlogLogic) GetBlogsByUserID(ctx context.Context, userID uint64, page, p
 }
 
 // checkViewPermission 检查用户是否有权限查看帖子
-func checkViewPermission(ctx context.Context, blog *model.Blog, userID uint64) error {
+func checkViewPermission(ctx context.Context, blog *model.Blog, userID int64) error {
 	switch blog.ViewPermission {
 	case "所有人":
 		return nil

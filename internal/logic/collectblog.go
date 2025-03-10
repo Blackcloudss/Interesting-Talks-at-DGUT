@@ -21,7 +21,7 @@ var (
 )
 
 // CollectBlog 收藏帖子
-func CollectBlog(ctx context.Context, userID, blogID uint64) error {
+func CollectBlog(ctx context.Context, userID, blogID int64) error {
 	tx := global.DB.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		zlog.CtxErrorf(ctx, "Failed to start transaction: %v", tx.Error)
@@ -73,7 +73,7 @@ func CollectBlog(ctx context.Context, userID, blogID uint64) error {
 }
 
 // UncollectBlog 取消收藏
-func UncollectBlog(ctx context.Context, userID, blogID uint64) error {
+func UncollectBlog(ctx context.Context, userID, blogID int64) error {
 	tx := global.DB.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		zlog.CtxErrorf(ctx, "Failed to start transaction: %v", tx.Error)
@@ -128,7 +128,7 @@ func UncollectBlog(ctx context.Context, userID, blogID uint64) error {
 }
 
 // GetCollectedBlogs 获取用户收藏的帖子
-func GetCollectedBlogs(ctx context.Context, userID uint64) ([]model.Blog, error) {
+func GetCollectedBlogs(ctx context.Context, userID int64) ([]model.Blog, error) {
 	// 调用数据层方法获取收藏的帖子
 	blogs, err := repo.GetCollectedBlogs(ctx, userID)
 	if err != nil {

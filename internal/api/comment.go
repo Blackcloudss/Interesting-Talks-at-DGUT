@@ -1,6 +1,7 @@
-package controller
+package api
 
 import (
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/controller"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/logic"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
@@ -22,7 +23,7 @@ func CommentHandler(c *gin.Context) {
 	}
 
 	// 获取当前用户ID
-	userID, err := getCurrentUserID(c)
+	userID, err := controller.getCurrentUserID(c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Failed to get current user ID: %v", err)
 		response.NewResponse(c).Error(response.USER_NOT_LOGIN) // 用户未登录
@@ -39,7 +40,7 @@ func CommentHandler(c *gin.Context) {
 
 	zlog.CtxInfof(ctx, "Comment created successfully: %+v", comment)
 	response.NewResponse(c).Success(gin.H{ // 返回评论成功响应
-		"commentID": comment.CommentID,
+		"commentID": comment.ID,
 	})
 }
 
@@ -53,14 +54,14 @@ func DeleteCommentHandler(c *gin.Context) {
 		return
 	}
 
-	userID, err := getCurrentUserID(c)
+	userID, err := controller.getCurrentUserID(c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "getCurrentUserID failed: %v", err)
 		response.NewResponse(c).Error(response.USER_NOT_LOGIN)
 		return
 	}
 
-	if err := logic.DeleteComment(ctx, commentID, userID); err != nil {
+	if err := logic.DeleteComment(ctx, int64(commentID), userID); err != nil {
 		zlog.CtxErrorf(ctx, "DeleteComment failed: %v", err)
 		response.NewResponse(c).Error(response.INTERNAL_ERROR)
 		return
@@ -89,7 +90,7 @@ func CommentListHandler(c *gin.Context) {
 	}
 
 	// 获取评论列表
-	comments, err := logic.GetCommentList(ctx, blogID)
+	comments, err := logic.GetCommentList(ctx, int64(blogID))
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Failed to retrieve comment list: %v", err)
 		response.NewResponse(c).Error(response.INTERNAL_ERROR) // 获取评论失败

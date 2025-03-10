@@ -48,7 +48,7 @@ func CreateComment(ctx context.Context, comment *model.Comment) error {
 
 	// 使用雪花算法生成评论ID
 	commentID := global.Node.Generate().Int64()
-	comment.CommentID = uint64(commentID)
+	comment.ID = commentID
 
 	// 创建评论
 	if err := repo.CreateComment(tx, comment); err != nil {
@@ -70,12 +70,12 @@ func CreateComment(ctx context.Context, comment *model.Comment) error {
 		return response.ErrResp(err, codeCommentCreateFailed)
 	}
 
-	zlog.CtxInfof(ctx, "Comment created successfully (commentID: %d, blogID: %d)", comment.CommentID, comment.BlogID)
+	zlog.CtxInfof(ctx, "Comment created successfully (commentID: %d, blogID: %d)", comment.ID, comment.BlogID)
 	return nil
 }
 
 // DeleteComment 删除评论
-func DeleteComment(ctx context.Context, commentID uint64, userID uint64) error {
+func DeleteComment(ctx context.Context, commentID int64, userID int64) error {
 	tx := global.DB.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		zlog.CtxErrorf(ctx, "Failed to start transaction: %v", tx.Error)
@@ -134,7 +134,7 @@ func DeleteComment(ctx context.Context, commentID uint64, userID uint64) error {
 }
 
 // GetCommentList 获取评论列表
-func GetCommentList(ctx context.Context, blogID uint64) ([]model.Comment, error) {
+func GetCommentList(ctx context.Context, blogID int64) ([]model.Comment, error) {
 	comments, err := repo.GetCommentList(ctx, blogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetCommentList failed: %v", err)

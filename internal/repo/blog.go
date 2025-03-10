@@ -22,7 +22,7 @@ func DeleteBlog(blogID uint64) error {
 }
 
 // GetBlogByID 根据ID获取帖子
-func GetBlogByID(blogID uint64) (*model.Blog, error) {
+func GetBlogByID(blogID int64) (*model.Blog, error) {
 	var blog model.Blog
 	if err := global.DB.First(&blog, blogID).Error; err != nil {
 		return nil, err

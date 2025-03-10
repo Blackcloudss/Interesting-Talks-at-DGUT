@@ -1,6 +1,7 @@
-package controller
+package api
 
 import (
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/controller"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/logic"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
@@ -9,10 +10,11 @@ import (
 )
 
 // FollowHandler 关注用户
+
 func FollowHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 
-	followerID, err := getCurrentUserID(c)
+	followerID, err := controller.getCurrentUserID(c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Failed to get current user ID: %v", err)
 		response.NewResponse(c).Error(response.USER_NOT_LOGIN) // 用户未登录
@@ -40,7 +42,7 @@ func FollowHandler(c *gin.Context) {
 func UnfollowHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 
-	followerID, err := getCurrentUserID(c)
+	followerID, err := controller.getCurrentUserID(c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Failed to get current user ID: %v", err)
 		response.NewResponse(c).Error(response.USER_NOT_LOGIN) // 用户未登录
@@ -68,7 +70,7 @@ func UnfollowHandler(c *gin.Context) {
 func GetFollowingsHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 
-	userID, err := getCurrentUserID(c)
+	userID, err := controller.getCurrentUserID(c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Failed to get current user ID: %v", err)
 		response.NewResponse(c).Error(response.USER_NOT_LOGIN) // 用户未登录
@@ -92,7 +94,7 @@ func GetFollowingsHandler(c *gin.Context) {
 func GetFollowersHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 
-	userID, err := getCurrentUserID(c)
+	userID, err := controller.getCurrentUserID(c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Failed to get current user ID: %v", err)
 		response.NewResponse(c).Error(response.USER_NOT_LOGIN) // 用户未登录

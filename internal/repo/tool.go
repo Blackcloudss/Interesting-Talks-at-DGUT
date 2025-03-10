@@ -6,7 +6,7 @@ import (
 )
 
 // GetUserRole 获取用户角色
-func GetUserRole(userID uint64) (string, error) {
+func GetUserRole(userID int64) (string, error) {
 	var user model.User
 	if err := global.DB.First(&user, userID).Error; err != nil {
 		return "", err

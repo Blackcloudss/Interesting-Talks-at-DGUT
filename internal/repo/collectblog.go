@@ -8,7 +8,7 @@ import (
 )
 
 // CollectBlog 收藏帖子
-func CollectBlog(db *gorm.DB, userID, blogID uint64) error {
+func CollectBlog(db *gorm.DB, userID, blogID int64) error {
 	return db.Create(&model.Collection{
 		UserID: userID,
 		BlogID: blogID,
@@ -16,12 +16,12 @@ func CollectBlog(db *gorm.DB, userID, blogID uint64) error {
 }
 
 // UncollectBlog 取消收藏
-func UncollectBlog(db *gorm.DB, userID, blogID uint64) error {
+func UncollectBlog(db *gorm.DB, userID, blogID int64) error {
 	return db.Delete(&model.Collection{}, "user_id = ? AND blog_id = ?", userID, blogID).Error
 }
 
 // GetCollectedBlogs 获取用户收藏的帖子
-func GetCollectedBlogs(ctx context.Context, userID uint64) ([]model.Blog, error) {
+func GetCollectedBlogs(ctx context.Context, userID int64) ([]model.Blog, error) {
 	var blogs []model.Blog
 	err := global.DB.WithContext(ctx).Model(&model.Blog{}).
 		Joins("inner join collections on collections.blog_id = blogs.id").
@@ -31,7 +31,7 @@ func GetCollectedBlogs(ctx context.Context, userID uint64) ([]model.Blog, error)
 }
 
 // IsCollected 检查是否已经收藏
-func IsCollected(db *gorm.DB, userID, blogID uint64) bool {
+func IsCollected(db *gorm.DB, userID, blogID int64) bool {
 	var count int64
 	db.Model(&model.Collection{}).
 		Where("user_id = ? AND blog_id = ?", userID, blogID).

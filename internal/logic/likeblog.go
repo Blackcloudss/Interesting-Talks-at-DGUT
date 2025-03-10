@@ -19,7 +19,7 @@ var (
 )
 
 // LikeBlog 点赞帖子
-func LikeBlog(ctx context.Context, userID, blogID uint64) error {
+func LikeBlog(ctx context.Context, userID, blogID int64) error {
 	tx := global.DB.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		zlog.CtxErrorf(ctx, "Failed to start transaction: %v", tx.Error)
@@ -62,7 +62,7 @@ func LikeBlog(ctx context.Context, userID, blogID uint64) error {
 }
 
 // UnlikeBlog 取消点赞
-func UnlikeBlog(ctx context.Context, userID, blogID uint64) error {
+func UnlikeBlog(ctx context.Context, userID, blogID int64) error {
 	tx := global.DB.WithContext(ctx).Begin()
 	if tx.Error != nil {
 		zlog.CtxErrorf(ctx, "Failed to start transaction: %v", tx.Error)
