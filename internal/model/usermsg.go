@@ -10,6 +10,7 @@ type UserMsg struct {
 	OpenId   string `gorm:"open_id"`                                  // 用户在不同类型产品中的身份id，不同产品互不相同
 	Nickname string `gorm:"default:游客" json:"nickname"`               // 默认昵称为“游客”
 	Avatar   string `gorm:"default:default_avatar.png" json:"avatar"` // 默认头像
+	Role     string `gorm:"default:tourist" json:"role"`              // 角色身份 默认身份为游客
 
 	Name      string `gorm:"column:name;type:varchar(30);comment:'真实姓名'"`
 	StudentId string `gorm:"column:student_id;type:char(13);comment:'学号'"`
