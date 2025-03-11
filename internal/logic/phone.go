@@ -3,14 +3,19 @@ package logic
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
+	"github.com/go-redis/redis/v8"
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 )
 
@@ -40,11 +45,34 @@ func NewPhoneLogic() *Phonelogic {
 // 获取用户手机号
 func (l *Phonelogic) GetPhone(ctx context.Context, req types.WxPhoneReq) (resp *types.WxPhoneResp, err error) {
 	defer utils.RecordTime(time.Now())()
-	//获取微信的access_token
-	req.WxAtoken, err = l.GetWxAtoken(ctx)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "获取微信的access_token失败：%v", err)
-		return nil, response.ErrResp(err, GET_WXATOKEN_FAULT)
+	//检验redis中是否有access_token,如果没有，需要重新获取
+	exists, err := global.Rdb.Exists(ctx, fmt.Sprintf(global.REDIS_WXATOKEN_KEY, req.WxAtoken)).Result()
+	if err != nil && err != redis.Nil {
+		zlog.CtxErrorf(ctx, "Redis访问异常: %v", err)
+		return nil, response.ErrResp(errors.New("缓存服务异常"), GET_WXATOKEN_FAULT)
+	}
+	if exists == 0 {
+		// 双检锁降低并发场景下的重复获取概率, 避免缓存击穿(避免大量客户端同时触发续期)
+		var mu sync.Mutex
+		mu.Lock()
+		defer mu.Unlock()
+
+		// 再次检查防止锁内已更新
+		exists, err = global.Rdb.Exists(ctx, fmt.Sprintf(global.REDIS_WXATOKEN_KEY, req.WxAtoken)).Result()
+		if exists == 0 {
+			newAtoken, err := l.GetWxAtoken(ctx)
+			if err != nil {
+				zlog.CtxErrorf(ctx, "获取微信access_token失败: %v", err)
+				return nil, response.ErrResp(err, GET_WXATOKEN_FAULT)
+			}
+
+			// 设置缓存并保留10%的冗余时间,防止缓存与真实Token同时失效
+			if err := global.Rdb.Set(ctx, fmt.Sprintf(global.REDIS_WXATOKEN_KEY, req.WxAtoken), newAtoken, global.REDIS_EFFECTIVE_TIME).Err(); err != nil {
+				zlog.CtxErrorf(ctx, "缓存写入失败: %v", err)
+				return nil, response.ErrResp(errors.New("缓存更新失败"), GET_WXATOKEN_FAULT)
+			}
+			req.WxAtoken = newAtoken
+		}
 	}
 
 	//调用微信的getPhoneNumber接口
@@ -107,6 +135,12 @@ func (l *Phonelogic) GetWxAtoken(ctx context.Context) (WxAtoken string, err erro
 		return BLANK_TOKEN, response.ErrResp(err, response.COMMON_FAIL)
 	}
 	WxAtoken = req.AccessToken
+
+	// 将微信的atoken存储到redis中
+	if err = global.Rdb.Set(ctx, fmt.Sprintf(global.REDIS_WXATOKEN_KEY, configs.Conf.Wechat.AppID), WxAtoken, global.REDIS_EFFECTIVE_TIME).Err(); err != nil {
+		zlog.CtxErrorf(ctx, "redis set wxatoken err: %v", err)
+		return BLANK_TOKEN, response.ErrResp(err, response.COMMON_FAIL)
+	}
 	return
 }
 

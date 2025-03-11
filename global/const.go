@@ -13,9 +13,9 @@ import (
 // 所有常量文件读取位置
 const (
 	DEFAULT_CONFIG_FILE_PATH  = "/config.yaml"
-	REDIS_PHONE_CODE          = "ITAD:phone.login.code:%s:string"
-	REDIS_PHONE               = "ITAD:phone.login.effective:%s:string"
-	REDIS_SESSION_KEY         = "ITAD:openid.login:%s:string"
+	REDIS_SESSIONKEY          = "ITAD:openid.login:%s:string"
+	REDIS_WXATOKEN_KEY        = "ITAD:wxatoken:%s:string"
+	REDIS_EFFECTIVE_TIME      = time.Minute * 108
 	SESSIONKEY_EFFECTIVE_TIME = time.Minute * 30
 	ATOKEN_EFFECTIVE_TIME     = time.Hour * 12
 	RTOKEN_EFFECTIVE_TIME     = time.Hour * 24 * 30
