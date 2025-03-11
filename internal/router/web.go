@@ -5,6 +5,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/api"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/manager"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/middleware"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/gin-gonic/gin"
 )
@@ -42,8 +43,19 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/rtoken", api.RefreshToken) //用rtoken刷新atoken和rtoken
 	})
 
+	//微信登陆相关路由
 	routeManager.RegisterLoginRoutes(func(rg *gin.RouterGroup) {
 		rg.GET("/login", api.WechatLogin)
+	})
+
+	//个人信息相关路由
+	routeManager.RegisterProfileRoutes(func(rg *gin.RouterGroup) {
+		middleware.CheckAtoken()                           // 检查 Atoken
+		middleware.PermissionMiddleware()                  // 检查权限
+		rg.GET("/common/show", api.GetCommonProfile)       // 获取基本信息
+		rg.GET("/private/show", api.GetDetailProfile)      // 获取隐私信息
+		rg.PUT("/common/update", api.UpdateCommonProfile)  // 更新基本信息
+		rg.PUT("/private/update", api.UpdateDetailProfile) // 更新隐私信息
 	})
 
 }

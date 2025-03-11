@@ -16,6 +16,10 @@ import (
 	"time"
 )
 
+var (
+	REDIS_FAULT = response.MsgCode{50001, "redis存取SessionKey失败"}
+)
+
 // @Title        login.go
 // @Description
 // @Create       XdpCs 2025-03-06 上午1:32
@@ -42,18 +46,28 @@ func (l *WechatLogic) WechatLogin(ctx context.Context, req types.WechatLoginReq)
 // 向微信服务器请求code2Session
 func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err error) {
 	url := fmt.Sprintf(configs.Conf.Wechat.BaseUrl, configs.Conf.Wechat.AppID, configs.Conf.Wechat.AppSecret, code)
-	result, err := http.DefaultClient.Get(url)
+	client := &http.Client{Timeout: 5 * time.Second}
+	result, err := client.Get(url)
+
+	// 先检查错误再判断状态码
 	if err != nil {
 		zlog.CtxErrorf(ctx, "调用微信code2Session接口失败：%v", err)
 		return resp, response.ErrResp(err, response.COMMON_FAIL)
 	}
+
+	// 后校验状态码
+	if result.StatusCode != http.StatusOK {
+		zlog.CtxErrorf(ctx, "微信接口异常，状态码：%d", result.StatusCode)
+		return resp, response.ErrResp(err, response.COMMON_FAIL)
+	}
+
 	defer result.Body.Close()
 
 	var C2S types.Code2SessionResp
 
 	if err = json.NewDecoder(result.Body).Decode(&C2S); err != nil {
 		zlog.CtxErrorf(ctx, "响应解析失败: %v", err)
-		return nil, response.ErrResp(err, response.COMMON_FAIL)
+		return resp, response.ErrResp(err, response.COMMON_FAIL)
 	}
 
 	//判断 该用户是否在数据库中,没有则存放数据库中
@@ -66,10 +80,10 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 	//把用户的Sessionkey放进Redis
 	if err = global.Rdb.Set(ctx, fmt.Sprintf(global.REDIS_SESSION_KEY, C2S.Openid), C2S.SessionKey, global.SESSIONKEY_EFFECTIVE_TIME).Err(); err != nil {
 		zlog.CtxErrorf(ctx, "redis set session_key err: %v", err)
-		return resp, response.ErrResp(err, response.COMMON_FAIL)
+		return resp, response.ErrResp(err, REDIS_FAULT)
 	}
 
-	//制作成 Atoken 和 Rtoken 登陆态
+	//制作 Atoken 和 Rtoken 自定义登陆态
 	resp.Atoken, err = jwt.GenToken(jwt.FullToken(global.AUTH_ENUMS_ATOKEN, UserId))
 	resp.Rtoken, err = jwt.GenToken(jwt.FullToken(global.AUTH_ENUMS_RTOKEN, UserId))
 
