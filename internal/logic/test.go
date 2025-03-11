@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"errors"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
@@ -37,7 +38,7 @@ func (l *TestLogic) TestLogic(ctx context.Context, req types.TestO1Req) (resp *t
 	defer utils.RecordTime(time.Now())()
 	//..... some logic
 
-	user, err := repo.NewTestRepo().GetUserById(req.UserID)
+	user, err := repo.NewTestRepo(global.DB).GetUserById(req.UserID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			zlog.CtxWarnf(ctx, "user not found: %v", err)
