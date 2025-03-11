@@ -12,6 +12,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -61,7 +62,13 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 		return resp, response.ErrResp(err, response.COMMON_FAIL)
 	}
 
-	defer result.Body.Close()
+	// 对 关闭Body 做封装处理
+	defer func(Body io.ReadCloser) {
+		err = Body.Close()
+		if err != nil {
+			zlog.CtxErrorf(ctx, "关闭Body失败: %v", err)
+		}
+	}(result.Body)
 
 	var C2S types.Code2SessionResp
 
@@ -78,7 +85,7 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 	}
 
 	//把用户的Sessionkey放进Redis
-	if err = global.Rdb.Set(ctx, fmt.Sprintf(global.REDIS_SESSION_KEY, C2S.Openid), C2S.SessionKey, global.SESSIONKEY_EFFECTIVE_TIME).Err(); err != nil {
+	if err = global.Rdb.Set(ctx, fmt.Sprintf(global.REDIS_SESSIONKEY, C2S.Openid), C2S.SessionKey, global.SESSIONKEY_EFFECTIVE_TIME).Err(); err != nil {
 		zlog.CtxErrorf(ctx, "redis set session_key err: %v", err)
 		return resp, response.ErrResp(err, REDIS_FAULT)
 	}

@@ -8,8 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var CODE_NOT_VALID = response.MsgCode{10007, "code值无效"}
-
 // @Title        login.go
 // @Description
 // @Create       XdpCs 2025-03-06 上午1:23

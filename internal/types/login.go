@@ -8,11 +8,6 @@ package types
 // 微信登录请求结构体
 type WechatLoginReq struct {
 	JsCode string `json:"js_code"` //微信临时登陆凭证
-	//Token     string `json:"token"`     //账号登录认证
-	//Nickname  string `json:"nickname"`  //微信昵称
-	//Headimage string `json:"headimage"` //微信头像
-	//User      string `json:"user"`      //账号
-	//Password  string `json:"password"`  //密码
 }
 
 // 调用code2session接口后返回数据
@@ -28,18 +23,4 @@ type Code2SessionResp struct {
 type WechatLoginResp struct {
 	Atoken string `json:"token"`  // 账号登录认证
 	Rtoken string `json:"rtoken"` // 刷新处理
-}
-
-// 微信解密手机号
-type WxPhoneReq struct {
-	Iv        string `json:"iv"`         //加密向量
-	JsCode    string `json:"js_code"`    //微信临时登陆凭证
-	PhoneData string `json:"phone_data"` //加密后的手机号数据
-}
-
-// 微信解密手机号
-type WxPhoneResp struct {
-	PhoneNumber     string `json:"phoneNumber"`     //格式化手机号
-	PurePhoneNumber string `json:"purePhoneNumber"` //原始手机号
-	CountryCode     string `json:"countryCode"`     //国家代码
 }
