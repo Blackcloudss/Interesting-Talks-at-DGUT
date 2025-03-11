@@ -13,7 +13,7 @@ import (
 // @Description
 // @Create       XdpCs 2025-03-10 上午1:18
 // @Update       XdpCs 2025-03-10 上午1:18
-func ReflashAtoken() gin.HandlerFunc {
+func CheckAtoken() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := zlog.GetCtxFromGin(c)
 		token := c.GetHeader("Authorization")
