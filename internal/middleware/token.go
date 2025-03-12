@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/logic"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
@@ -40,15 +39,15 @@ func CheckAtoken() gin.HandlerFunc {
 		}
 		//将token内部数据传下去
 		c.Set(global.TOKEN_USER_ID, data.Userid)
-		//生成新的token
-		resp, err := logic.NewTokenLogic().GenAtoken(ctx, data)
+		//生成新的atoken
+		NewAToken, err := jwt.GenToken(data)
 		if err != nil {
 			zlog.CtxErrorf(ctx, "ReflashAtoken err:%v", err)
 			c.Abort()
 			return
 		}
 		//将token放到响应头
-		c.Header("Authorization", resp.Atoken)
+		c.Header("Authorization", NewAToken)
 		c.Next()
 	}
 }
