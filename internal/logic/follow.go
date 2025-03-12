@@ -3,9 +3,9 @@ package logic
 import (
 	"context"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 )
 
@@ -19,8 +19,15 @@ var (
 	codeGetFollowersFailed  = response.MsgCode{Code: 40040, Msg: "获取粉丝列表失败"}
 )
 
+type FollowLogic struct {
+}
+
+func NewFollowLogic() *FollowLogic {
+	return &FollowLogic{}
+}
+
 // Follow 关注用户
-func Follow(ctx context.Context, followerID, followedID uint64) error {
+func (l *FollowLogic) Follow(ctx context.Context, req types.FollowReq) error {
 	tx := global.DB.Begin()
 	if tx.Error != nil {
 		zlog.CtxErrorf(ctx, "Failed to start transaction: %v", tx.Error)
@@ -28,14 +35,14 @@ func Follow(ctx context.Context, followerID, followedID uint64) error {
 	}
 
 	// 检查是否已经关注
-	if repo.IsFollowing(followerID, followedID) {
+	if repo.IsFollowing(tx, req.FollowerID, req.FollowedID) {
 		tx.Rollback()
-		zlog.CtxInfof(ctx, "Follow skipped: already following (followerID: %d, followedID: %d)", followerID, followedID)
+		zlog.CtxInfof(ctx, "Follow skipped: already following (followerID: %d, followedID: %d)", req.FollowerID, req.FollowedID)
 		return response.ErrResp(nil, codeAlreadyFollowing)
 	}
 
 	// 插入关注关系
-	if err := repo.Follow(tx, followerID, followedID); err != nil {
+	if err := repo.Follow(tx, req.FollowerID, req.FollowedID); err != nil {
 		tx.Rollback()
 		zlog.CtxErrorf(ctx, "Follow failed: %v", err)
 		return response.ErrResp(err, codeFollowFailed)
@@ -47,12 +54,12 @@ func Follow(ctx context.Context, followerID, followedID uint64) error {
 		return response.ErrResp(err, codeFollowFailed)
 	}
 
-	zlog.CtxInfof(ctx, "Followed successfully (followerID: %d, followedID: %d)", followerID, followedID)
+	zlog.CtxInfof(ctx, "Followed successfully (followerID: %d, followedID: %d)", req.FollowerID, req.FollowedID)
 	return nil
 }
 
 // Unfollow 取消关注
-func Unfollow(ctx context.Context, followerID, followedID uint64) error {
+func (l *FollowLogic) Unfollow(ctx context.Context, req types.UnfollowReq) error {
 	tx := global.DB.Begin()
 	if tx.Error != nil {
 		zlog.CtxErrorf(ctx, "Failed to start transaction: %v", tx.Error)
@@ -60,14 +67,14 @@ func Unfollow(ctx context.Context, followerID, followedID uint64) error {
 	}
 
 	// 检查是否已经取消关注
-	if !repo.IsFollowing(followerID, followedID) {
+	if !repo.IsFollowing(tx, req.FollowerID, req.FollowedID) {
 		tx.Rollback()
-		zlog.CtxInfof(ctx, "Unfollow skipped: not following (followerID: %d, followedID: %d)", followerID, followedID)
+		zlog.CtxInfof(ctx, "Unfollow skipped: not following (followerID: %d, followedID: %d)", req.FollowerID, req.FollowedID)
 		return response.ErrResp(nil, codeNotFollowing)
 	}
 
 	// 删除关注关系
-	if err := repo.Unfollow(tx, followerID, followedID); err != nil {
+	if err := repo.Unfollow(tx, req.FollowerID, req.FollowedID); err != nil {
 		tx.Rollback()
 		zlog.CtxErrorf(ctx, "Unfollow failed: %v", err)
 		return response.ErrResp(err, codeUnfollowFailed)
@@ -79,30 +86,30 @@ func Unfollow(ctx context.Context, followerID, followedID uint64) error {
 		return response.ErrResp(err, codeUnfollowFailed)
 	}
 
-	zlog.CtxInfof(ctx, "Unfollowed successfully (followerID: %d, followedID: %d)", followerID, followedID)
+	zlog.CtxInfof(ctx, "Unfollowed successfully (followerID: %d, followedID: %d)", req.FollowerID, req.FollowedID)
 	return nil
 }
 
 // GetFollowings 获取用户关注的用户列表
-func GetFollowings(ctx context.Context, userID uint64) ([]model.User, error) {
-	users, err := repo.GetFollowings(userID)
+func (l *FollowLogic) GetFollowings(ctx context.Context, req types.GetFollowingsReq) (resp types.GetFollowingsResp, err error) {
+	users, err := repo.GetFollowings(req.UserID)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "Failed to get followings for user (userID: %d): %v", userID, err)
-		return nil, response.ErrResp(err, codeGetFollowingsFailed)
+		zlog.CtxErrorf(ctx, "Failed to get followings for user (userID: %d): %v", req.UserID, err)
+		return types.GetFollowingsResp{}, response.ErrResp(err, codeGetFollowingsFailed)
 	}
 
-	zlog.CtxInfof(ctx, "Followings retrieved successfully (userID: %d)", userID)
-	return users, nil
+	zlog.CtxInfof(ctx, "Followings retrieved successfully (userID: %d)", req.UserID)
+	return types.GetFollowingsResp{List: users}, nil
 }
 
 // GetFollowers 获取用户的粉丝列表
-func GetFollowers(ctx context.Context, userID uint64) ([]model.User, error) {
-	users, err := repo.GetFollowers(userID)
+func (l *FollowLogic) GetFollowers(ctx context.Context, req types.GetFollowersReq) (resp types.GetFollowersResp, err error) {
+	users, err := repo.GetFollowers(req.UserID)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "Failed to get followers for user (userID: %d): %v", userID, err)
-		return nil, response.ErrResp(err, codeGetFollowersFailed)
+		zlog.CtxErrorf(ctx, "Failed to get followers for user (userID: %d): %v", req.UserID, err)
+		return types.GetFollowersResp{}, response.ErrResp(err, codeGetFollowersFailed)
 	}
 
-	zlog.CtxInfof(ctx, "Followers retrieved successfully (userID: %d)", userID)
-	return users, nil
+	zlog.CtxInfof(ctx, "Followers retrieved successfully (userID: %d)", req.UserID)
+	return types.GetFollowersResp{List: users}, nil
 }
