@@ -214,7 +214,7 @@ func (l *BlogLogic) UncollectBlog(ctx context.Context, req types.UncollectBlogRe
 
 	err := repo.NewBlogRepo(global.DB).UncollectBlog(int64(UserID), req.BlogID)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "UncollectBlog failed: %v", err)
+		zlog.CtxErrorf(ctx, "UncollectBlog failed:%v", err)
 		return response.ErrResp(err, codeUncollectFailed)
 	}
 
@@ -225,7 +225,10 @@ func (l *BlogLogic) UncollectBlog(ctx context.Context, req types.UncollectBlogRe
 func (l *BlogLogic) GetCollectedBlogs(ctx context.Context, req types.GetCollectedBlogsReq) (resp *types.GetCollectedBlogsResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
-	blogs, err := repo.NewBlogRepo(global.DB).GetCollectedBlogs(req.BlogID)
+	// 暂时用1代替
+	UserID := int64(1)
+
+	blogs, err := repo.NewBlogRepo(global.DB).GetCollectedBlogs(UserID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetCollectedBlogs failed: %v", err)
 		return nil, response.ErrResp(err, codeGetCollectedFailed)
@@ -241,10 +244,10 @@ func (l *BlogLogic) GetCollectedBlogs(ctx context.Context, req types.GetCollecte
 func (l *BlogLogic) LikeBlog(ctx context.Context, req types.LikeBlogReq) error {
 	defer utils.RecordTime(time.Now())()
 
-	//暂时用1代替
-	UserID := 1
+	// 暂时用1代替
+	UserID := int64(1)
 
-	err := repo.NewBlogRepo(global.DB).LikeBlog(int64(UserID), req.BlogID)
+	err := repo.NewBlogRepo(global.DB).LikeBlog(UserID, req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "LikeBlog failed: %v", err)
 		return response.ErrResp(err, codeLikeFailed)
@@ -257,10 +260,10 @@ func (l *BlogLogic) LikeBlog(ctx context.Context, req types.LikeBlogReq) error {
 func (l *BlogLogic) UnlikeBlog(ctx context.Context, req types.UnlikeBlogReq) error {
 	defer utils.RecordTime(time.Now())()
 
-	//暂时用1代替
-	UserID := 1
+	// 暂时用1代替
+	UserID := int64(1)
 
-	err := repo.NewBlogRepo(global.DB).UnlikeBlog(int64(UserID), req.BlogID)
+	err := repo.NewBlogRepo(global.DB).UnlikeBlog(UserID, req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UnlikeBlog failed: %v", err)
 		return response.ErrResp(err, codeUnlikeFailed)

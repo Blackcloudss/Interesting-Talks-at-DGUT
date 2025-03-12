@@ -14,6 +14,7 @@ func CreateBlogHandler(c *gin.Context) {
 	req, err := types.BindReq[types.CreateBlogReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "CreateBlog request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
 	zlog.CtxInfof(ctx, "CreateBlog request: %v", req)
@@ -27,6 +28,7 @@ func UpdateBlogHandler(c *gin.Context) {
 	req, err := types.BindReq[types.UpdateBlogReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UpdateBlog request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
 	zlog.CtxInfof(ctx, "UpdateBlog request: %v", req)
@@ -40,6 +42,7 @@ func DeleteBlogHandler(c *gin.Context) {
 	req, err := types.BindReq[types.DeleteBlogReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "DeleteBlog request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
 	zlog.CtxInfof(ctx, "DeleteBlog request: %v", req)
@@ -53,6 +56,7 @@ func GetBlogByIDHandler(c *gin.Context) {
 	req, err := types.BindReq[types.GetBlogByIDReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetBlogByID request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetBlogByID request: %v", req)
@@ -66,6 +70,7 @@ func GetBlogsHandler(c *gin.Context) {
 	req, err := types.BindReq[types.GetBlogsReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetBlogs request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetBlogs request: %v", req)
@@ -79,6 +84,7 @@ func GetBlogsByTagHandler(c *gin.Context) {
 	req, err := types.BindReq[types.GetBlogsByTagReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetBlogsByTag request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetBlogsByTag request: %v", req)
@@ -92,6 +98,7 @@ func GetMyBlogsHandler(c *gin.Context) {
 	req, err := types.BindReq[types.GetMyBlogsReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetMyBlogs request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetMyBlogs request: %v", req)
@@ -105,6 +112,7 @@ func CollectBlogHandler(c *gin.Context) {
 	req, err := types.BindReq[types.CollectBlogReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "CollectBlog request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
 	zlog.CtxInfof(ctx, "CollectBlog request: %v", req)
@@ -118,6 +126,7 @@ func UncollectBlogHandler(c *gin.Context) {
 	req, err := types.BindReq[types.UncollectBlogReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UncollectBlog request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
 	zlog.CtxInfof(ctx, "UncollectBlog request: %v", req)
@@ -131,6 +140,7 @@ func GetCollectedBlogsHandler(c *gin.Context) {
 	req, err := types.BindReq[types.GetCollectedBlogsReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetCollectedBlogs request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetCollectedBlogs request: %v", req)
@@ -144,6 +154,7 @@ func LikeBlogHandler(c *gin.Context) {
 	req, err := types.BindReq[types.LikeBlogReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "LikeBlog request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
 	zlog.CtxInfof(ctx, "LikeBlog request: %v", req)
@@ -157,6 +168,7 @@ func UnlikeBlogHandler(c *gin.Context) {
 	req, err := types.BindReq[types.UnlikeBlogReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UnlikeBlog request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
 	zlog.CtxInfof(ctx, "UnlikeBlog request: %v", req)
