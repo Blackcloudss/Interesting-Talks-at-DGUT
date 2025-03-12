@@ -39,9 +39,9 @@ func (r *CasbinRepo) CheckUserPermission(Durl string, UserId int64) (IsExist boo
 	defer utils.RecordTime(time.Now())()
 	//查找该用户所扮演的角色
 	var Role string
-	err = r.DB.Model(&model.UserMsg{}).
+	err = r.DB.Model(&model.UserDisplay{}).
 		Select(ROLE).
-		Where(&model.UserMsg{
+		Where(&model.UserDisplay{
 			CommonModel: model.CommonModel{
 				ID: UserId,
 			},

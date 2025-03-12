@@ -3,6 +3,7 @@ package initalize
 import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/pkg/database"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/pkg/mysqlx"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/pkg/redisx"
@@ -46,7 +47,16 @@ func InitRedis(config configs.Config) {
 
 }
 
+// 自动迁移表 --通过GORM的AutoMigrate方法自动创建或更新数据库表结构 确保表结构与模型定义一致
 func migrateTables() {
-	//自动迁移 *** 表，确保表结构存在
-
+	global.DB.AutoMigrate(
+		//自动迁移 用户展示表，确保表结构存在
+		&model.UserDisplay{},
+		//自动迁移 用户普通信息表，确保表结构存在
+		&model.UserCommon{},
+		//自动迁移 用户私有信息表，确保表结构存在
+		&model.UserPrivate{},
+		//自动迁移 用户授权表，确保表结构存在
+		&model.UserAuth{},
+	)
 }

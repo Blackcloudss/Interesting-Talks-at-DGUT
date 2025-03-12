@@ -11,7 +11,7 @@ const (
 	Id = "id"
 )
 
-// @Title        user.go
+// @Title        tz_user.go
 // @Description
 // @Create       XdpCs 2025-03-10 下午1:59
 // @Update       XdpCs 2025-03-10 下午1:59
@@ -29,35 +29,55 @@ func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 
 	var UserID int64
 
-	err := r.DB.Model(&model.UserMsg{}).
+	err := r.DB.Model(&model.UserDisplay{}).
 		Select(Id).
-		Where(&model.UserMsg{
+		Where(&model.UserDisplay{
 			OpenId: Openid,
 		}).
 		First(&UserID).
 		Error
 	if err != nil {
-		// 如果数据库中没有该记录，则创建新用户 存放 OpenId
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			err = r.DB.Model(&model.UserMsg{}).
-				Create(&model.UserMsg{
-					OpenId: Openid,
-				}).Error
-			if err != nil {
-				zlog.Errorf("创建用户失败：: %v", err)
+			// 开启事务
+			tx := r.DB.Begin()
+			defer func() {
+				if r := recover(); r != nil {
+					tx.Rollback()
+				}
+			}()
+
+			// 创建用户展示表
+			userDisplay := &model.UserDisplay{OpenId: Openid}
+			if err = tx.Create(userDisplay).Error; err != nil {
+				tx.Rollback()
+				zlog.Errorf("创建用户展示表失败：%v", err)
 				return 0, err
 			}
-			// 查询新创建的用户的 ID
-			err = r.DB.Model(&model.UserMsg{}).
-				Select(Id).
-				Where(&model.UserMsg{
-					OpenId: Openid,
-				}).
-				First(&UserID).
-				Error
-			return UserID, nil
+
+			// 使用事务创建后续表
+			tables := []interface{}{
+				&model.UserCommon{OpenId: Openid},
+				&model.UserPrivate{OpenId: Openid},
+				&model.UserAuth{OpenId: Openid},
+			}
+
+			for _, table := range tables {
+				if err = tx.Create(table).Error; err != nil {
+					tx.Rollback()
+					zlog.Errorf("创建用户表失败：%v", err)
+					return 0, err
+				}
+			}
+
+			// 提交事务
+			if err = tx.Commit().Error; err != nil {
+				zlog.Errorf("事务提交失败：%v", err)
+				return 0, err
+			}
+
+			// 直接使用创建后获得的ID
+			return userDisplay.ID, nil
 		}
-		zlog.Errorf("查询失败：: %v", err)
 		return 0, err
 	}
 	return UserID, nil
