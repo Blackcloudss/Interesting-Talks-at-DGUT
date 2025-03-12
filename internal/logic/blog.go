@@ -6,218 +6,265 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
+	"time"
 )
 
-// BlogLogic 帖子逻辑层
-type BlogLogic struct{}
+// 定义内部逻辑错误
+var (
+	codeBlogCreateFailed   = response.MsgCode{Code: 40021, Msg: "创建帖子失败"}
+	codeBlogUpdateFailed   = response.MsgCode{Code: 40022, Msg: "更新帖子失败"}
+	codeBlogDeleteFailed   = response.MsgCode{Code: 40023, Msg: "删除帖子失败"}
+	codeCollectFailed      = response.MsgCode{Code: 40026, Msg: "收藏帖子失败"}
+	codeUncollectFailed    = response.MsgCode{Code: 40027, Msg: "取消收藏失败"}
+	codeGetCollectedFailed = response.MsgCode{Code: 40028, Msg: "获取收藏帖子失败"}
+	codeLikeFailed         = response.MsgCode{Code: 40041, Msg: "点赞失败"}
+	codeUnlikeFailed       = response.MsgCode{Code: 40042, Msg: "取消点赞失败"}
+)
 
-// NewBlogLogic 创建帖子逻辑层实例
+type BlogLogic struct {
+}
+
 func NewBlogLogic() *BlogLogic {
 	return &BlogLogic{}
 }
 
-// 定义内部逻辑错误
-var (
-	codeBlogCreateFailed = response.MsgCode{Code: 40021, Msg: "创建帖子失败"}
-	codeBlogUpdateFailed = response.MsgCode{Code: 40022, Msg: "更新帖子失败"}
-	codeBlogDeleteFailed = response.MsgCode{Code: 40023, Msg: "删除帖子失败"}
-)
-
 // CreateBlog 创建帖子
-func (l *BlogLogic) CreateBlog(ctx context.Context, blog *model.Blog) error {
-	tx := global.DB.Begin()
-	if tx.Error != nil {
-		zlog.CtxErrorf(ctx, "Failed to start transaction: %v", tx.Error)
-		return response.ErrResp(tx.Error, codeTransactionFailed)
+func (l *BlogLogic) CreateBlog(ctx context.Context, req types.CreateBlogReq) (resp *types.CreateBlogResp, err error) {
+	defer utils.RecordTime(time.Now())()
+
+	blog := &model.Blog{
+		Content:        req.Content,
+		Tag:            req.Tag,
+		SubTag:         req.SubTag,
+		ViewPermission: req.ViewPermission,
 	}
 
-	// 生成帖子ID（雪花算法）
-	blogID := global.Node.Generate().Int64()
-	blog.ID = int64(blogID)
-
-	// 创建帖子
-	if err := repo.CreateBlog(tx, blog); err != nil {
-		tx.Rollback()
-		zlog.CtxErrorf(ctx, "Failed to create blog: %v", err)
-		return response.ErrResp(err, codeBlogCreateFailed)
+	err = repo.NewBlogRepo(global.DB).CreateBlog(blog)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "create blog error: %v", err)
+		return nil, response.ErrResp(err, codeBlogCreateFailed)
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		zlog.CtxErrorf(ctx, "Failed to commit transaction: %v", err)
-		return response.ErrResp(err, codeTransactionFailed)
+	resp = &types.CreateBlogResp{
+		Blog: *blog,
 	}
-
-	zlog.CtxInfof(ctx, "Blog created successfully: %+v", blog)
-	return nil
+	return resp, nil
 }
 
 // UpdateBlog 更新帖子
-func (l *BlogLogic) UpdateBlog(ctx context.Context, blog *model.Blog) error {
-	// 检查帖子是否存在
-	existingBlog, err := repo.GetBlogByID(blog.ID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			zlog.CtxWarnf(ctx, "Blog not found: %v", err)
-			return response.ErrResp(err, codeBlogNotFound)
-		}
-		zlog.CtxErrorf(ctx, "repo.GetBlogByID failed: %v", err)
-		return response.ErrResp(err, response.INTERNAL_ERROR)
-	}
+func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq) (resp *types.UpdateBlogResp, err error) {
+	defer utils.RecordTime(time.Now())()
 
-	// 更新帖子内容
-	existingBlog.Content = blog.Content
-	existingBlog.Tag = blog.Tag
-	existingBlog.SubTag = blog.SubTag
-	existingBlog.ViewPermission = blog.ViewPermission
-
-	// 调用数据库操作更新帖子
-	if err := repo.UpdateBlog(existingBlog); err != nil {
-		zlog.CtxErrorf(ctx, "repo.UpdateBlog failed: %v", err)
-		return response.ErrResp(err, codeBlogUpdateFailed)
-	}
-
-	zlog.CtxInfof(ctx, "Blog updated successfully: %+v", existingBlog)
-	return nil
-}
-
-// DeleteBlog 删除帖子
-func (l *BlogLogic) DeleteBlog(ctx context.Context, blogID uint64) error {
-	// 获取帖子详情
-	blog, err := repo.GetBlogByID(blogID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			zlog.CtxWarnf(ctx, "Blog not found: %v", err)
-			return response.ErrResp(err, codeBlogNotFound)
-		}
-		zlog.CtxErrorf(ctx, "repo.GetBlogByID failed: %v", err)
-		return response.ErrResp(err, response.INTERNAL_ERROR)
-	}
-
-	// 删除帖子
-	if err := repo.DeleteBlog(blogID); err != nil {
-		zlog.CtxErrorf(ctx, "repo.DeleteBlog failed: %v", err)
-		return response.ErrResp(err, codeBlogDeleteFailed)
-	}
-
-	zlog.CtxInfof(ctx, "Blog deleted successfully: %+v", blog)
-	return nil
-}
-
-// GetBlogByID 获取帖子详情
-func (l *BlogLogic) GetBlogByID(ctx context.Context, blogID int64, userID int64) (*model.Blog, error) {
-	blog, err := repo.GetBlogByID(blogID)
+	blog, err := repo.NewBlogRepo(global.DB).GetBlogByID(req.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			zlog.CtxWarnf(ctx, "Blog not found: %v", err)
 			return nil, response.ErrResp(err, codeBlogNotFound)
 		}
-		zlog.CtxErrorf(ctx, "repo.GetBlogByID failed: %v", err)
+		zlog.CtxErrorf(ctx, "GetBlogByID failed: %v", err)
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 
-	// 检查观看权限
-	if err := checkViewPermission(ctx, blog, userID); err != nil {
-		zlog.CtxWarnf(ctx, "User does not have permission to view this blog: %+v", blog)
-		return nil, response.ErrResp(err, codeInsufficientPermission)
+	blog.Content = req.Content
+	blog.Tag = req.Tag
+	blog.SubTag = req.SubTag
+	blog.ViewPermission = req.ViewPermission
+
+	err = repo.NewBlogRepo(global.DB).UpdateBlog(blog)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "UpdateBlog failed: %v", err)
+		return nil, response.ErrResp(err, codeBlogUpdateFailed)
 	}
 
-	zlog.CtxInfof(ctx, "Blog retrieved successfully: %+v", blog)
-	return blog, nil
+	resp = &types.UpdateBlogResp{
+		Blog: *blog,
+	}
+	return resp, nil
+}
+
+// DeleteBlog 删除帖子
+func (l *BlogLogic) DeleteBlog(ctx context.Context, req types.DeleteBlogReq) error {
+	defer utils.RecordTime(time.Now())()
+
+	_, err := repo.NewBlogRepo(global.DB).GetBlogByID(req.ID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.CtxWarnf(ctx, "Blog not found: %v", err)
+			return response.ErrResp(err, codeBlogNotFound)
+		}
+		zlog.CtxErrorf(ctx, "GetBlogByID failed: %v", err)
+		return response.ErrResp(err, response.INTERNAL_ERROR)
+	}
+
+	err = repo.NewBlogRepo(global.DB).DeleteBlog(req.ID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "DeleteBlog failed: %v", err)
+		return response.ErrResp(err, codeBlogDeleteFailed)
+	}
+
+	return nil
+}
+
+// GetBlogByID 获取帖子详情
+func (l *BlogLogic) GetBlogByID(ctx context.Context, req types.GetBlogByIDReq) (resp *types.GetBlogByIDResp, err error) {
+	defer utils.RecordTime(time.Now())()
+
+	blog, err := repo.NewBlogRepo(global.DB).GetBlogByID(req.ID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.CtxWarnf(ctx, "Blog not found: %v", err)
+			return nil, response.ErrResp(err, codeBlogNotFound)
+		}
+		zlog.CtxErrorf(ctx, "GetBlogByID failed: %v", err)
+		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
+
+	resp = &types.GetBlogByIDResp{
+		Blog: *blog,
+	}
+	return resp, nil
 }
 
 // GetBlogs 分页获取帖子列表
-func (l *BlogLogic) GetBlogs(ctx context.Context, page, pageSize int, userID int64) ([]model.Blog, int64, error) {
-	blogs, total, err := repo.GetBlogs(page, pageSize)
+func (l *BlogLogic) GetBlogs(ctx context.Context, req types.GetBlogsReq) (resp *types.GetBlogsResp, err error) {
+	defer utils.RecordTime(time.Now())()
+
+	blogs, total, err := repo.NewBlogRepo(global.DB).GetBlogs(req.Page, req.PageSize)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "repo.GetBlogs failed: %v", err)
-		return nil, 0, response.ErrResp(err, response.INTERNAL_ERROR)
-	}
-
-	// 过滤帖子，根据观看权限
-	filteredBlogs := make([]model.Blog, 0)
-	for _, blog := range blogs {
-		if err := checkViewPermission(ctx, &blog, userID); err == nil {
-			filteredBlogs = append(filteredBlogs, blog)
-		}
-	}
-
-	zlog.CtxInfof(ctx, "Blogs retrieved successfully: %+v", filteredBlogs)
-	return filteredBlogs, total, nil
-}
-
-// GetBlogsAfterID 获取比指定 ID 更新的帖子
-func (l *BlogLogic) GetBlogsAfterID(ctx context.Context, latestID int64, pageSize int) ([]model.Blog, error) {
-	blogs, err := repo.GetBlogsAfterID(latestID, pageSize)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "Failed to get blogs after ID: %v", err)
+		zlog.CtxErrorf(ctx, "GetBlogs failed: %v", err)
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
-	return blogs, nil
+
+	resp = &types.GetBlogsResp{
+		List:     blogs,
+		Total:    total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+	}
+	return resp, nil
 }
 
-// GetBlogsByTag 根据标签分页获取帖子列表
-func (l *BlogLogic) GetBlogsByTag(ctx context.Context, tag string, page, pageSize int) ([]model.Blog, int64, error) {
-	blogs, total, err := repo.GetBlogsByTag(tag, page, pageSize)
+// GetBlogsByTag 根据标签获取帖子列表
+func (l *BlogLogic) GetBlogsByTag(ctx context.Context, req types.GetBlogsByTagReq) (resp *types.GetBlogsByTagResp, err error) {
+	defer utils.RecordTime(time.Now())()
+
+	// 调用仓库层获取帖子列表
+	blogs, err := repo.NewBlogRepo(global.DB).GetBlogsByTag(req.SubTag)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "repo.GetBlogsByTag failed: %v", err)
-		return nil, 0, response.ErrResp(err, response.INTERNAL_ERROR)
+		zlog.CtxErrorf(ctx, "GetBlogsByTag failed: %v", err)
+		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
-	zlog.CtxInfof(ctx, "Blogs retrieved successfully: %+v", blogs)
-	return blogs, total, nil
+
+	// 构建响应体
+	resp = &types.GetBlogsByTagResp{
+		List: blogs,
+	}
+	return resp, nil
 }
 
-// GetBlogsByUserID 根据用户ID分页获取帖子列表
-func (l *BlogLogic) GetBlogsByUserID(ctx context.Context, userID int64, page, pageSize int) ([]model.Blog, int64, error) {
-	blogs, total, err := repo.GetBlogsByUserID(userID, page, pageSize)
+// GetMyBlogs 获取当前用户发布的帖子
+func (l *BlogLogic) GetMyBlogs(ctx context.Context, req types.GetMyBlogsReq) (resp *types.GetMyBlogsResp, err error) {
+	defer utils.RecordTime(time.Now())()
+
+	//暂时用1代替
+	UserID := 1
+
+	blogs, total, err := repo.NewBlogRepo(global.DB).GetBlogsByUserID(int64(UserID), req.Page, req.PageSize)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "repo.GetBlogsByUserID failed: %v", err)
-		return nil, 0, response.ErrResp(err, response.INTERNAL_ERROR)
+		zlog.CtxErrorf(ctx, "GetMyBlogs failed: %v", err)
+		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
-	zlog.CtxInfof(ctx, "Blogs retrieved successfully: %+v", blogs)
-	return blogs, total, nil
+
+	resp = &types.GetMyBlogsResp{
+		List:     blogs,
+		Total:    total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+	}
+	return resp, nil
 }
 
-// checkViewPermission 检查用户是否有权限查看帖子
-func checkViewPermission(ctx context.Context, blog *model.Blog, userID int64) error {
-	switch blog.ViewPermission {
-	case "所有人":
-		return nil
-	case "仅学生":
-		if userID == 0 {
-			// 如果是游客（未登录用户），直接拒绝访问
-			return response.ErrResp(nil, codeInsufficientPermission)
-		}
-		role, err := repo.GetUserRole(userID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				// 用户不存在，可能是游客或非法用户
-				zlog.CtxWarnf(ctx, "User not found (userID: %d)", userID)
-				return response.ErrResp(err, codeUserNotFound)
-			}
-			zlog.CtxErrorf(ctx, "Failed to get user role: %v", err)
-			return response.ErrResp(err, response.INTERNAL_ERROR)
-		}
-		if role != "student" {
-			return response.ErrResp(nil, codeInsufficientPermission)
-		}
-	case "仅好友":
-		if userID == blog.UserID {
-			return nil // 自己可以查看自己的帖子
-		}
-		isFriend := repo.IsFollowing(userID, blog.UserID) && repo.IsFollowing(blog.UserID, userID)
-		if !isFriend {
-			return response.ErrResp(nil, codeInsufficientPermission)
-		}
-	case "仅自己":
-		if userID != blog.UserID {
-			return response.ErrResp(nil, codeInsufficientPermission)
-		}
-	default:
-		return response.ErrResp(nil, response.INTERNAL_ERROR)
+// CollectBlog 收藏帖子
+func (l *BlogLogic) CollectBlog(ctx context.Context, req types.CollectBlogReq) error {
+	defer utils.RecordTime(time.Now())()
+
+	//暂时用1代替
+	UserID := 1
+
+	err := repo.NewBlogRepo(global.DB).CollectBlog(int64(UserID), req.BlogID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "CollectBlog failed: %v", err)
+		return response.ErrResp(err, codeCollectFailed)
 	}
+
+	return nil
+}
+
+// UncollectBlog 取消收藏帖子
+func (l *BlogLogic) UncollectBlog(ctx context.Context, req types.UncollectBlogReq) error {
+	defer utils.RecordTime(time.Now())()
+
+	//暂时用1代替
+	UserID := 1
+
+	err := repo.NewBlogRepo(global.DB).UncollectBlog(int64(UserID), req.BlogID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "UncollectBlog failed: %v", err)
+		return response.ErrResp(err, codeUncollectFailed)
+	}
+
+	return nil
+}
+
+// GetCollectedBlogs 获取用户收藏的帖子
+func (l *BlogLogic) GetCollectedBlogs(ctx context.Context, req types.GetCollectedBlogsReq) (resp *types.GetCollectedBlogsResp, err error) {
+	defer utils.RecordTime(time.Now())()
+
+	blogs, err := repo.NewBlogRepo(global.DB).GetCollectedBlogs(req.BlogID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "GetCollectedBlogs failed: %v", err)
+		return nil, response.ErrResp(err, codeGetCollectedFailed)
+	}
+
+	resp = &types.GetCollectedBlogsResp{
+		List: blogs,
+	}
+	return resp, nil
+}
+
+// LikeBlog 点赞帖子
+func (l *BlogLogic) LikeBlog(ctx context.Context, req types.LikeBlogReq) error {
+	defer utils.RecordTime(time.Now())()
+
+	//暂时用1代替
+	UserID := 1
+
+	err := repo.NewBlogRepo(global.DB).LikeBlog(int64(UserID), req.BlogID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "LikeBlog failed: %v", err)
+		return response.ErrResp(err, codeLikeFailed)
+	}
+
+	return nil
+}
+
+// UnlikeBlog 取消点赞帖子
+func (l *BlogLogic) UnlikeBlog(ctx context.Context, req types.UnlikeBlogReq) error {
+	defer utils.RecordTime(time.Now())()
+
+	//暂时用1代替
+	UserID := 1
+
+	err := repo.NewBlogRepo(global.DB).UnlikeBlog(int64(UserID), req.BlogID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "UnlikeBlog failed: %v", err)
+		return response.ErrResp(err, codeUnlikeFailed)
+	}
+
 	return nil
 }

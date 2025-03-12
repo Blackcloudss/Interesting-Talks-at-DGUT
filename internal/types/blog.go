@@ -2,14 +2,16 @@ package types
 
 import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
+	"mime/multipart"
 )
 
 // CreateBlogReq 创建帖子请求体
 type CreateBlogReq struct {
-	Content        string `json:"content"`
-	Tag            string ` json:"tag"`            // 帖子分区（主标签）
-	SubTag         string ` json:"sub_tag"`        // 子标签
-	ViewPermission string `json:"view_permission"` // 访问权限，默认为“所有人”
+	Content        string                `json:"content"`
+	Tag            string                ` json:"tag"`            // 帖子分区（主标签）
+	SubTag         string                ` json:"sub_tag"`        // 子标签
+	ViewPermission string                `json:"view_permission"` // 访问权限，默认为“所有人”
+	Image          *multipart.FileHeader `form:"image"`           // 图片文件
 }
 
 // CreateBlogResp 创建帖子响应体
@@ -68,7 +70,7 @@ type GetBlogsResp struct {
 
 // GetBlogsByTagReq 根据标签显示帖子列表请求体
 type GetBlogsByTagReq struct {
-	Tag string `json:"tag"`
+	SubTag string `json:"subtag"`
 }
 
 // GetBlogsByTagResp 根据标签显示帖子列表响应体
