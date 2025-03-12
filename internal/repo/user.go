@@ -24,6 +24,7 @@ func NewUserRepo(db *gorm.DB) *UserRepo {
 	return &UserRepo{DB: db}
 }
 
+// 判断用户是否存在
 func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 
 	var UserID int64

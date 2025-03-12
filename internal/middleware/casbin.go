@@ -7,6 +7,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/gin-gonic/gin"
 	"io"
 	"strings"
@@ -18,9 +19,10 @@ func PermissionMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := zlog.GetCtxFromGin(c)
 
-		//正式使用，    测试时需注释掉
-		//UserId := logic.GetUserId(c)
+		UserId := jwt.GetUserId(c) //正式使用，
+		//var UserId int64          //测试使用
 
+		var Url string
 		var req any
 		var err error
 
@@ -49,10 +51,6 @@ func PermissionMiddleware() gin.HandlerFunc {
 
 		// 重要!! 将读取的请求体内容重新设置到 c.Request.Body，供后续处理使用
 		c.Request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-
-		// 类型断言为包含 UserId  的结构体
-		var UserId int64 //正式使用时需删除
-		var Url string
 
 		//如果是delete请求，需要截取 url的前面部分
 		if c.Request.Method == "DELETE" {
