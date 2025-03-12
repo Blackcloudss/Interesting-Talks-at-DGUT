@@ -45,13 +45,13 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//微信登陆相关路由
 	routeManager.RegisterLoginRoutes(func(rg *gin.RouterGroup) {
-		rg.GET("/login", api.WechatLogin)
+		rg.GET("/qrcode", api.GetQRCode)  //获取小程序二维码
+		rg.GET("/login", api.WechatLogin) //微信登陆
 	})
 
 	//个人信息相关路由
 	routeManager.RegisterProfileRoutes(func(rg *gin.RouterGroup) {
-		rg.GET("/phone", api.GetPhone) //获取用户手机号
-
+		rg.GET("/phone", api.GetPhone)                     //获取用户手机号
 		middleware.CheckAtoken()                           // 检查 Atoken
 		middleware.PermissionMiddleware()                  // 检查权限
 		rg.GET("/common/show", api.GetCommonProfile)       // 获取基本信息

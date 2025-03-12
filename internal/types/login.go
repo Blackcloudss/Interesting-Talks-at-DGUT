@@ -24,3 +24,26 @@ type WechatLoginResp struct {
 	Atoken string `json:"token"`  // 账号登录认证
 	Rtoken string `json:"rtoken"` // 刷新处理
 }
+
+// 生成小程序码的请求参数
+type QRCodeReq struct {
+	Scene     string    `json:"scene"`      // 必填，场景值（长度≤32字符）
+	Page      string    `json:"page"`       // 可选，不填默认跳转主页
+	Width     int       `json:"width"`      // 可选，二维码宽度（默认430px）
+	LineColor LineColor `json:"line_color"` // 可选，使用 rgb 设置颜色
+	IsHyaline bool      `json:"is_hyaline"` // 可选，是否需要透明底色，为 true 时，生成透明底色的小程序码
+}
+
+// 二维码颜色设置
+type LineColor struct {
+	R int `json:"r"`
+	G int `json:"g"`
+	B int `json:"b"`
+}
+
+// 生成小程序码的响应参数
+type QRCodeResp struct {
+	Errcode int    `json:"errcode"` // 错误码
+	Errmsg  string `json:"errmsg"`  // 错误信息
+	Buffer  []byte `json:"buffer"`  // 二维码图片
+}

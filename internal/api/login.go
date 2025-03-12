@@ -25,3 +25,17 @@ func WechatLogin(c *gin.Context) {
 	response.Response(c, resp, err)
 	return
 }
+
+// 获取小程序二维码
+func GetQRCode(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.QRCodeReq](c) // 修改请求结构体
+	if err != nil {
+		zlog.CtxErrorf(ctx, "GetQRCode request error: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
+		return
+	}
+	zlog.CtxInfof(ctx, "GetQRCode request: %v", req)
+	resp, err := logic.NewWechatLoginLogic().GetQRCode(ctx, req)
+	response.Response(c, resp, err)
+}

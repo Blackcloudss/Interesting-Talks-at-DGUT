@@ -14,7 +14,7 @@ import (
 const (
 	DEFAULT_CONFIG_FILE_PATH  = "/config.yaml"
 	REDIS_SESSIONKEY          = "ITAD:openid.login:%s:string"
-	REDIS_WXATOKEN_KEY        = "ITAD:wxatoken:%s:string"
+	REDIS_WXATOKEN_KEY        = "ITAD:WxAtoken"
 	REDIS_EFFECTIVE_TIME      = time.Minute * 108
 	SESSIONKEY_EFFECTIVE_TIME = time.Minute * 30
 	ATOKEN_EFFECTIVE_TIME     = time.Hour * 12
