@@ -8,70 +8,47 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CommentHandler 创建评论
+// CreateCommentHandler 创建评论
 func CreateCommentHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.CreateCommentReq](c)
-	if err != nil {
+	req := new(types.CreateCommentReq)
+	if err := c.ShouldBindJSON(req); err != nil {
 		zlog.CtxErrorf(ctx, "CreateComment request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
-	/*
 
-		// 获取当前用户ID
-		userID, err := controller.getCurrentUserID(c)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "Failed to get current user ID: %v", err)
-			response.NewResponse(c).Error(response.USER_NOT_LOGIN) // 用户未登录
-			return
-		}
-		comment.AuthorID = userID*/
-	zlog.CtxInfof(ctx, "CreateComment request: %v", req)
-	resp, err := logic.NewBlogLogic().CreateComment(ctx, req)
+	zlog.CtxInfof(ctx, "CreateComment request: %+v", req)
+	resp, err := logic.NewCommentLogic().CreateComment(ctx, *req)
 	response.Response(c, resp, err)
-	return
 }
 
 // DeleteCommentHandler 删除评论
 func DeleteCommentHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.DeleteCommentReq](c)
-	if err != nil {
+	req := new(types.DeleteCommentReq)
+	if err := c.ShouldBindJSON(req); err != nil {
 		zlog.CtxErrorf(ctx, "DeleteComment request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
-	/*
-		userID, err := controller.getCurrentUserID(c)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "getCurrentUserID failed: %v", err)
-			response.NewResponse(c).Error(response.USER_NOT_LOGIN)
-			return
-		}*/
 
-	zlog.CtxInfof(ctx, "DeleteComment request: %v", req)
-	resp, err := logic.NewBlogLogic().DeleteComment(ctx, req)
+	zlog.CtxInfof(ctx, "DeleteComment request: %+v", req)
+	resp, err := logic.NewCommentLogic().DeleteComment(ctx, req)
 	response.Response(c, resp, err)
-	return
 }
 
-// CommentListHandler 获取评论列表
+// GetCommentListHandler 获取评论列表
 func GetCommentListHandler(c *gin.Context) {
-	// 从 Gin 中获取上下文
 	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.GetCommentListReq](c)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "DeleteComment request error: %v", err)
+	req := new(types.GetCommentListReq)
+	if err := c.ShouldBindJSON(req); err != nil {
+		zlog.CtxErrorf(ctx, "GetCommentList request error: %v", err)
+		response.Response(c, nil, err)
 		return
 	}
-	/*
-		userID, err := controller.getCurrentUserID(c)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "getCurrentUserID failed: %v", err)
-			response.NewResponse(c).Error(response.USER_NOT_LOGIN)
-			return
-		}*/
-	zlog.CtxInfof(ctx, "GetCommentList request: %v", req)
-	resp, err := logic.NewBlogLogic().GetCommentList(ctx, req)
+
+	zlog.CtxInfof(ctx, "GetCommentList request: %+v", req)
+	resp, err := logic.NewCommentLogic().GetCommentList(ctx, *req)
 	response.Response(c, resp, err)
-	return
 }

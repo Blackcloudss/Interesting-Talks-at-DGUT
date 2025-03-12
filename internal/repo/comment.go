@@ -1,45 +1,75 @@
 package repo
 
 import (
-	"context"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"gorm.io/gorm"
 )
 
-// CreateComment 创建评论记录
-func CreateComment(db *gorm.DB, comment *model.Comment) error {
-	return db.Create(comment).Error
+type CommentRepo struct {
+	DB *gorm.DB
 }
 
-// DeleteComment 删除评论
-func DeleteComment(db *gorm.DB, commentID int64) error {
-	return db.Delete(&model.Comment{}, commentID).Error
+func NewCommentRepo(db *gorm.DB) *CommentRepo {
+	return &CommentRepo{
+		DB: db,
+	}
 }
 
-// IncrementCommentCount 增加帖子的评论数
-func IncrementCommentCount(db *gorm.DB, blogID int64) error {
-	return db.Model(&model.Blog{}).Where("id = ?", blogID).Update("comment_count", gorm.Expr("comment_count + 1")).Error
+// CreateComment 创建评论并更新帖子的评论数
+func (r *CommentRepo) CreateComment(req types.CreateCommentReq) (comment model.Comment, err error) {
+	err = r.DB.Transaction(func(tx *gorm.DB) error {
+		// 创建评论记录
+		comment := model.Comment{
+			AuthorID: req.UserID,
+			BlogID:   req.BlogID,
+			Content:  req.Content,
+		}
+		if err := tx.Create(&comment).Error; err != nil {
+			return err
+		}
+
+		// 更新帖子的评论数
+		if err := tx.Model(&model.Blog{}).Where("id = ?", req.BlogID).Update("comment_count", gorm.Expr("comment_count + 1")).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return comment, err
 }
 
-// DecrementCommentCount 减少帖子的评论数
-func DecrementCommentCount(db *gorm.DB, blogID int64) error {
-	return db.Model(&model.Blog{}).Where("id = ?", blogID).Update("comment_count", gorm.Expr("comment_count - 1")).Error
+// DeleteComment 删除评论并减少帖子的评论数
+func (r *CommentRepo) DeleteComment(commentID int64, blogID int64) error {
+	return r.DB.Transaction(func(tx *gorm.DB) error {
+		// 删除评论记录
+		if err := tx.Delete(&model.Comment{}, commentID).Error; err != nil {
+			return err
+		}
+
+		// 更新帖子的评论数
+		if err := tx.Model(&model.Blog{}).Where("id = ?", blogID).Update("comment_count", gorm.Expr("comment_count - 1")).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 // GetCommentList 获取评论列表
-func GetCommentList(ctx context.Context, blogID int64) ([]model.Comment, error) {
+func (r *CommentRepo) GetCommentList(blogID int64) ([]model.Comment, error) {
 	var comments []model.Comment
-	if err := global.DB.WithContext(ctx).Where("blog_id = ?", blogID).Order("created_at DESC").Find(&comments).Error; err != nil {
+	if err := r.DB.Where("blog_id = ?", blogID).Order("created_at DESC").Find(&comments).Error; err != nil {
 		return nil, err
 	}
 	return comments, nil
 }
 
 // GetCommentByID 根据评论ID获取评论
-func GetCommentByID(ctx context.Context, commentID int64) (*model.Comment, error) {
+func (r *CommentRepo) GetCommentByID(commentID int64) (*model.Comment, error) {
 	var comment model.Comment
-	if err := global.DB.WithContext(ctx).First(&comment, commentID).Error; err != nil {
+	if err := r.DB.First(&comment, commentID).Error; err != nil {
 		return nil, err
 	}
 	return &comment, nil

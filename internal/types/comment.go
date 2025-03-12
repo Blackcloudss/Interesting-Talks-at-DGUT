@@ -11,7 +11,7 @@ type CreateCommentReq struct {
 
 // CreateCommentResp 创建评论响应结构体
 type CreateCommentResp struct {
-	Comment model.Comment `json:"comment"`
+	CommentID int64 `json:"commentID"`
 }
 
 // DeleteCommentReq 删除评论请求结构体
@@ -25,12 +25,12 @@ type DeleteCommentResp struct {
 	Success bool `json:"success"`
 }
 
-// 获取评论列表请求体
+// GetCommentListReq 获取评论列表请求体
 type GetCommentListReq struct {
 	BlogID int64 `json:"blogID"`
 }
 
-// 获取评论列表响应体
-type GetCommentResp struct {
-	Comment []model.Comment `json:"comment"`
+// GetCommentListResp 获取评论列表响应体
+type GetCommentListResp struct {
+	Comments []model.Comment `json:"comments"`
 }
