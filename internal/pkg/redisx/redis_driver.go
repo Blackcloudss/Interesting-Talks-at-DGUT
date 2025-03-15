@@ -6,6 +6,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/go-redis/redis/v8"
+	"time"
 )
 
 // @Title        redis_driver.go
@@ -50,4 +51,23 @@ func GetRedisClient(config configs.Config) (*redis.Client, error) {
 		return nil, err
 	}
 	return client, nil
+}
+
+// Lock 尝试获取 Redis 锁
+func Lock(client *redis.Client, key string, value string, expiration time.Duration) (bool, error) {
+	ctx := context.Background()
+	return client.SetNX(ctx, key, value, expiration).Result()
+}
+
+// Unlock 释放 Redis 锁
+func Unlock(client *redis.Client, key string, value string) error {
+	ctx := context.Background()
+	script := `
+        if redis.call("GET", KEYS[1]) == ARGV[1] then
+            return redis.call("DEL", KEYS[1])
+        else
+            return 0
+        end
+    `
+	return client.Eval(ctx, script, []string{key}, value).Err()
 }

@@ -2,8 +2,13 @@ package repo
 
 import (
 	"errors"
+	"fmt"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/pkg/redisx"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"gorm.io/gorm"
+	"time"
 )
 
 // BlogRepo 帖子仓库
@@ -101,6 +106,25 @@ func (r *BlogRepo) IsCollected(userID, blogID int64) (bool, error) {
 
 // CollectBlog 用户收藏帖子
 func (r *BlogRepo) CollectBlog(userID, blogID int64) error {
+	lockKey := fmt.Sprintf("blog:collect:%d", blogID)
+	lockValue := fmt.Sprintf("%d-%d", userID, time.Now().UnixNano())
+	expiration := 10 * time.Second
+
+	// 尝试获取锁
+	locked, err := redisx.Lock(global.Rdb, lockKey, lockValue, expiration)
+	if err != nil {
+		return err
+	}
+	if !locked {
+		return errors.New("failed to acquire lock")
+	}
+	defer func() {
+		// 释放锁
+		if err := redisx.Unlock(global.Rdb, lockKey, lockValue); err != nil {
+			zlog.Errorf("Failed to unlock: %v", err)
+		}
+	}()
+
 	// 检查是否已经收藏
 	isCollected, err := r.IsCollected(userID, blogID)
 	if err != nil {
@@ -165,10 +189,35 @@ func (r *BlogRepo) IsBlogLiked(userID, blogID int64) (bool, error) {
 
 // LikeBlog 点赞帖子
 func (r *BlogRepo) LikeBlog(userID, blogID int64) error {
+	lockKey := fmt.Sprintf("blog:like:%d", blogID)
+	lockValue := fmt.Sprintf("%d-%d", userID, time.Now().UnixNano())
+	expiration := 10 * time.Second
+
+	// 尝试获取锁
+	locked, err := redisx.Lock(global.Rdb, lockKey, lockValue, expiration)
+	if err != nil {
+		return err
+	}
+	if !locked {
+		return errors.New("failed to acquire lock")
+	}
+	defer func() {
+		// 释放锁
+		if err := redisx.Unlock(global.Rdb, lockKey, lockValue); err != nil {
+			zlog.Errorf("Failed to unlock: %v", err)
+		}
+	}()
+
 	tx := r.DB.Begin()
 	if tx.Error != nil {
 		return tx.Error
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			panic(r)
+		}
+	}()
 
 	// 检查是否已经点赞
 	isLiked, err := r.IsBlogLiked(userID, blogID)
