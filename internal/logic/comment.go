@@ -29,11 +29,6 @@ func NewCommentLogic() *CommentLogic {
 
 // CreateComment 创建评论
 func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommentReq) (*types.CreateCommentResp, error) {
-	/*// 检查用户是否登录
-	if req.UserID == 0 {
-		zlog.CtxErrorf(ctx, "CreateComment failed: user not logged in")
-		return nil, response.ErrResp(nil, codeUserNotLoggedIn)
-	}*/
 
 	// 检查帖子是否存在
 	blogRepo := repo.NewBlogRepo(global.DB)
@@ -60,7 +55,7 @@ func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommen
 }
 
 // DeleteComment 删除评论
-func (l *CommentLogic) DeleteComment(ctx context.Context, req *types.DeleteCommentReq) (*types.DeleteCommentResp, error) {
+func (l *CommentLogic) DeleteComment(ctx context.Context, req types.DeleteCommentReq) (*types.DeleteCommentResp, error) {
 	// 检查评论是否存在
 	commentRepo := repo.NewCommentRepo(global.DB)
 	comment, err := commentRepo.GetCommentByID(req.CommentID)

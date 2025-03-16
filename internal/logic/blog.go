@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"errors"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
@@ -9,7 +10,6 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
-	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"time"
 )
@@ -26,8 +26,7 @@ var (
 	codeUnlikeFailed       = response.MsgCode{Code: 40042, Msg: "取消点赞失败"}
 )
 
-type BlogLogic struct {
-}
+type BlogLogic struct{}
 
 func NewBlogLogic() *BlogLogic {
 	return &BlogLogic{}
@@ -38,6 +37,7 @@ func (l *BlogLogic) CreateBlog(ctx context.Context, req types.CreateBlogReq) (re
 	defer utils.RecordTime(time.Now())()
 
 	blog := &model.Blog{
+		UserID:         int64(req.UserID),
 		Content:        req.Content,
 		Tag:            req.Tag,
 		SubTag:         req.SubTag,
@@ -153,14 +153,12 @@ func (l *BlogLogic) GetBlogs(ctx context.Context, req types.GetBlogsReq) (resp *
 func (l *BlogLogic) GetBlogsByTag(ctx context.Context, req types.GetBlogsByTagReq) (resp *types.GetBlogsByTagResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
-	// 调用仓库层获取帖子列表
 	blogs, err := repo.NewBlogRepo(global.DB).GetBlogsByTag(req.SubTag)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetBlogsByTag failed: %v", err)
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 
-	// 构建响应体
 	resp = &types.GetBlogsByTagResp{
 		List: blogs,
 	}
@@ -171,10 +169,7 @@ func (l *BlogLogic) GetBlogsByTag(ctx context.Context, req types.GetBlogsByTagRe
 func (l *BlogLogic) GetMyBlogs(ctx context.Context, req types.GetMyBlogsReq) (resp *types.GetMyBlogsResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
-	//暂时用1代替
-	UserID := 1
-
-	blogs, total, err := repo.NewBlogRepo(global.DB).GetBlogsByUserID(int64(UserID), req.Page, req.PageSize)
+	blogs, total, err := repo.NewBlogRepo(global.DB).GetBlogsByUserID(int64(req.UserID), req.Page, req.PageSize)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetMyBlogs failed: %v", err)
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
@@ -193,10 +188,7 @@ func (l *BlogLogic) GetMyBlogs(ctx context.Context, req types.GetMyBlogsReq) (re
 func (l *BlogLogic) CollectBlog(ctx context.Context, req types.CollectBlogReq) error {
 	defer utils.RecordTime(time.Now())()
 
-	//暂时用1代替
-	UserID := 1
-
-	err := repo.NewBlogRepo(global.DB).CollectBlog(int64(UserID), req.BlogID)
+	err := repo.NewBlogRepo(global.DB).CollectBlog(int64(req.UserID), req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "CollectBlog failed: %v", err)
 		return response.ErrResp(err, codeCollectFailed)
@@ -209,10 +201,7 @@ func (l *BlogLogic) CollectBlog(ctx context.Context, req types.CollectBlogReq) e
 func (l *BlogLogic) UncollectBlog(ctx context.Context, req types.UncollectBlogReq) error {
 	defer utils.RecordTime(time.Now())()
 
-	//暂时用1代替
-	UserID := 1
-
-	err := repo.NewBlogRepo(global.DB).UncollectBlog(int64(UserID), req.BlogID)
+	err := repo.NewBlogRepo(global.DB).UncollectBlog(int64(req.UserID), req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UncollectBlog failed:%v", err)
 		return response.ErrResp(err, codeUncollectFailed)
@@ -225,10 +214,7 @@ func (l *BlogLogic) UncollectBlog(ctx context.Context, req types.UncollectBlogRe
 func (l *BlogLogic) GetCollectedBlogs(ctx context.Context, req types.GetCollectedBlogsReq) (resp *types.GetCollectedBlogsResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
-	// 暂时用1代替
-	UserID := int64(1)
-
-	blogs, err := repo.NewBlogRepo(global.DB).GetCollectedBlogs(UserID)
+	blogs, err := repo.NewBlogRepo(global.DB).GetCollectedBlogs(int64(req.UserID))
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetCollectedBlogs failed: %v", err)
 		return nil, response.ErrResp(err, codeGetCollectedFailed)
@@ -244,10 +230,7 @@ func (l *BlogLogic) GetCollectedBlogs(ctx context.Context, req types.GetCollecte
 func (l *BlogLogic) LikeBlog(ctx context.Context, req types.LikeBlogReq) error {
 	defer utils.RecordTime(time.Now())()
 
-	// 暂时用1代替
-	UserID := int64(1)
-
-	err := repo.NewBlogRepo(global.DB).LikeBlog(UserID, req.BlogID)
+	err := repo.NewBlogRepo(global.DB).LikeBlog(int64(req.UserID), req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "LikeBlog failed: %v", err)
 		return response.ErrResp(err, codeLikeFailed)
@@ -260,10 +243,7 @@ func (l *BlogLogic) LikeBlog(ctx context.Context, req types.LikeBlogReq) error {
 func (l *BlogLogic) UnlikeBlog(ctx context.Context, req types.UnlikeBlogReq) error {
 	defer utils.RecordTime(time.Now())()
 
-	// 暂时用1代替
-	UserID := int64(1)
-
-	err := repo.NewBlogRepo(global.DB).UnlikeBlog(UserID, req.BlogID)
+	err := repo.NewBlogRepo(global.DB).UnlikeBlog(int64(req.UserID), req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UnlikeBlog failed: %v", err)
 		return response.ErrResp(err, codeUnlikeFailed)

@@ -9,46 +9,45 @@ import (
 )
 
 // CreateCommentHandler 创建评论
-func CreateCommentHandler(c *gin.Context) {
+func CreateComment(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req := new(types.CreateCommentReq)
-	if err := c.ShouldBindJSON(req); err != nil {
+	req, err := types.BindReq[types.CreateCommentReq](c)
+	if err != nil {
 		zlog.CtxErrorf(ctx, "CreateComment request error: %v", err)
-		response.Response(c, nil, err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
-
 	zlog.CtxInfof(ctx, "CreateComment request: %+v", req)
-	resp, err := logic.NewCommentLogic().CreateComment(ctx, *req)
+	resp, err := logic.NewCommentLogic().CreateComment(ctx, req)
 	response.Response(c, resp, err)
+	return
 }
 
 // DeleteCommentHandler 删除评论
-func DeleteCommentHandler(c *gin.Context) {
+func DeleteComment(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req := new(types.DeleteCommentReq)
-	if err := c.ShouldBindJSON(req); err != nil {
+	req, err := types.BindReq[types.DeleteCommentReq](c)
+	if err != nil {
 		zlog.CtxErrorf(ctx, "DeleteComment request error: %v", err)
-		response.Response(c, nil, err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
-
 	zlog.CtxInfof(ctx, "DeleteComment request: %+v", req)
 	resp, err := logic.NewCommentLogic().DeleteComment(ctx, req)
 	response.Response(c, resp, err)
+	return
 }
 
-// GetCommentListHandler 获取评论列表
-func GetCommentListHandler(c *gin.Context) {
+func GetCommentList(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req := new(types.GetCommentListReq)
-	if err := c.ShouldBindJSON(req); err != nil {
+	req, err := types.BindReq[types.GetCommentListReq](c)
+	if err != nil {
 		zlog.CtxErrorf(ctx, "GetCommentList request error: %v", err)
-		response.Response(c, nil, err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
-
 	zlog.CtxInfof(ctx, "GetCommentList request: %+v", req)
-	resp, err := logic.NewCommentLogic().GetCommentList(ctx, *req)
+	resp, err := logic.NewCommentLogic().GetCommentList(ctx, req)
 	response.Response(c, resp, err)
+	return
 }
