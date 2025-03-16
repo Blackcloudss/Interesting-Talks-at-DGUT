@@ -3,7 +3,7 @@ FROM golang:1.22.3 AS builder
 
 WORKDIR /app
 
-# 先单独复制依赖文件（重要优化）
+# 先单独复制依赖文件
 COPY go.mod go.sum ./
 
 # 下载依赖（利用Docker缓存层）
