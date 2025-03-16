@@ -19,6 +19,7 @@ type RouteManager struct {
 	CommonRoutes  *gin.RouterGroup // 通用的路由组
 	LoginRoutes   *gin.RouterGroup // 登录相关的路由组
 	ProfileRoutes *gin.RouterGroup // 个人信息相关路由组
+	BlogRoutes    *gin.RouterGroup //博客相关路由组
 }
 
 // NewRouteManager 创建一个新的 RouteManager 实例，包含各业务功能的路由组
@@ -27,6 +28,7 @@ func NewRouteManager(router *gin.Engine) *RouteManager {
 		CommonRoutes:  router.Group("/api/common"),  // 初始化通用路由组
 		LoginRoutes:   router.Group("/api/wxlogin"), // 初始化登录路由组
 		ProfileRoutes: router.Group("/api/profile"), // 初始化个人信息路由组
+		BlogRoutes:    router.Group("/api/blog"),    // 初始化帖子路由组
 	}
 }
 
@@ -40,6 +42,11 @@ func (rm *RouteManager) RegisterLoginRoutes(handler PathHandler) {
 
 func (rm *RouteManager) RegisterProfileRoutes(handler PathHandler) {
 	handler(rm.ProfileRoutes)
+}
+
+// RegisterBlogRoutes 注册帖子相关路由
+func (rm *RouteManager) RegisterBlogRoutes(handler PathHandler) {
+	handler(rm.BlogRoutes)
 }
 
 // RequestGlobalMiddleware 注册全局中间件，应用于所有路由
