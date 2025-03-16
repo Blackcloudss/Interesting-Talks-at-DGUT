@@ -75,4 +75,11 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/unlike", api.UnlikeBlogHandler)          // 取消点赞
 	})
 
+	//评论相关路由
+	routeManager.RegisterCommentRoutes(func(rg *gin.RouterGroup) {
+		rg.POST("/create", api.CreateComment)   // 创建评论
+		rg.DELETE("/delete", api.DeleteComment) // 删除评论
+		rg.GET("/list", api.GetCommentList)     // 获取评论列表
+	})
+
 }

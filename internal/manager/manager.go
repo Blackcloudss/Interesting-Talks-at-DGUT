@@ -20,6 +20,7 @@ type RouteManager struct {
 	LoginRoutes   *gin.RouterGroup // 登录相关的路由组
 	ProfileRoutes *gin.RouterGroup // 个人信息相关路由组
 	BlogRoutes    *gin.RouterGroup //博客相关路由组
+	CommentRoutes *gin.RouterGroup // 评论相关路由组
 }
 
 // NewRouteManager 创建一个新的 RouteManager 实例，包含各业务功能的路由组
@@ -47,6 +48,11 @@ func (rm *RouteManager) RegisterProfileRoutes(handler PathHandler) {
 // RegisterBlogRoutes 注册帖子相关路由
 func (rm *RouteManager) RegisterBlogRoutes(handler PathHandler) {
 	handler(rm.BlogRoutes)
+}
+
+// RegisterCommentRoutes 注册评论相关路由
+func (rm *RouteManager) RegisterCommentRoutes(handler PathHandler) {
+	handler(rm.CommentRoutes)
 }
 
 // RequestGlobalMiddleware 注册全局中间件，应用于所有路由
