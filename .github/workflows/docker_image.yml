@@ -1,13 +1,14 @@
-name: Docker Images CI
+name: Docker Build and Deploy
 
 on:
   push:
     branches: ["test"]
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
+      #----------- 构建镜像 -----------
       - name: CheckOut
         uses: actions/checkout@v4
 
@@ -23,4 +24,32 @@ jobs:
         run: | 
           docker login -u qinsikai -p ${{ secrets.DOCKER_HUB_PASSWORD }}
           docker buildx create --use
-          docker buildx build .  --push --tag qinsikai/interesting-talks:test
+          docker buildx build . \
+          --platform linux/amd64 \
+          --push \ 
+          --tag qinsikai/interesting-talks:test
+          
+          
+      # ----------- 部署到服务器 -----------
+      - name: Deploy to Server
+        env:
+           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }} # 从 GitHub Secrets 获取 SSH 私钥
+           SERVER_IP: ${{ secrets.SERVER_IP }}            # 从 Secrets 获取服务器 IP
+        run: |          
+            mkdir -p ~/.ssh
+        # 将私钥内容写入文件
+            echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+        # 设置密钥文件权限
+            chmod 600 ~/.ssh/deploy_key                  
+                    
+        # 执行部署命令
+            ssh -i ~/.ssh/deploy_key \                    # 指定私钥连接
+            -o StrictHostKeyChecking=no \                 # 跳过主机验证
+            root@$SERVER_IP '                             # 连接目标服务器
+            docker pull qinsikai/interesting-talks:test   # 拉取最新镜像
+            docker stop talks || true                     # 停止旧容器（允许失败）
+            docker rm talks || true                       # 删除旧容器（允许失败）
+            docker run -d \                               # 后台运行新容器
+            --name interesting-talks \                    # 容器命名
+            -p 8085:8080 \                                # 端口映射
+            qinsikai/interesting-talks:test               # 使用最新镜像
