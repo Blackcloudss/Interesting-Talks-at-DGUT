@@ -22,8 +22,22 @@ type UserInfo struct {
 type UserInfoResp struct {
 }
 
-// 用户基本信息 入参
-type CommonProfileReq struct {
+// 获取用户基本信息 入参
+type GetCommonProfileReq struct {
+}
+
+// 获取用户基本信息 出参
+type GetCommonProfileResp struct {
+	Nickname string `json:"nickname"` // 昵称
+	Avatar   string `json:"avatar"`   // 头像
+	Sex      string `json:"sex"`      // 性别
+	Birthday string `json:"birthday"` // 生日
+	Sign     string `json:"sign"`     // 签名
+	Tag      string `json:"tag"`      // 标签
+}
+
+// 更改用户基本信息 入参
+type UpdateCommonProfileReq struct {
 	Nickname string `json:"nickname"` // 昵称
 	Avatar   string `json:"avatar"`   // 头像
 	Sex      string `json:"sex"`      // 性别
@@ -31,16 +45,30 @@ type CommonProfileReq struct {
 	Sign     string `json:"sign"`     // 签名
 }
 
-// 用户基本信息 出参
-type CommonProfileResp struct {
+// 更改用户基本信息 出参
+type UpdateCommonProfileResp struct {
 }
 
-// 用户私人信息 入参
-type PrivateProfileReq struct {
+// 获取用户私人信息 入参
+type GetPrivateProfileReq struct {
+}
+
+// 获取用户私人信息 出参
+type GetPrivateProfileResp struct {
 	Name      string `json:"name"`      // 真实姓名
 	StudentId string `json:"studentId"` // 学号
 	Academy   string `json:"academy"`   // 学院
 	Grade     int64  `json:"grade"`     // 年级
 	Major     string `json:"major"`     // 专业
-	Phone     string `json:"phone"`     //手机号 后端自动获取
+	Phone     string `json:"phone"`     // 手机号
+}
+
+// 更改用户私人信息 入参
+type UpdatePrivateProfileReq struct {
+	Name      string `json:"name"`      // 真实姓名
+	StudentId string `json:"studentId"` // 学号
+	Academy   string `json:"academy"`   // 学院
+	Grade     int64  `json:"grade"`     // 年级
+	Major     string `json:"major"`     // 专业
+	Phone     string `json:"phone"`     // 手机号
 }

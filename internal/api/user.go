@@ -17,7 +17,7 @@ import (
 // 获取用户基本信息
 func GetCommonProfile(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.CommonProfileReq](c)
+	req, err := types.BindReq[types.GetCommonProfileReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetCommonProfile error: %v", err)
 		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
@@ -29,7 +29,7 @@ func GetCommonProfile(c *gin.Context) {
 // 更新用户基本信息
 func UpdateCommonProfile(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.CommonProfileReq](c)
+	req, err := types.BindReq[types.UpdateCommonProfileReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UpdateCommonProfile error: %v", err)
 		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
@@ -41,7 +41,7 @@ func UpdateCommonProfile(c *gin.Context) {
 // 获取用户隐私信息
 func GetDetailProfile(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.PrivateProfileReq](c)
+	req, err := types.BindReq[types.GetPrivateProfileReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetDetailProfile error: %v", err)
 		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
@@ -53,7 +53,7 @@ func GetDetailProfile(c *gin.Context) {
 // 更新用户隐私信息
 func UpdateDetailProfile(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.CommonProfileReq](c)
+	req, err := types.BindReq[types.UpdateCommonProfileReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UpdateDetailProfile error: %v", err)
 		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
