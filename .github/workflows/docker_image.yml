@@ -25,10 +25,10 @@ jobs:
          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Build the Docker image
-        run: |  
-          docker buildx build .\
-          --platform linux/amd64\
-          --push\
+        run: >  
+          docker buildx build .
+          --platform linux/amd64
+          --push
           --tag qinsikai/interesting-talks:test
 
       - name: Deploy to Server
