@@ -16,6 +16,9 @@ type UserDisplay struct {
 	Avatar   string `gorm:"column:avatar;type:varchar(255);index:idx_profile,priority:3;comment:'微信头像'"`               // 头像
 	Nickname string `gorm:"column:nickname;type:varchar(50);default:微信用户;index:idx_profile,priority:2;comment:'微信昵称'"` // 昵称
 	Tag      string `gorm:"column:tag;type:varchar(50);default:大一新生;index:idx_profile,priority:1;comment:'用户标签'"`      // 用户标签
+
+	// 添加关联关系
+	PrivateInfo UserPrivate `gorm:"foreignKey:DisplayOpenId;references:OpenId"`
 }
 
 func (t *UserDisplay) TableName() string {
@@ -29,9 +32,6 @@ type UserCommon struct {
 	Sex      string    `gorm:"column:sex;type:char(2);comment:'性别'"`
 	Birthday time.Time `gorm:"column:birthday;type:date;comment:'出生日期'"` //****年**月**日
 	Sign     string    `gorm:"column:sign;type:varchar(50);comment:'个性签名'"`
-
-	//外键关联
-	DisplayOpenId string `gorm:"foreignKey:DisplayOpenId;references:OpenId"`
 }
 
 func (t *UserCommon) TableName() string {
