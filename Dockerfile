@@ -28,5 +28,7 @@ WORKDIR /app
 COPY --from=builder /app/interesting-talks  ./
 COPY --from=builder /app/config.yaml  ./
 
+#声明容器运行时监听 8080 端口
 EXPOSE 8080
-ENTRYPOINT ./interesting-talks
+#启动应用程序
+ENTRYPOINT ["./interesting-talks"]

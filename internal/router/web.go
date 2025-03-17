@@ -30,6 +30,8 @@ func listen() (*gin.Engine, error) {
 	r := gin.Default() // 创建默认的 Gin 引擎
 	// 注册全局中间件（例如获取 Trace ID）
 	manager.RequestGlobalMiddleware(r)
+	//设置静态路由，用于访问上传的文件
+	r.Static("image", "./images")
 	// 创建 RouteManager 实例
 	routeManager := manager.NewRouteManager(r)
 	// 注册各业务路由组的具体路由
@@ -49,13 +51,14 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.GET("/login", api.WechatLogin) //微信登陆
 	})
 
-	//个人信息相关路由
+	//用户信息相关路由
 	routeManager.RegisterProfileRoutes(func(rg *gin.RouterGroup) {
-		rg.GET("/phone", api.GetPhone)                     //获取用户手机号
 		middleware.CheckAtoken()                           // 检查 Atoken
+		rg.GET("/phone", api.GetPhone)                     //获取用户手机号（授权时使用）
+		rg.GET("/userinfo", api.GetUserInfo)               //获取用户的微信头像和微信昵称（授权时使用）
 		middleware.PermissionMiddleware()                  // 检查权限
-		rg.GET("/common/show", api.GetCommonProfile)       // 获取基本信息
-		rg.GET("/private/show", api.GetDetailProfile)      // 获取隐私信息
+		rg.GET("/common/show", api.GetCommonProfile)       // 获取用户基本信息
+		rg.GET("/private/show", api.GetDetailProfile)      // 获取用户隐私信息
 		rg.PUT("/common/update", api.UpdateCommonProfile)  // 更新基本信息
 		rg.PUT("/private/update", api.UpdateDetailProfile) // 更新隐私信息
 	})

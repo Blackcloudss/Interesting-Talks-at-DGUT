@@ -5,6 +5,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,7 +15,7 @@ import (
 // @Update       XdpCs 2025-03-11 上午9:29
 func GetPhone(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-
+	userid := jwt.GetUserId(c)
 	// 获取 code
 	req, err := types.BindReq[types.WxPhoneReq](c)
 	if err != nil {
@@ -23,7 +24,7 @@ func GetPhone(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "GetPhone request: %v", req)
-	resp, err := logic.NewPhoneLogic().GetPhone(ctx, req)
+	resp, err := logic.NewPhoneLogic().GetPhone(ctx, req, userid)
 	response.Response(c, resp, err)
 	return
 }

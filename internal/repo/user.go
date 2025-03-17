@@ -3,6 +3,7 @@ package repo
 import (
 	"errors"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"gorm.io/gorm"
 )
@@ -26,7 +27,6 @@ func NewUserRepo(db *gorm.DB) *UserRepo {
 
 // 判断用户是否存在
 func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
-
 	var UserID int64
 
 	err := r.DB.Model(&model.UserDisplay{}).
@@ -47,12 +47,13 @@ func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 			}()
 
 			// 创建用户展示表
-			userDisplay := &model.UserDisplay{OpenId: Openid}
-			if err = tx.Create(userDisplay).Error; err != nil {
+			UserDisplay := &model.UserDisplay{OpenId: Openid}
+			if err = tx.Create(UserDisplay).Error; err != nil {
 				tx.Rollback()
 				zlog.Errorf("创建用户展示表失败：%v", err)
 				return 0, err
 			}
+			zlog.Infof("创建用户展示表成功，ID：%d", UserDisplay.ID)
 
 			// 使用事务创建后续表
 			tables := []interface{}{
@@ -74,11 +75,64 @@ func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 				zlog.Errorf("事务提交失败：%v", err)
 				return 0, err
 			}
-
-			// 直接使用创建后获得的ID
-			return userDisplay.ID, nil
+			zlog.Infof("创建用户表成功，ID：%d", UserDisplay.ID)
+			UserID = UserDisplay.ID
+			return UserID, nil
 		}
 		return 0, err
 	}
 	return UserID, nil
+}
+
+// GetOpenId
+//
+//	@Description: 根据UserID获取用户拥有的OpenId
+//	@receiver r
+//	@param UserId
+//	@return OpenId
+//	@return Err
+func (r *UserRepo) GetOpenId(UserId int64) (OpenId int64, err error) {
+	err = r.DB.Model(&model.UserDisplay{}).
+		Select("open_id").
+		Where(&model.UserDisplay{
+			CommonModel: model.CommonModel{
+				ID: UserId,
+			},
+		}).
+		First(&OpenId).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Errorf("用户不存在：%v", err)
+			return 0, err
+		}
+		zlog.Errorf("查询用户对应的OpenId失败：%v", err)
+		return 0, err
+	}
+	return
+}
+
+// SaveUserInfo
+//
+//	@Description: 保存用户信息到数据库中
+//	@receiver r
+//	@param UserId
+//	@param User
+//	@return err
+func (r *UserRepo) SaveUserInfo(UserId int64, User types.UserInfo) (err error) {
+	err = r.DB.Model(&model.UserDisplay{}).
+		Where(&model.UserDisplay{
+			CommonModel: model.CommonModel{
+				ID: UserId,
+			},
+		}).
+		Updates(&model.UserDisplay{
+			Avatar:   User.Avatar,
+			Nickname: User.Nickname,
+		}).Error
+	if err != nil {
+		zlog.Errorf("更新用户信息失败：%v", err)
+		return err
+	}
+	return
 }

@@ -58,5 +58,7 @@ func migrateTables() {
 		&model.UserPrivate{},
 		//自动迁移 用户授权表，确保表结构存在
 		&model.UserAuth{},
+		//自动迁移 图片表，确保表结构存在
+		&model.Image{},
 	)
 }

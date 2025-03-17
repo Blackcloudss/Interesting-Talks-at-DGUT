@@ -3,6 +3,8 @@ package logic
 import (
 	"context"
 	"encoding/json"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
@@ -18,7 +20,10 @@ const (
 	PHONE_URL = "https://api.weixin.qq.com/wxa/business/getuserphonenumber"
 )
 
-var GET_PHONE_FAULT = response.MsgCode{50003, "获取微信手机号失败"}
+var (
+	GET_PHONE_FAULT  = response.MsgCode{50003, "获取微信手机号失败"}
+	SAVE_PHONE_FAULT = response.MsgCode{50004, "保存手机号失败"}
+)
 
 // @Title        phone.go
 // @Description
@@ -32,7 +37,7 @@ func NewPhoneLogic() *Phonelogic {
 }
 
 // 获取用户手机号
-func (l *Phonelogic) GetPhone(ctx context.Context, req types.WxPhoneReq) (resp *types.WxPhoneResp, err error) {
+func (l *Phonelogic) GetPhone(ctx context.Context, req types.WxPhoneReq, UserId int64) (resp *types.WxPhoneResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
 	//检验redis中是否有Wxaccess_token,如果没有，需要重新获取
@@ -46,7 +51,13 @@ func (l *Phonelogic) GetPhone(ctx context.Context, req types.WxPhoneReq) (resp *
 	}
 	resp = new(types.WxPhoneResp)
 	resp.PhoneNumber = result.PhoneInfo.PhoneNumber
-	resp.PurePhoneNumber = result.PhoneInfo.PurePhoneNumber
+	//将手机号保存到数据库中
+	err = repo.NewPhoneRepo(global.DB).SavePhone(UserId, resp.PhoneNumber)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "保存手机号到数据库失败：%v", err)
+		return nil, response.ErrResp(err, SAVE_PHONE_FAULT)
+	}
+
 	return
 }
 
@@ -92,12 +103,12 @@ func (l *Phonelogic) GetPhoneNumber(ctx context.Context, atoken, code string) (r
 	resp = new(types.WxPhone)
 	if err = json.NewDecoder(result.Body).Decode(resp); err != nil {
 		zlog.CtxErrorf(ctx, "响应解析失败: %v", err)
-		return nil, response.ErrResp(err, response.COMMON_FAIL)
+		return nil, response.ErrResp(err, GET_PHONE_FAULT)
 	}
 	if resp.Errcode != 0 {
 		zlog.CtxErrorf(ctx, "微信接口异常，状态码：%d", resp.Errcode)
 		zlog.CtxErrorf(ctx, "微信接口异常，错误信息：%s", resp.Errmsg)
-		return nil, response.ErrResp(err, response.COMMON_FAIL)
+		return nil, response.ErrResp(err, GET_PHONE_FAULT)
 	}
 
 	return

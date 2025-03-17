@@ -129,7 +129,7 @@ func JudgeWxAtoken(ctx context.Context) (WxAtoken string, err error) {
 			}
 
 			// 设置缓存并保留10%的冗余时间,防止缓存与真实Token同时失效
-			if err = global.Rdb.Set(ctx, global.REDIS_WXATOKEN_KEY, WxAtoken, global.REDIS_EFFECTIVE_TIME).Err(); err != nil {
+			if err = global.Rdb.Set(ctx, global.REDIS_WXATOKEN_KEY, WxAtoken, global.WXATOKEN_EFFECTIVE_TIME).Err(); err != nil {
 				zlog.CtxErrorf(ctx, "缓存写入失败: %v", err)
 				return BLANK_TOKEN, response.ErrResp(errors.New("缓存更新失败"), response.GET_WXATOKEN_FAULT)
 			}
@@ -188,7 +188,7 @@ func GetWxAtoken(ctx context.Context) (WxAtoken string, err error) {
 	WxAtoken = req.AccessToken
 
 	// 将微信的atoken存储到redis中
-	if err = global.Rdb.Set(ctx, fmt.Sprintf(global.REDIS_WXATOKEN_KEY, configs.Conf.Wechat.AppID), WxAtoken, global.REDIS_EFFECTIVE_TIME).Err(); err != nil {
+	if err = global.Rdb.Set(ctx, fmt.Sprintf(global.REDIS_WXATOKEN_KEY, configs.Conf.Wechat.AppID), WxAtoken, global.WXATOKEN_EFFECTIVE_TIME).Err(); err != nil {
 		zlog.CtxErrorf(ctx, "redis set wxatoken err: %v", err)
 		return BLANK_TOKEN, response.ErrResp(err, response.COMMON_FAIL)
 	}
