@@ -31,4 +31,4 @@ COPY --from=builder /app/config.yaml  ./
 #声明容器运行时监听 8080 端口
 EXPOSE 8080
 #启动应用程序
-ENTRYPOINT ./interesting-talks
+ENTRYPOINT ["./interesting-talks"]
