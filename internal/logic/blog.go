@@ -88,10 +88,10 @@ func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq) (re
 }
 
 // DeleteBlog 删除帖子
-func (l *BlogLogic) DeleteBlog(ctx context.Context, req types.DeleteBlogReq) error {
+func (l *BlogLogic) DeleteBlog(ctx context.Context, req types.DeleteBlogReq) (err error) {
 	defer utils.RecordTime(time.Now())()
 
-	_, err := repo.NewBlogRepo(global.DB).GetBlogByID(req.ID)
+	_, err = repo.NewBlogRepo(global.DB).GetBlogByID(req.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			zlog.CtxWarnf(ctx, "Blog not found: %v", err)

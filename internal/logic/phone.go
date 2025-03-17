@@ -42,7 +42,7 @@ func (l *Phonelogic) GetPhone(ctx context.Context, req types.WxPhoneReq) (resp *
 	result, err := l.GetPhoneNumber(ctx, req.WxAtoken, req.Code)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "调用微信getPhoneNumber接口失败：%v", err)
-		return nil, response.ErrResp(err, GET_PHONE_FAULT)
+		return
 	}
 	resp = new(types.WxPhoneResp)
 	resp.PhoneNumber = result.PhoneInfo.PhoneNumber
@@ -92,12 +92,12 @@ func (l *Phonelogic) GetPhoneNumber(ctx context.Context, atoken, code string) (r
 	resp = new(types.WxPhone)
 	if err = json.NewDecoder(result.Body).Decode(resp); err != nil {
 		zlog.CtxErrorf(ctx, "响应解析失败: %v", err)
-		return nil, response.ErrResp(err, response.COMMON_FAIL)
+		return nil, response.ErrResp(err, GET_PHONE_FAULT)
 	}
 	if resp.Errcode != 0 {
 		zlog.CtxErrorf(ctx, "微信接口异常，状态码：%d", resp.Errcode)
 		zlog.CtxErrorf(ctx, "微信接口异常，错误信息：%s", resp.Errmsg)
-		return nil, response.ErrResp(err, response.COMMON_FAIL)
+		return nil, response.ErrResp(err, GET_PHONE_FAULT)
 	}
 
 	return

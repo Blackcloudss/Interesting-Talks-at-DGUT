@@ -10,10 +10,11 @@ type TokenReq struct {
 	Token string `json:"token"`
 }
 
-// 后端将atoken和rtoken传回给前端
+// 后端将atoken、rtoken和角色当前身份传回给前端
 type TokenResp struct {
 	Atoken string `json:"atoken"` //认证身份
 	Rtoken string `json:"rtoken"` //刷新Atoken
+	Role   string `json:"role"`   // 角色身份
 }
 
 // 后端请求微信的Atoken

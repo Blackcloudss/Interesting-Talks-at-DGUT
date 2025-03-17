@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	REDIS_FAULT = response.MsgCode{50001, "redis存取SessionKey失败"}
+	REDIS_SET_FAULT = response.MsgCode{50001, "redis存取SessionKey失败"}
 )
 
 const (
@@ -92,10 +92,10 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 		return resp, response.ErrResp(err, response.COMMON_FAIL)
 	}
 
-	//把用户的Sessionkey放进Redis
+	//把用户新的Sessionkey放进Redis
 	if err = global.Rdb.Set(ctx, fmt.Sprintf(global.REDIS_SESSIONKEY, C2S.Openid), C2S.SessionKey, global.SESSIONKEY_EFFECTIVE_TIME).Err(); err != nil {
 		zlog.CtxErrorf(ctx, "redis set session_key err: %v", err)
-		return resp, response.ErrResp(err, REDIS_FAULT)
+		return resp, response.ErrResp(err, REDIS_SET_FAULT)
 	}
 
 	//制作 Atoken 和 Rtoken 自定义登陆态

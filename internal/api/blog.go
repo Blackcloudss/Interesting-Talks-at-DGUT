@@ -74,7 +74,7 @@ func GetBlogsHandler(c *gin.Context) {
 	req, err := types.BindReq[types.GetBlogsReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetBlogs request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)rr)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetBlogs request: %v", req)
@@ -174,7 +174,8 @@ func LikeBlogHandler(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "LikeBlog request: %v", req)
-	resp, err:= logic.NewBlogLogic().LikeBlog(ctx, req)
+	err = logic.NewBlogLogic().LikeBlog(ctx, req)
+	resp := types.LikeBlogResp{}
 	response.Response(c, resp, err)
 	return
 }
@@ -189,7 +190,8 @@ func UnlikeBlogHandler(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "UnlikeBlog request: %v", req)
-	resp, err := logic.NewBlogLogic().UnlikeBlog(ctx, req)
+	err = logic.NewBlogLogic().UnlikeBlog(ctx, req)
+	resp := types.UnlikeBlogResp{}
 	response.Response(c, resp, err)
 	return
 }
