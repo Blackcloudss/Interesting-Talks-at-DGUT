@@ -25,7 +25,7 @@ jobs:
          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
       - name: Build the Docker image
-        run: | 
+        run: |  
           docker buildx build . \
           --platform linux/amd64 \
           --push \ 
@@ -35,12 +35,10 @@ jobs:
         env:
            SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
            SERVER_IP: ${{ secrets.SERVER_IP }}
-        run: |          
+        run: |  
             mkdir -p ~/.ssh
             echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
             chmod 600 ~/.ssh/deploy_key
-                    
-        # 执行部署命令
             ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@$SERVER_IP "    
             docker pull qinsikai/interesting-talks:test;
             if docker ps -aq --filter name=interesting-talks; then
