@@ -30,7 +30,7 @@ jobs:
           --tag qinsikai/interesting-talks:test
           
           
-      # ----------- 部署到服务器 -----------
+      #----------- 部署到服务器 -----------
       - name: Deploy to Server
         env:
            SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }} # 从 GitHub Secrets 获取 SSH 私钥

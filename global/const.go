@@ -15,8 +15,8 @@ const (
 	DEFAULT_CONFIG_FILE_PATH  = "/config.yaml"
 	REDIS_SESSIONKEY          = "ITAD:openid.login:%s:string"
 	REDIS_WXATOKEN_KEY        = "ITAD:WxAtoken"
-	REDIS_EFFECTIVE_TIME      = time.Minute * 108
-	SESSIONKEY_EFFECTIVE_TIME = time.Minute * 30
+	WXATOKEN_EFFECTIVE_TIME   = time.Minute * 108
+	SESSIONKEY_EFFECTIVE_TIME = time.Hour * 24 * 7
 	ATOKEN_EFFECTIVE_TIME     = time.Hour * 12
 	RTOKEN_EFFECTIVE_TIME     = time.Hour * 24 * 30
 	AUTH_ENUMS_ATOKEN         = "atoken"
@@ -26,6 +26,8 @@ const (
 	TOURIST                   = "tourist"
 	STUDENT                   = "student"
 	MANAGER                   = "manager"
+	IMAGE_PATH                = "images"
+	IMAGE_SIZE                = 1024 * 1024 * 2
 )
 
 var Node, _ = snowflake.NewNode(DEFAULT_NODE_ID)

@@ -1,4 +1,4 @@
-package logic
+package utils
 
 import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
@@ -6,6 +6,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// @Title        hook.go
+// @Description
+// @Create       XdpCs 2025-03-15 下午6:26
+// @Update       XdpCs 2025-03-15 下午6:26
 // @Title        hook.go
 // @Description
 // @Create       XdpCs 2025-02-16 上午1:32

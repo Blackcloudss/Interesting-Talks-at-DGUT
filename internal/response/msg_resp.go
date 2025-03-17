@@ -27,6 +27,7 @@ var (
 	PARAM_NOT_COMPLETE = MsgCode{10004, "参数缺失"}
 	MEMBER_NOT_EXIST   = MsgCode{10005, "用户不存在"}
 	MESSAGE_NOT_EXIST  = MsgCode{10006, "消息不存在"}
+	OPENID_NOT_EXIST   = MsgCode{100007, "获取用户OpenId失败"}
 
 	/* 用户错误 20000 ~ 29999 */
 	USER_NOT_LOGIN             = MsgCode{20001, "用户未登录"}
