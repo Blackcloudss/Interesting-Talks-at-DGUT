@@ -38,18 +38,17 @@ jobs:
         run: |          
             mkdir -p ~/.ssh
             echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-            chmod 600 ~/.ssh/deploy_key                  
+            chmod 600 ~/.ssh/deploy_key
                     
         # 执行部署命令
-            ssh -i ~/.ssh/deploy_key \                    
-            -o StrictHostKeyChecking=no \                
-            root@$SERVER_IP \                             
-            "docker pull qinsikai/interesting-talks:test;   
+            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@$SERVER_IP "    
+            docker pull qinsikai/interesting-talks:test;
             if docker ps -aq --filter name=interesting-talks; then
-              docker stop interesting-talks || true     
-              docker rm -f interesting-talks || true    
+              docker stop interesting-talks || true
+              docker rm -f interesting-talks || true
             fi;
-            docker run -d \                               
-            --name interesting-talks \                   
-            -p 8085:8080 \          
-            qinsikai/interesting-talks:test"
+            docker run -d \   
+            --name interesting-talks \         
+            -p 8085:8080 \
+            qinsikai/interesting-talks:test
+            "
