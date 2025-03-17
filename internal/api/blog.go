@@ -5,6 +5,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/image"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,8 +18,21 @@ func CreateBlogHandler(c *gin.Context) {
 		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
+
+	// 处理图片上传
+	var imageUrl string
+	if req.ImageFile != nil {
+		imageUrl, err = image.UploadImage(req.ImageFile)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "Upload image error: %v", err)
+			response.NewResponse(c).Error(response.INTERNAL_ERROR)
+			return
+		}
+		zlog.CtxInfof(ctx, "Image uploaded successfully, URL: %s", imageUrl)
+	}
+
 	zlog.CtxInfof(ctx, "CreateBlog request: %+v", req)
-	resp, err := logic.NewBlogLogic().CreateBlog(ctx, req)
+	resp, err := logic.NewBlogLogic().CreateBlog(ctx, req, imageUrl)
 	response.Response(c, resp, err)
 	return
 }
@@ -32,8 +46,20 @@ func UpdateBlogHandler(c *gin.Context) {
 		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
+	// 处理图片上传
+	var imageUrl string
+	if req.ImageFile != nil {
+		imageUrl, err = image.UploadImage(req.ImageFile)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "Upload image error: %v", err)
+			response.NewResponse(c).Error(response.INTERNAL_ERROR)
+			return
+		}
+		zlog.CtxInfof(ctx, "Image uploaded successfully, URL: %s", imageUrl)
+	}
+
 	zlog.CtxInfof(ctx, "UpdateBlog request: %+v", req)
-	resp, err := logic.NewBlogLogic().UpdateBlog(ctx, req)
+	resp, err := logic.NewBlogLogic().UpdateBlog(ctx, req, imageUrl)
 	response.Response(c, resp, err)
 	return
 }
