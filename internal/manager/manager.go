@@ -19,6 +19,7 @@ type RouteManager struct {
 	CommonRoutes  *gin.RouterGroup // 通用的路由组
 	LoginRoutes   *gin.RouterGroup // 登录相关的路由组
 	ProfileRoutes *gin.RouterGroup // 个人信息相关路由组
+	AIRoutes      *gin.RouterGroup // AI相关路由组
 }
 
 // NewRouteManager 创建一个新的 RouteManager 实例，包含各业务功能的路由组
@@ -27,6 +28,7 @@ func NewRouteManager(router *gin.Engine) *RouteManager {
 		CommonRoutes:  router.Group("/api/common"),  // 初始化通用路由组
 		LoginRoutes:   router.Group("/api/wxlogin"), // 初始化登录路由组
 		ProfileRoutes: router.Group("/api/profile"), // 初始化个人信息路由组
+		AIRoutes:      router.Group("/api/ai"),      //初始化AI路由组
 	}
 }
 
