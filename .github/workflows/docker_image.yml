@@ -26,9 +26,9 @@ jobs:
 
       - name: Build the Docker image
         run: |  
-          docker buildx build . \
-          --platform linux/amd64 \
-          --push \ 
+          docker buildx build .\
+          --platform linux/amd64\
+          --push\
           --tag qinsikai/interesting-talks:test
 
       - name: Deploy to Server
@@ -45,8 +45,8 @@ jobs:
               docker stop interesting-talks || true
               docker rm -f interesting-talks || true
             fi;
-            docker run -d \   
-            --name interesting-talks \         
-            -p 8085:8080 \
+            docker run -d\
+            --name interesting-talks\
+            -p 8085:8080\
             qinsikai/interesting-talks:test
             "
