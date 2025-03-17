@@ -33,24 +33,23 @@ jobs:
 
       - name: Deploy to Server
         env:
-           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }} # 从 GitHub Secrets 获取 SSH 私钥
-           SERVER_IP: ${{ secrets.SERVER_IP }}            # 从 Secrets 获取服务器 IP
+           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+           SERVER_IP: ${{ secrets.SERVER_IP }}
         run: |          
             mkdir -p ~/.ssh
             echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
             chmod 600 ~/.ssh/deploy_key                  
                     
         # 执行部署命令
-            ssh -i ~/.ssh/deploy_key \                    # 指定私钥连接
-            -o StrictHostKeyChecking=no \                 # 跳过主机验证
-            root@$SERVER_IP "                             # 连接目标服务器
-            docker pull qinsikai/interesting-talks:test   # 拉取最新镜像
-            if docker ps -aq --filter name=interesting-talks; then # 检查容器是否存在
-              docker stop interesting-talks || true      # 停止旧容器
-              docker rm -f interesting-talks || true     # 删除旧容器
-            fi
-            docker run -d \                               # 后台运行新容器
-            --name interesting-talks \                    # 容器命名
-            -p 8085:8080 \                                # 端口映射
-            qinsikai/interesting-talks:test               # 使用最新镜像
-            "
+            ssh -i ~/.ssh/deploy_key \                    
+            -o StrictHostKeyChecking=no \                
+            root@$SERVER_IP \                             
+            "docker pull qinsikai/interesting-talks:test;   
+            if docker ps -aq --filter name=interesting-talks; then
+              docker stop interesting-talks || true     
+              docker rm -f interesting-talks || true    
+            fi;
+            docker run -d \                               
+            --name interesting-talks \                   
+            -p 8085:8080 \          
+            qinsikai/interesting-talks:test"
