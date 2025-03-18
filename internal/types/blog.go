@@ -54,8 +54,8 @@ type GetBlogByIDReq struct {
 
 // GetBlogByIDResp 获取帖子详情响应体
 type GetBlogByIDResp struct {
-	Blog   model.Blog    `json:"blog"`
-	Images []model.Image `json:"images"`
+	Blog   model.Blog     `json:"blog"`
+	Images []*model.Image `json:"images"` // 确保返回的是图片列表
 }
 
 // GetBlogsReq 分页显示帖子请求体
