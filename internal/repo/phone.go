@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"gorm.io/gorm"
 )
@@ -20,8 +21,8 @@ func NewPhoneRepo(db *gorm.DB) *PhoneRepo {
 }
 
 func (r *PhoneRepo) SavePhone(userid int64, phone string) (err error) {
-	if err = r.DB.Model(&model.UserDisplay{}).
-		Where("user_id = ?", userid).
+	if err = r.DB.Model(&model.UserPrivate{}).
+		Where(fmt.Sprintf("%s = ?", USER_ID), userid).
 		Update("phone", phone).
 		Error; err != nil {
 		return

@@ -50,14 +50,13 @@ func (l *Phonelogic) GetPhone(ctx context.Context, req types.WxPhoneReq, UserId 
 		return nil, response.ErrResp(err, GET_PHONE_FAULT)
 	}
 	resp = new(types.WxPhoneResp)
-	resp.PhoneNumber = result.PhoneInfo.PhoneNumber
+	resp.PurePhoneNumber = result.PhoneInfo.PurePhoneNumber
 	//将手机号保存到数据库中
-	err = repo.NewPhoneRepo(global.DB).SavePhone(UserId, resp.PhoneNumber)
+	err = repo.NewPhoneRepo(global.DB).SavePhone(UserId, resp.PurePhoneNumber)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "保存手机号到数据库失败：%v", err)
 		return nil, response.ErrResp(err, SAVE_PHONE_FAULT)
 	}
-
 	return
 }
 

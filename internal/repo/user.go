@@ -8,10 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	Id = "id"
-)
-
 // @Title        tz_user.go
 // @Description
 // @Create       XdpCs 2025-03-10 下午1:59
@@ -30,7 +26,7 @@ func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 	var UserID int64
 
 	err := r.DB.Model(&model.UserDisplay{}).
-		Select(Id).
+		Select(ID).
 		Where(&model.UserDisplay{
 			OpenId: Openid,
 		}).
@@ -54,12 +50,13 @@ func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 				return 0, err
 			}
 			zlog.Infof("创建用户展示表成功，ID：%d", UserDisplay.ID)
+			UserID = UserDisplay.ID
 
 			// 使用事务创建后续表
 			tables := []interface{}{
-				&model.UserCommon{OpenId: Openid},
-				&model.UserPrivate{OpenId: Openid},
-				&model.UserAuth{OpenId: Openid},
+				&model.UserCommon{UserID: UserID},
+				&model.UserPrivate{UserID: UserID},
+				&model.UserAuth{UserID: UserID},
 			}
 
 			for _, table := range tables {
@@ -76,7 +73,6 @@ func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 				return 0, err
 			}
 			zlog.Infof("创建用户表成功，ID：%d", UserDisplay.ID)
-			UserID = UserDisplay.ID
 			return UserID, nil
 		}
 		return 0, err
@@ -93,7 +89,7 @@ func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 //	@return Err
 func (r *UserRepo) GetOpenId(UserId int64) (OpenId int64, err error) {
 	err = r.DB.Model(&model.UserDisplay{}).
-		Select("open_id").
+		Select(OPEN_ID).
 		Where(&model.UserDisplay{
 			CommonModel: model.CommonModel{
 				ID: UserId,
