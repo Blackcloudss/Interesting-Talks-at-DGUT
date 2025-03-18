@@ -11,11 +11,7 @@ ENV GO111MODULE=on \
     GOPROXY=https://goproxy.cn,direct \
     CGO_ENABLED=0
 
-# 下载依赖（新增缓存验证步骤）
-
-# 打印环境变量
-# -x 显示详细下载过程
-# 验证 Go 版本
+# 下载依赖
 RUN go mod download -x \
     && go version \
     && go env
@@ -23,12 +19,17 @@ RUN go mod download -x \
 # 复制全部代码
 COPY . .
 
-# 编译前验证依赖
+# 编译
 RUN go mod verify \
     && go build -v -ldflags="-s -w" -o interesting-talks ./cmd/main.go
 
 # 执行过程
 FROM alpine:latest
+
+# 设置时区
+RUN apk add --no-cache tzdata && \
+    ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
 
 WORKDIR /app
 
