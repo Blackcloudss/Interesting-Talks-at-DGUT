@@ -18,8 +18,10 @@ jobs:
       - name: Write config file
         working-directory: .
         run: |
-          printf '%s\n' "${{ secrets.CONFIG_YAML }}" > config.yaml
+          echo "${{ secrets.CONFIG_YAML }}" > config.yaml
           chmod 644 config.yaml
+          cat config.yaml
+          grep "database:" config.yaml || (echo "错误：未找到数据库配置" && exit 1)
 
       - name: Check generated files
         working-directory: .
