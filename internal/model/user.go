@@ -1,7 +1,5 @@
 package model
 
-import "time"
-
 // @Title        user.go
 // @Description
 // @Create       XdpCs 2025-03-10 上午1:32
@@ -13,9 +11,9 @@ type UserDisplay struct {
 	OpenId      string `gorm:"column:openid;type:varchar(255);uniqueIndex"`                 // 添加唯一索引                     // 用户在不同类型产品中的身份id，不同产品互不相同
 	Role        string `gorm:"column:role;type:varchar(20);default:tourist;comment:'用户身份'"` //  角色身份 默认身份为游客
 	//建立联合索引
-	Avatar   string `gorm:"column:avatar;type:varchar(255);index:idx_profile,priority:3;comment:'微信头像'"`               // 头像
-	Nickname string `gorm:"column:nickname;type:varchar(50);default:微信用户;index:idx_profile,priority:2;comment:'微信昵称'"` // 昵称
-	Tag      string `gorm:"column:tag;type:varchar(50);default:大一新生;index:idx_profile,priority:1;comment:'用户标签'"`      // 用户标签
+	Avatar   string `gorm:"column:avatar;type:varchar(255);index:idx_profile,priority:2;comment:'微信头像'"`               // 头像
+	Nickname string `gorm:"column:nickname;type:varchar(50);default:微信用户;index:idx_profile,priority:1;comment:'微信昵称'"` // 昵称
+	Tag      string `gorm:"column:tag;type:varchar(50);default:大一新生;index:idx_profile,priority:3;comment:'用户标签'"`      // 用户标签
 }
 
 func (t *UserDisplay) TableName() string {
@@ -25,9 +23,9 @@ func (t *UserDisplay) TableName() string {
 // 用户基本信息表
 type UserCommon struct {
 	CommonModel
-	Sex      string    `gorm:"column:sex;type:char(2);comment:'性别'"`
-	Birthday time.Time `gorm:"column:birthday;type:date;comment:'出生日期'"` //****年**月**日
-	Sign     string    `gorm:"column:sign;type:varchar(50);comment:'个性签名'"`
+	Sex      string `gorm:"column:sex;type:char(2);comment:'性别'"`
+	Birthday string `gorm:"column:birthday;type:char(11);comment:'出生日期'"` //****年**月**日
+	Sign     string `gorm:"column:sign;type:varchar(50);comment:'个性签名'"`
 
 	UserID int64 `gorm:"column:user_id;type:bigint;comment:'用户ID'"`
 	//外键关联
@@ -60,9 +58,9 @@ func (t *UserPrivate) TableName() string {
 // 用户授权表
 type UserAuth struct {
 	CommonModel
-	Is_agreed_phone    bool `gorm:"column:is_agreed_phone;type:tinyint(1);comment:'是否同意授权手机号'"`     // 0 未授权 1 已授权
-	Is_agreed_avatar   bool `gorm:"column:is_agreed_avatar;type:tinyint(1);comment:'是否同意授权微信头像'"`   // 0 未授权 1 已授权
-	Is_agreed_nickname bool `gorm:"column:is_agreed_nickname;type:tinyint(1);comment:'是否同意授权微信昵称'"` // 0 未授权 1 已授权
+	IsAgreedPhone    bool `gorm:"column:is_agreed_phone;type:tinyint(1);comment:'是否同意授权手机号'"`     // 0 未授权 1 已授权
+	IsAgreedAvatar   bool `gorm:"column:is_agreed_avatar;type:tinyint(1);comment:'是否同意授权微信头像'"`   // 0 未授权 1 已授权
+	IsAgreedNickname bool `gorm:"column:is_agreed_nickname;type:tinyint(1);comment:'是否同意授权微信昵称'"` // 0 未授权 1 已授权
 
 	UserID int64 `gorm:"column:user_id;type:bigint;comment:'用户ID'"`
 	//外键关联
