@@ -32,10 +32,10 @@ FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/interesting-talks  ./
-COPY --from=builder /app/config.yaml  ./
+COPY --from=builder /app/interesting-talks ./
+COPY config.yaml ./
 
-#声明容器运行时监听 8085 端口
+#声明容器运行时监听 8080 端口
 EXPOSE 8080
 #启动应用程序
 ENTRYPOINT ["./interesting-talks"]
