@@ -5,7 +5,6 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/gin-gonic/gin"
@@ -23,7 +22,7 @@ func PermissionMiddleware() gin.HandlerFunc {
 		//var UserId int64          //测试使用
 
 		var Url string
-		var req any
+		//var req any
 		var err error
 
 		// 在请求处理中读取并缓存请求体
@@ -39,15 +38,15 @@ func PermissionMiddleware() gin.HandlerFunc {
 			c.Request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		}
 
-		req, err = types.BindReq[types.RuleCheck](c)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "PermissionMiddleware 参数绑定失败: %v", err)
-			zlog.CtxInfof(ctx, "请求详情: Method=%s, Headers=%v, Query=%v", c.Request.Method, c.Request.Header, c.Request.URL.Query())
-			response.NewResponse(c).Error(response.PARAM_NOT_VALID)
-			c.Abort()
-			return
-		}
-		zlog.CtxInfof(ctx, "PermissionMiddleware middleware: %v", req)
+		//req, err = types.BindReq[types.RuleCheck](c)
+		//if err != nil {
+		//	zlog.CtxErrorf(ctx, "PermissionMiddleware 参数绑定失败: %v", err)
+		//	zlog.CtxInfof(ctx, "请求详情: Method=%s, Headers=%v, Query=%v", c.Request.Method, c.Request.Header, c.Request.URL.Query())
+		//	response.NewResponse(c).Error(response.PARAM_NOT_VALID)
+		//	c.Abort()
+		//	return
+		//}
+		//zlog.CtxInfof(ctx, "PermissionMiddleware middleware: %v", req)
 
 		// 重要!! 将读取的请求体内容重新设置到 c.Request.Body，供后续处理使用
 		c.Request.Body = io.NopCloser(bytes.NewReader(bodyBytes))

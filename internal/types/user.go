@@ -1,5 +1,7 @@
 package types
 
+import "mime/multipart"
+
 // @Title        tz_user.go
 // @Description
 // @Create       XdpCs 2025-03-09 下午4:49
@@ -30,19 +32,34 @@ type GetCommonProfileReq struct {
 type GetCommonProfileResp struct {
 	Nickname string `json:"nickname"` // 昵称
 	Avatar   string `json:"avatar"`   // 头像
+	Tag      string `json:"tag"`      // 标签
 	Sex      string `json:"sex"`      // 性别
 	Birthday string `json:"birthday"` // 生日
 	Sign     string `json:"sign"`     // 签名
+}
+
+// 获取他人基本信息 入参
+type GetOtherProfileReq struct {
+	OtherID int64 `json:"otherid"` // 他人ID
+}
+
+// 获取他人基本信息 出参
+type GetOtherProfileResp struct {
+	Nickname string `json:"nickname"` // 昵称
+	Avatar   string `json:"avatar"`   // 头像
 	Tag      string `json:"tag"`      // 标签
+	Sex      string `json:"sex"`      // 性别
+	Birthday string `json:"birthday"` // 生日
+	Sign     string `json:"sign"`     // 签名
 }
 
 // 更改用户基本信息 入参
 type UpdateCommonProfileReq struct {
-	Nickname string `json:"nickname"` // 昵称
-	Avatar   string `json:"avatar"`   // 头像
-	Sex      string `json:"sex"`      // 性别
-	Birthday string `json:"birthday"` // 生日
-	Sign     string `json:"sign"`     // 签名
+	Nickname string                `json:"nickname"` // 昵称
+	Avatar   *multipart.FileHeader `form:"avatar"`   // 头像图片文件
+	Sex      string                `json:"sex"`      // 性别
+	Birthday string                `json:"birthday"` // 生日
+	Sign     string                `json:"sign"`     // 签名
 }
 
 // 更改用户基本信息 出参
@@ -63,7 +80,7 @@ type GetPrivateProfileResp struct {
 	Phone     string `json:"phone"`     // 手机号
 }
 
-// 更改用户私人信息 入参
+// 更改用户隐私信息 入参
 type UpdatePrivateProfileReq struct {
 	Name      string `json:"name"`      // 真实姓名
 	StudentId string `json:"studentId"` // 学号
@@ -71,4 +88,9 @@ type UpdatePrivateProfileReq struct {
 	Grade     int64  `json:"grade"`     // 年级
 	Major     string `json:"major"`     // 专业
 	Phone     string `json:"phone"`     // 手机号
+}
+
+// 更改用户隐私信息 出参
+type UpdatePrivateProfileResp struct {
+	Role string `json:"role"` // 用户身份
 }

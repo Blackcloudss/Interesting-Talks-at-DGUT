@@ -2,10 +2,30 @@ package repo
 
 import (
 	"errors"
+	"fmt"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"gorm.io/gorm"
+)
+
+const (
+	USER_DISPLAY = "user_display"
+	USER_COMMON  = "user_common"
+	NICKNAME     = "nickname"
+	AVATAR       = "avatar"
+	TAG          = "tag"
+	SEX          = "sex"
+	BIRTHDAY     = "birthday"
+	SIGN         = "sign"
+	NAME         = "name"
+	STUDENT_ID   = "student_id"
+	ACADEMY      = "academy"
+	GRADE        = "grade"
+	MAJOR        = "major"
+	PHONE        = "phone"
+	USERDISPLAY  = "UserDisplay"
 )
 
 // @Title        tz_user.go
@@ -130,5 +150,157 @@ func (r *UserRepo) SaveUserInfo(UserId int64, User types.UserInfo) (err error) {
 		zlog.Errorf("更新用户信息失败：%v", err)
 		return err
 	}
-	return
+	return nil
+}
+
+// GetCommonProfile
+//
+//	@Description: 查找用户基本信息
+//	@receiver r
+//	@param UserId
+//	@return UserCommon
+//	@return err
+func (r *UserRepo) GetCommonProfile(UserId int64) (resp types.GetCommonProfileResp, err error) {
+	err = r.DB.Preload(USERDISPLAY).
+		Select(fmt.Sprintf("%s.%s,%s.%s,%s.%s,%s.%s,%s.%s,%s.%s",
+			USER_DISPLAY, NICKNAME, USER_DISPLAY, AVATAR, USER_DISPLAY, TAG,
+			USER_COMMON, BIRTHDAY, USER_COMMON, SEX, USER_COMMON, SIGN,
+		)).
+		Where(fmt.Sprintf("%s = ?", USER_ID), UserId).
+		First(&resp).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Errorf("用户不存在：%v", err)
+			return resp, err
+		}
+		zlog.Errorf("查询用户基本信息失败：%v", err)
+		return resp, err
+	}
+	return resp, nil
+}
+
+// UpdateCommonProfile
+//
+//	@Description: 更新用户隐私信息
+//	@receiver r
+//	@param UserId
+//	@param req
+//	@return err
+func (r *UserRepo) UpdateCommonProfile(UserId int64, Avatar string, req types.UpdateCommonProfileReq) (err error) {
+	err = r.DB.Model(&model.UserDisplay{}).
+		Where(fmt.Sprintf("%s = ?", ID), UserId).
+		Updates(&model.UserDisplay{
+			Avatar:   Avatar,
+			Nickname: req.Nickname,
+		}).Error
+	if err != nil {
+		zlog.Errorf("更新用户基本信息失败：%v", err)
+		return err
+	}
+
+	err = r.DB.Model(&model.UserCommon{}).
+		Where(fmt.Sprintf("%s = ?", USER_ID), UserId).
+		Updates(&model.UserCommon{
+			Birthday: req.Birthday,
+			Sex:      req.Sex,
+			Sign:     req.Sign,
+		}).Error
+	if err != nil {
+		zlog.Errorf("更新用户基本信息失败：%v", err)
+		return err
+	}
+	return nil
+}
+
+// GetUserPrivateInfo
+//
+//	@Description: 查找用户隐私信息
+//	@receiver r
+//	@param UserId
+//	@return UserPrivate
+//	@return err
+func (r *UserRepo) GetPrivateProfile(UserId int64) (resp types.GetPrivateProfileResp, err error) {
+	err = r.DB.Model(&model.UserPrivate{}).
+		Select(fmt.Sprintf("%s, %s, %s, %s, %s, %s", NAME, STUDENT_ID, ACADEMY, GRADE, MAJOR, PHONE)).
+		Where(&model.UserPrivate{
+			UserID: UserId,
+		}).
+		First(&resp).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Errorf("用户不存在：%v", err)
+			return resp, err
+		}
+		zlog.Errorf("查询用户隐私信息失败：%v", err)
+		return resp, err
+	}
+	return resp, nil
+}
+
+// UpdatePrivateProfile
+//
+//	@Description: 更改用户隐私信息
+//	@receiver r
+//	@param UserId
+//	@param req
+//	@return err
+func (r *UserRepo) UpdatePrivateProfile(UserId int64, req types.UpdatePrivateProfileReq) (Role string, err error) {
+	// 更改用户隐私信息
+	err = r.DB.Model(&model.UserPrivate{}).
+		Where(&model.UserPrivate{
+			UserID: UserId,
+		}).
+		Updates(&model.UserPrivate{
+			Name:      req.Name,
+			StudentId: req.StudentId,
+			Academy:   req.Academy,
+			Grade:     req.Grade,
+			Major:     req.Major,
+			Phone:     req.Phone,
+		}).Error
+	if err != nil {
+		zlog.Errorf("更新用户隐私信息失败：%v", err)
+		return "", err
+	}
+	//更改用户身份
+	err = r.DB.Model(&model.UserDisplay{}).
+		Where(&model.UserDisplay{
+			CommonModel: model.CommonModel{
+				ID: UserId,
+			},
+		}).
+		Updates(&model.UserDisplay{
+			Role: STUDENT,
+		}).Error
+	if err != nil {
+		zlog.Errorf("更新用户身份失败：%v", err)
+		return "", err
+	}
+	Role = STUDENT
+
+	return Role, nil
+}
+
+func (r *UserRepo) GetUserRole(userID int64) (string, error) {
+	var role string
+	err := global.DB.Model(&model.UserDisplay{}).
+		Select(ROLE).
+		Where(model.UserDisplay{
+			CommonModel: model.CommonModel{
+				ID: userID,
+			},
+		}).
+		First(&role).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Errorf("用户不存在：%v", err)
+			return "", err
+		}
+		zlog.Errorf("查询用户角色失败：%v", err)
+		return "", err
+	}
+	return role, nil
 }

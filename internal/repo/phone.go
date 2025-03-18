@@ -23,7 +23,7 @@ func NewPhoneRepo(db *gorm.DB) *PhoneRepo {
 func (r *PhoneRepo) SavePhone(userid int64, phone string) (err error) {
 	if err = r.DB.Model(&model.UserPrivate{}).
 		Where(fmt.Sprintf("%s = ?", USER_ID), userid).
-		Update("phone", phone).
+		Update(fmt.Sprintf("%s", PHONE), phone).
 		Error; err != nil {
 		return
 	}

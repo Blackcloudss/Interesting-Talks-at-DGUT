@@ -9,4 +9,5 @@ const (
 	ID      = "id"
 	OPEN_ID = "open_id"
 	USER_ID = "user_id"
+	ROLE    = "role"
 )
