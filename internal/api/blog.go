@@ -148,6 +148,21 @@ func GetMyBlogsHandler(c *gin.Context) {
 	return
 }
 
+// GetMyBlogsHandler 获取其他用户发布的帖子
+func GetBlogsByUserIDHandler(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetBlogsByUserIDReq](c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "GetBlogsByUserID request error: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
+		return
+	}
+	zlog.CtxInfof(ctx, "GetBlogsByUserID request: %+v", req)
+	resp, err := logic.NewBlogLogic().GetBlogsByUserID(ctx, req)
+	response.Response(c, resp, err)
+	return
+}
+
 // CollectBlogHandler 收藏帖子
 func CollectBlogHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)

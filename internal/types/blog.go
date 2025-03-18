@@ -98,6 +98,22 @@ type GetMyBlogsResp struct {
 	PageSize int           `json:"page_size"`
 }
 
+// 获取其他用户帖子
+type GetBlogsByUserIDReq struct {
+	UserID   int64 `json:"user_id"`
+	Page     int   `json:"page"`
+	PageSize int   `json:"page_size"`
+}
+
+// GetMyBlogsResp 获取其他用户发布的帖子响应体
+type GetBlogsByUserIDResp struct {
+	Blogs    []model.Blog  `json:"list"`
+	Images   []model.Image `json:"images"`
+	Total    int64         `json:"total"`
+	Page     int           `json:"page"`
+	PageSize int           `json:"page_size"`
+}
+
 // CollectBlogReq 收藏帖子请求体
 type CollectBlogReq struct {
 	BlogID int64 `json:"blog_id"`
