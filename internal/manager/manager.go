@@ -31,7 +31,7 @@ func NewRouteManager(router *gin.Engine) *RouteManager {
 		LoginRoutes:   router.Group("/api/wxlogin"), // 初始化登录路由组
 		ProfileRoutes: router.Group("/api/profile"), // 初始化个人信息路由组
 		BlogRoutes:    router.Group("/api/blog"),    // 初始化帖子路由组
-		CommentRoutes: router.Group("/api/blog"),
+		CommentRoutes: router.Group("/api/comment"), // 初始化评论路由组
 		AIRoutes:      router.Group("/api/ai"),      //初始化AI路由组
 	}
 }
