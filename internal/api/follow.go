@@ -5,6 +5,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,10 +18,10 @@ func FollowHandler(c *gin.Context) {
 		response.Response(c, nil, err)
 		return
 	}
-
+	UserID := jwt.GetUserId(c)
 	zlog.CtxInfof(ctx, "Follow request: %v", req)
-	err = logic.NewFollowLogic().Follow(ctx, req)
-	response.Response(c, nil, err)
+	resp, err := logic.NewFollowLogic().Follow(ctx, req, UserID)
+	response.Response(c, resp, err)
 }
 
 // UnfollowHandler 取消关注用户
@@ -32,10 +33,10 @@ func UnfollowHandler(c *gin.Context) {
 		response.Response(c, nil, err)
 		return
 	}
-
+	UserID := jwt.GetUserId(c)
 	zlog.CtxInfof(ctx, "Unfollow request: %v", req)
-	err = logic.NewFollowLogic().Unfollow(ctx, req)
-	response.Response(c, nil, err)
+	resp, err := logic.NewFollowLogic().Unfollow(ctx, req, UserID)
+	response.Response(c, resp, err)
 }
 
 // GetFollowingsHandler 获取用户关注的用户列表
@@ -47,9 +48,9 @@ func GetFollowingsHandler(c *gin.Context) {
 		response.Response(c, nil, err)
 		return
 	}
-
+	UserID := jwt.GetUserId(c)
 	zlog.CtxInfof(ctx, "GetFollowings request: %v", req)
-	resp, err := logic.NewFollowLogic().GetFollowings(ctx, req)
+	resp, err := logic.NewFollowLogic().GetFollowings(ctx, req, UserID)
 	response.Response(c, resp, err)
 }
 
@@ -62,7 +63,8 @@ func GetFollowersHandler(c *gin.Context) {
 		response.Response(c, nil, err)
 		return
 	}
+	UserID := jwt.GetUserId(c)
 	zlog.CtxInfof(ctx, "GetFollowers request: %v", req)
-	resp, err := logic.NewFollowLogic().GetFollowers(ctx, req)
+	resp, err := logic.NewFollowLogic().GetFollowers(ctx, req, UserID)
 	response.Response(c, resp, err)
 }
