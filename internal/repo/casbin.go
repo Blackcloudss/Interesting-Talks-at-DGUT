@@ -10,7 +10,11 @@ import (
 	"time"
 )
 
-const ROLE = "role"
+const (
+	TOURIST = "tourist"
+	STUDENT = "student"
+	MANAGER = "manager"
+)
 
 // @Title        casbin.go
 // @Description
@@ -55,21 +59,21 @@ func (r *CasbinRepo) CheckUserPermission(Durl string, UserId int64) (IsExist boo
 		zlog.Errorf("查询用户对应的角色失败：%v", err)
 		return false, err
 	}
-	if Role == global.TOURIST {
+	if Role == TOURIST {
 		IsExist, err = r.Contains(global.TOURIST_URLS, Durl)
 		if err != nil {
 			zlog.Errorf("查询失败：: %v", err)
 			return false, err
 		}
 		return IsExist, nil
-	} else if Role == global.STUDENT {
+	} else if Role == STUDENT {
 		IsExist, err = r.Contains(global.STUDENT_URLS, Durl)
 		if err != nil {
 			zlog.Errorf("查询失败：: %v", err)
 			return false, err
 		}
 		return IsExist, nil
-	} else if Role == global.MANAGER {
+	} else if Role == MANAGER {
 		IsExist, err = r.Contains(global.MANAGER_URLS, Durl)
 		if err != nil {
 			zlog.Errorf("查询失败：: %v", err)

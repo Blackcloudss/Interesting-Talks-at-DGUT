@@ -24,11 +24,6 @@ const (
 	AUTH_ENUMS_RTOKEN         = "rtoken"
 	DEFAULT_NODE_ID           = 1
 	TOKEN_USER_ID             = "UserId"
-	TOURIST                   = "tourist"
-	STUDENT                   = "student"
-	MANAGER                   = "manager"
-	IMAGE_PATH                = "images"
-	IMAGE_SIZE                = 1024 * 1024 * 2
 )
 
 var Node, _ = snowflake.NewNode(DEFAULT_NODE_ID)

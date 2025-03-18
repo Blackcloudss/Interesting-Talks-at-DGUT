@@ -53,17 +53,27 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//用户信息相关路由
 	routeManager.RegisterProfileRoutes(func(rg *gin.RouterGroup) {
-		middleware.CheckAtoken()                           // 检查 Atoken
-		rg.GET("/phone", api.GetPhone)                     //获取用户手机号（授权时使用）
-		rg.GET("/userinfo", api.GetUserInfo)               //获取用户的微信头像和微信昵称（授权时使用）
-		middleware.PermissionMiddleware()                  // 检查权限
-		rg.GET("/common/show", api.GetCommonProfile)       // 获取用户基本信息
-		rg.GET("/private/show", api.GetDetailProfile)      // 获取用户隐私信息
-		rg.PUT("/common/update", api.UpdateCommonProfile)  // 更新基本信息
-		rg.PUT("/private/update", api.UpdateDetailProfile) // 更新隐私信息
+		rg.Use(middleware.CheckAtoken())          // 检查 Atoken
+		rg.GET("/phone", api.GetPhone)            //获取用户手机号（授权时使用）
+		rg.GET("/userinfo", api.GetUserInfo)      //获取用户的微信头像和微信昵称（授权时使用）
+		rg.Use(middleware.PermissionMiddleware()) // 检查权限
+
+		CommonProfile := rg.Group("/common")
+		{
+			CommonProfile.GET("/show", api.GetCommonProfile)      // 获取用户基本信息
+			CommonProfile.GET("/other", api.GetOtherProfile)      // 获取他人基本信息
+			CommonProfile.PUT("/update", api.UpdateCommonProfile) // 更新基本信息
+		}
+		PrivateProfile := rg.Group("/private")
+		{
+			PrivateProfile.GET("/show", api.GetPrivateProfile)      // 获取用户隐私信息
+			PrivateProfile.PUT("/update", api.UpdatePrivateProfile) // 更新隐私信息
+		}
 	})
+
 	//帖子相关路由
 	routeManager.RegisterBlogRoutes(func(rg *gin.RouterGroup) {
+		rg.Use(middleware.CheckAtoken())                   // 检查 Atoken
 		rg.POST("/create", api.CreateBlogHandler)          // 创建帖子
 		rg.PUT("/update", api.UpdateBlogHandler)           // 更新帖子
 		rg.DELETE("/delete", api.DeleteBlogHandler)        // 删除帖子
@@ -80,6 +90,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//评论相关路由
 	routeManager.RegisterCommentRoutes(func(rg *gin.RouterGroup) {
+		rg.Use(middleware.CheckAtoken())        // 检查 Atoken
 		rg.POST("/create", api.CreateComment)   // 创建评论
 		rg.DELETE("/delete", api.DeleteComment) // 删除评论
 		rg.GET("/list", api.GetCommentList)     // 获取评论列表
