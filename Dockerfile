@@ -34,7 +34,7 @@ RUN apk add --no-cache tzdata && \
 WORKDIR /app
 
 COPY --from=builder /app/interesting-talks ./
-COPY config.yaml ./
+COPY --chmod=644 config.yaml ./
 
 #声明容器运行时监听 8080 端口
 EXPOSE 8080
