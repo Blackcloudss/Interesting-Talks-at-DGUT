@@ -5,6 +5,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,7 +19,8 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "CreateComment request: %+v", req)
-	resp, err := logic.NewCommentLogic().CreateComment(ctx, req)
+	UserID := jwt.GetUserId(c)
+	resp, err := logic.NewCommentLogic().CreateComment(ctx, req, UserID)
 	response.Response(c, resp, err)
 	return
 }
@@ -33,7 +35,8 @@ func DeleteComment(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "DeleteComment request: %+v", req)
-	resp, err := logic.NewCommentLogic().DeleteComment(ctx, req)
+	UserID := jwt.GetUserId(c)
+	resp, err := logic.NewCommentLogic().DeleteComment(ctx, req, UserID)
 	response.Response(c, resp, err)
 	return
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
@@ -16,8 +17,6 @@ var (
 	codeCommentNotFound     = response.MsgCode{Code: 40031, Msg: "评论不存在"}
 	codeCommentCreateFailed = response.MsgCode{Code: 40032, Msg: "创建评论失败"}
 	codeCommentDeleteFailed = response.MsgCode{Code: 40033, Msg: "删除评论失败"}
-	codeUnauthorized        = response.MsgCode{Code: 40034, Msg: "用户未授权"}
-	codeUserNotLoggedIn     = response.MsgCode{Code: 20001, Msg: "用户未登录"}
 )
 
 type CommentLogic struct{}
@@ -28,23 +27,17 @@ func NewCommentLogic() *CommentLogic {
 }
 
 // CreateComment 创建评论
-func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommentReq) (*types.CreateCommentResp, error) {
-
-	// 检查帖子是否存在
-	blogRepo := repo.NewBlogRepo(global.DB)
-	_, err := blogRepo.GetBlogByID(req.BlogID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			zlog.CtxWarnf(ctx, "CreateComment failed: blog not found (blogID: %d)", req.BlogID)
-			return nil, response.ErrResp(err, codeBlogNotFound)
-		}
-		zlog.CtxErrorf(ctx, "CreateComment failed: %v", err)
-		return nil, response.ErrResp(err, codeCommentCreateFailed)
+func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommentReq, UserID int64) (*types.CreateCommentResp, error) {
+	// 构建评论对象
+	comment := model.Comment{
+		UserID:  UserID,
+		BlogID:  req.BlogID,
+		Content: req.Content,
 	}
 
 	// 创建评论并更新帖子的评论数
 	commentRepo := repo.NewCommentRepo(global.DB)
-	comment, err := commentRepo.CreateComment(req)
+	err := commentRepo.CreateComment(&comment)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "CreateComment failed: %v", err)
 		return nil, response.ErrResp(err, codeCommentCreateFailed)
@@ -55,7 +48,7 @@ func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommen
 }
 
 // DeleteComment 删除评论
-func (l *CommentLogic) DeleteComment(ctx context.Context, req types.DeleteCommentReq) (*types.DeleteCommentResp, error) {
+func (l *CommentLogic) DeleteComment(ctx context.Context, req types.DeleteCommentReq, UserID int64) (*types.DeleteCommentResp, error) {
 	// 检查评论是否存在
 	commentRepo := repo.NewCommentRepo(global.DB)
 	comment, err := commentRepo.GetCommentByID(req.CommentID)
@@ -69,7 +62,8 @@ func (l *CommentLogic) DeleteComment(ctx context.Context, req types.DeleteCommen
 	}
 
 	// 删除评论并更新帖子的评论数
-	if err := commentRepo.DeleteComment(req.CommentID, comment.BlogID); err != nil {
+	err = commentRepo.DeleteComment(req.CommentID, comment.BlogID)
+	if err != nil {
 		zlog.CtxErrorf(ctx, "DeleteComment failed: %v", err)
 		return nil, response.ErrResp(err, codeCommentDeleteFailed)
 	}

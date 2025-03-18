@@ -19,6 +19,7 @@ var (
 	codeBlogCreateFailed   = response.MsgCode{Code: 40021, Msg: "创建帖子失败"}
 	codeBlogUpdateFailed   = response.MsgCode{Code: 40022, Msg: "更新帖子失败"}
 	codeBlogDeleteFailed   = response.MsgCode{Code: 40023, Msg: "删除帖子失败"}
+	codeImageCreateFailed  = response.MsgCode{Code: 40024, Msg: "上传图片失败"}
 	codeCollectFailed      = response.MsgCode{Code: 40026, Msg: "收藏帖子失败"}
 	codeUncollectFailed    = response.MsgCode{Code: 40027, Msg: "取消收藏失败"}
 	codeGetCollectedFailed = response.MsgCode{Code: 40028, Msg: "获取收藏帖子失败"}
@@ -33,32 +34,46 @@ func NewBlogLogic() *BlogLogic {
 }
 
 // CreateBlog 创建帖子
-func (l *BlogLogic) CreateBlog(ctx context.Context, req types.CreateBlogReq, imageUrl string) (resp *types.CreateBlogResp, err error) {
+func (l *BlogLogic) CreateBlog(ctx context.Context, req types.CreateBlogReq, UserID int64, imageUrls []string) (resp *types.CreateBlogResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
 	blog := &model.Blog{
-		UserID:         int64(req.UserID),
+		UserID:         UserID,
 		Content:        req.Content,
 		Tag:            req.Tag,
 		SubTag:         req.SubTag,
 		ViewPermission: req.ViewPermission,
-		ImageUrls:      imageUrl, // 将上传的图片URL赋值给ImageUrls字段
 	}
-
+	//创建帖子
 	err = repo.NewBlogRepo(global.DB).CreateBlog(blog)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "create blog error: %v", err)
 		return nil, response.ErrResp(err, codeBlogCreateFailed)
 	}
+	//存储图片到数据库
+	var images []model.Image
+	for _, imageUrl := range imageUrls {
+		image := model.Image{
+			ImagePath: imageUrl,
+			BlogID:    blog.ID,
+		}
+		err = repo.NewImageRepo(global.DB).CreateImage(&image)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "create image error: %v", err)
+			return nil, response.ErrResp(err, codeImageCreateFailed)
+		}
+		images = append(images, image)
+	}
 
 	resp = &types.CreateBlogResp{
-		Blog: *blog,
+		Blog:   *blog,
+		Images: images,
 	}
 	return resp, nil
 }
 
 // UpdateBlog 更新帖子
-func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq, imageUrl string) (resp *types.UpdateBlogResp, err error) {
+func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq, imageUrls []string) (resp *types.UpdateBlogResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
 	blog, err := repo.NewBlogRepo(global.DB).GetBlogByID(req.ID)
@@ -75,7 +90,6 @@ func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq, ima
 	blog.Tag = req.Tag
 	blog.SubTag = req.SubTag
 	blog.ViewPermission = req.ViewPermission
-	blog.ImageUrls = imageUrl
 
 	err = repo.NewBlogRepo(global.DB).UpdateBlog(blog)
 	if err != nil {
@@ -83,39 +97,55 @@ func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq, ima
 		return nil, response.ErrResp(err, codeBlogUpdateFailed)
 	}
 
+	var images []model.Image
+	for _, imageUrl := range imageUrls {
+		image := model.Image{
+			ImagePath: imageUrl,
+			BlogID:    blog.ID,
+		}
+		err = repo.NewImageRepo(global.DB).CreateImage(&image)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "create image error: %v", err)
+			return nil, response.ErrResp(err, codeImageCreateFailed)
+		}
+		images = append(images, image)
+	}
+
 	resp = &types.UpdateBlogResp{
-		Blog: *blog,
+		Blog:   *blog,
+		Images: images,
 	}
 	return resp, nil
 }
 
 // DeleteBlog 删除帖子
-func (l *BlogLogic) DeleteBlog(ctx context.Context, req types.DeleteBlogReq) (err error) {
+func (l *BlogLogic) DeleteBlog(ctx context.Context, req types.DeleteBlogReq) (resp *types.DeleteBlogResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
 	_, err = repo.NewBlogRepo(global.DB).GetBlogByID(req.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			zlog.CtxWarnf(ctx, "Blog not found: %v", err)
-			return response.ErrResp(err, codeBlogNotFound)
+			return nil, response.ErrResp(err, codeBlogNotFound)
 		}
 		zlog.CtxErrorf(ctx, "GetBlogByID failed: %v", err)
-		return response.ErrResp(err, response.INTERNAL_ERROR)
+		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 
 	err = repo.NewBlogRepo(global.DB).DeleteBlog(req.ID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "DeleteBlog failed: %v", err)
-		return response.ErrResp(err, codeBlogDeleteFailed)
+		return nil, response.ErrResp(err, codeBlogDeleteFailed)
 	}
 
-	return nil
+	return resp, nil
 }
 
 // GetBlogByID 获取帖子详情
 func (l *BlogLogic) GetBlogByID(ctx context.Context, req types.GetBlogByIDReq) (resp *types.GetBlogByIDResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
+	// 获取帖子详情
 	blog, err := repo.NewBlogRepo(global.DB).GetBlogByID(req.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -126,8 +156,17 @@ func (l *BlogLogic) GetBlogByID(ctx context.Context, req types.GetBlogByIDReq) (
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 
+	// 获取与帖子关联的所有图片
+	images, err := repo.NewImageRepo(global.DB).GetImagesByBlogID(blog.ID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Get images by blog ID failed: %v", err)
+		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
+
+	// 构造响应体
 	resp = &types.GetBlogByIDResp{
-		Blog: *blog,
+		Blog:   *blog,
+		Images: images, // 返回图片列表
 	}
 	return resp, nil
 }
@@ -143,7 +182,7 @@ func (l *BlogLogic) GetBlogs(ctx context.Context, req types.GetBlogsReq) (resp *
 	}
 
 	resp = &types.GetBlogsResp{
-		List:     blogs,
+		Blogs:    blogs,
 		Total:    total,
 		Page:     req.Page,
 		PageSize: req.PageSize,
@@ -162,23 +201,23 @@ func (l *BlogLogic) GetBlogsByTag(ctx context.Context, req types.GetBlogsByTagRe
 	}
 
 	resp = &types.GetBlogsByTagResp{
-		List: blogs,
+		Blogs: blogs,
 	}
 	return resp, nil
 }
 
 // GetMyBlogs 获取当前用户发布的帖子
-func (l *BlogLogic) GetMyBlogs(ctx context.Context, req types.GetMyBlogsReq) (resp *types.GetMyBlogsResp, err error) {
+func (l *BlogLogic) GetMyBlogs(ctx context.Context, req types.GetMyBlogsReq, UserID int64) (resp *types.GetMyBlogsResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
-	blogs, total, err := repo.NewBlogRepo(global.DB).GetBlogsByUserID(int64(req.UserID), req.Page, req.PageSize)
+	blogs, total, err := repo.NewBlogRepo(global.DB).GetBlogsByUserID(UserID, req.Page, req.PageSize)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetMyBlogs failed: %v", err)
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 
 	resp = &types.GetMyBlogsResp{
-		List:     blogs,
+		Blogs:    blogs,
 		Total:    total,
 		Page:     req.Page,
 		PageSize: req.PageSize,
@@ -187,52 +226,56 @@ func (l *BlogLogic) GetMyBlogs(ctx context.Context, req types.GetMyBlogsReq) (re
 }
 
 // CollectBlog 收藏帖子
-func (l *BlogLogic) CollectBlog(ctx context.Context, req types.CollectBlogReq) error {
+func (l *BlogLogic) CollectBlog(ctx context.Context, req types.CollectBlogReq, UserID int64) (resp *types.CollectBlogResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
-	err := repo.NewBlogRepo(global.DB).CollectBlog(int64(req.UserID), req.BlogID)
+	err = repo.NewBlogRepo(global.DB).CollectBlog(UserID, req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "CollectBlog failed: %v", err)
-		return response.ErrResp(err, codeCollectFailed)
+		return nil, response.ErrResp(err, codeCollectFailed)
 	}
-
-	return nil
+	resp = &types.CollectBlogResp{
+		Success: true,
+	}
+	return resp, nil
 }
 
 // UncollectBlog 取消收藏帖子
-func (l *BlogLogic) UncollectBlog(ctx context.Context, req types.UncollectBlogReq) error {
+func (l *BlogLogic) UncollectBlog(ctx context.Context, req types.UncollectBlogReq, UserID int64) (resp *types.UncollectBlogResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
-	err := repo.NewBlogRepo(global.DB).UncollectBlog(int64(req.UserID), req.BlogID)
+	err = repo.NewBlogRepo(global.DB).UncollectBlog(UserID, req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UncollectBlog failed:%v", err)
-		return response.ErrResp(err, codeUncollectFailed)
+		return nil, response.ErrResp(err, codeUncollectFailed)
 	}
-
-	return nil
+	resp = &types.UncollectBlogResp{
+		Success: true,
+	}
+	return resp, nil
 }
 
 // GetCollectedBlogs 获取用户收藏的帖子
-func (l *BlogLogic) GetCollectedBlogs(ctx context.Context, req types.GetCollectedBlogsReq) (resp *types.GetCollectedBlogsResp, err error) {
+func (l *BlogLogic) GetCollectedBlogs(ctx context.Context, req types.GetCollectedBlogsReq, UserID int64) (resp *types.GetCollectedBlogsResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
-	blogs, err := repo.NewBlogRepo(global.DB).GetCollectedBlogs(int64(req.UserID))
+	blogs, err := repo.NewBlogRepo(global.DB).GetCollectedBlogs(UserID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetCollectedBlogs failed: %v", err)
 		return nil, response.ErrResp(err, codeGetCollectedFailed)
 	}
 
 	resp = &types.GetCollectedBlogsResp{
-		List: blogs,
+		Blogs: blogs,
 	}
 	return resp, nil
 }
 
 // LikeBlog 点赞帖子
-func (l *BlogLogic) LikeBlog(ctx context.Context, req types.LikeBlogReq) (resp *types.LikeBlogResp, err error) {
+func (l *BlogLogic) LikeBlog(ctx context.Context, req types.LikeBlogReq, UserID int64) (resp *types.LikeBlogResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
-	err = repo.NewBlogRepo(global.DB).LikeBlog(int64(req.UserID), req.BlogID)
+	err = repo.NewBlogRepo(global.DB).LikeBlog(UserID, req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "LikeBlog failed: %v", err)
 		return nil, response.ErrResp(err, codeLikeFailed)
@@ -245,17 +288,16 @@ func (l *BlogLogic) LikeBlog(ctx context.Context, req types.LikeBlogReq) (resp *
 }
 
 // UnlikeBlog 取消点赞帖子
-func (l *BlogLogic) UnlikeBlog(ctx context.Context, req types.UnlikeBlogReq) (resp *types.UnlikeBlogResp, err error) {
+func (l *BlogLogic) UnlikeBlog(ctx context.Context, req types.UnlikeBlogReq, UserID int64) (resp *types.UnlikeBlogResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
-	err = repo.NewBlogRepo(global.DB).UnlikeBlog(int64(req.UserID), req.BlogID)
+	err = repo.NewBlogRepo(global.DB).UnlikeBlog(UserID, req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UnlikeBlog failed: %v", err)
 		return nil, response.ErrResp(err, codeUnlikeFailed)
 	}
 
 	resp = &types.UnlikeBlogResp{
-		BlogID:  req.BlogID,
 		Success: true,
 	}
 	return resp, nil
