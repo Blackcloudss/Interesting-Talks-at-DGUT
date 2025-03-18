@@ -2,12 +2,14 @@ package initalize
 
 import (
 	"flag"
+	"os"
+	"time"
+
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
-	"time"
 )
 
 // @Title        init_config.go
@@ -41,7 +43,6 @@ func InitConfig() {
 	// 将配置文件读入 viper
 	if err := viper.ReadInConfig(); err != nil {
 		zlog.Panicf("无法读取配置文件 err: %v", err)
-
 	}
 	// 解析到变量中
 	if err := viper.Unmarshal(&configs.Conf); err != nil {
@@ -49,4 +50,14 @@ func InitConfig() {
 	}
 	zlog.Debugf("配置文件为 ： %+v", configs.Conf)
 	global.Config = configs.Conf
+
+	// 添加文件存在性检查
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		zlog.Fatalf("配置文件不存在于路径: %s", configPath)
+	}
+
+	zlog.Debugf("最终加载的配置内容：%+v", configs.Conf)
+	if configs.Conf.DB.Driver == "" {
+		zlog.Panicf("数据库驱动配置为空，请检查配置文件")
+	}
 }
