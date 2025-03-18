@@ -13,13 +13,18 @@ import (
 	"time"
 )
 
+const (
+	IMAGE_PATH = "images"
+	IMAGE_SIZE = 1024 * 1024 * 2
+)
+
 // @Title        image.go
 // @Description
 // @Create       XdpCs 2025-03-17 下午3:09
 // @Update       XdpCs 2025-03-17 下午3:09
 func UploadImage(file *multipart.FileHeader) (ImageUrl string, err error) {
 	//图片大小限制
-	if file.Size > global.IMAGE_SIZE {
+	if file.Size > IMAGE_SIZE {
 		zlog.Errorf("图片大小超过限制")
 		return
 	}
@@ -35,7 +40,7 @@ func UploadImage(file *multipart.FileHeader) (ImageUrl string, err error) {
 
 	// 按日期分目录存储
 	dateDir := time.Now().Format("2006-01") // 格式如 "2023-10"
-	saveDir := filepath.Join(global.IMAGE_PATH, dateDir)
+	saveDir := filepath.Join(IMAGE_PATH, dateDir)
 	savePath := filepath.Join(saveDir, newFilename)
 
 	// 创建目录
@@ -51,7 +56,7 @@ func UploadImage(file *multipart.FileHeader) (ImageUrl string, err error) {
 	}
 
 	// 返回相对路径（如 /images/2023-10/雪花id.jpg）
-	ImageUrl = fmt.Sprintf("/%s/%s/%s", global.IMAGE_PATH, dateDir, newFilename)
+	ImageUrl = fmt.Sprintf("/%s/%s/%s", IMAGE_PATH, dateDir, newFilename)
 	return
 }
 

@@ -91,6 +91,8 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 		zlog.CtxErrorf(ctx, "GenLoginData err: %v", err)
 		return resp, response.ErrResp(err, response.COMMON_FAIL)
 	}
+	//获取用户角色
+	resp.Role, err = repo.NewUserRepo(global.DB).GetUserRole(UserId)
 
 	//把用户新的Sessionkey放进Redis
 	if err = global.Rdb.Set(ctx, fmt.Sprintf(global.REDIS_SESSIONKEY, C2S.Openid), C2S.SessionKey, global.SESSIONKEY_EFFECTIVE_TIME).Err(); err != nil {
