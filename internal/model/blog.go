@@ -10,7 +10,6 @@ type Blog struct { // 帖子
 	ViewPermission string `gorm:"type:varchar(20);default:'所有人'" json:"view_permission"` // 访问权限，默认为“所有人”
 	UserID         int64  `json:"user_id"`                                               // 用户ID
 	Content        string `gorm:"type:text;not null" json:"content"`                     // 内容，不可为空
-	ImageUrls      string `gorm:"type:text" json:"image_urls"`                           // 图片 URL 列表
 }
 
 type Like struct { // 点赞

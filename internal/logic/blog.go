@@ -19,6 +19,7 @@ var (
 	codeBlogCreateFailed   = response.MsgCode{Code: 40021, Msg: "创建帖子失败"}
 	codeBlogUpdateFailed   = response.MsgCode{Code: 40022, Msg: "更新帖子失败"}
 	codeBlogDeleteFailed   = response.MsgCode{Code: 40023, Msg: "删除帖子失败"}
+	codeImageCreateFailed  = response.MsgCode{Code: 40024, Msg: "上传图片失败"}
 	codeCollectFailed      = response.MsgCode{Code: 40026, Msg: "收藏帖子失败"}
 	codeUncollectFailed    = response.MsgCode{Code: 40027, Msg: "取消收藏失败"}
 	codeGetCollectedFailed = response.MsgCode{Code: 40028, Msg: "获取收藏帖子失败"}
@@ -42,7 +43,14 @@ func (l *BlogLogic) CreateBlog(ctx context.Context, req types.CreateBlogReq, ima
 		Tag:            req.Tag,
 		SubTag:         req.SubTag,
 		ViewPermission: req.ViewPermission,
-		ImageUrls:      imageUrl, // 将上传的图片URL赋值给ImageUrls字段
+	}
+
+	var image *model.Image
+	if imageUrl != "" {
+		image = &model.Image{
+			ImagePath: imageUrl,
+			Size:      req.ImageFile.Size,
+		}
 	}
 
 	err = repo.NewBlogRepo(global.DB).CreateBlog(blog)
@@ -51,8 +59,18 @@ func (l *BlogLogic) CreateBlog(ctx context.Context, req types.CreateBlogReq, ima
 		return nil, response.ErrResp(err, codeBlogCreateFailed)
 	}
 
+	if image != nil {
+		image.BlogID = blog.ID
+		err = repo.NewImageRepo(global.DB).CreateImage(image)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "create image error: %v", err)
+			return nil, response.ErrResp(err, codeImageCreateFailed)
+		}
+	}
+
 	resp = &types.CreateBlogResp{
-		Blog: *blog,
+		Blog:  *blog,
+		Image: *image,
 	}
 	return resp, nil
 }
@@ -75,7 +93,6 @@ func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq, ima
 	blog.Tag = req.Tag
 	blog.SubTag = req.SubTag
 	blog.ViewPermission = req.ViewPermission
-	blog.ImageUrls = imageUrl
 
 	err = repo.NewBlogRepo(global.DB).UpdateBlog(blog)
 	if err != nil {
@@ -83,8 +100,23 @@ func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq, ima
 		return nil, response.ErrResp(err, codeBlogUpdateFailed)
 	}
 
+	var image *model.Image
+	if imageUrl != "" {
+		image = &model.Image{
+			ImagePath: imageUrl,
+			Size:      req.ImageFile.Size,
+			BlogID:    blog.ID,
+		}
+		err = repo.NewImageRepo(global.DB).CreateImage(image)
+		if err != nil {
+			zlog.CtxErrorf(ctx, "create image error: %v", err)
+			return nil, response.ErrResp(err, codeImageCreateFailed)
+		}
+	}
+
 	resp = &types.UpdateBlogResp{
-		Blog: *blog,
+		Blog:  *blog,
+		Image: *image,
 	}
 	return resp, nil
 }

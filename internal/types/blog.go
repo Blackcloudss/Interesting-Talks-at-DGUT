@@ -17,7 +17,8 @@ type CreateBlogReq struct {
 
 // CreateBlogResp 创建帖子响应体
 type CreateBlogResp struct {
-	Blog model.Blog `json:"blog"`
+	Blog  model.Blog  `json:"blog"`
+	Image model.Image `json:"image"`
 }
 
 // UpdateBlogReq 更新帖子请求体
@@ -32,7 +33,8 @@ type UpdateBlogReq struct {
 
 // UpdateBlogResp 更新帖子响应体
 type UpdateBlogResp struct {
-	Blog model.Blog `json:"blog"`
+	Blog  model.Blog  `json:"blog"`
+	Image model.Image `json:"image"`
 }
 
 // DeleteBlogReq 删除帖子请求体
