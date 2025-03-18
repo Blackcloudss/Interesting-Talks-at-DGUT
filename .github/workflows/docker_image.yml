@@ -41,6 +41,11 @@ jobs:
             chmod 600 ~/.ssh/deploy_key
             ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@$SERVER_IP "    
             docker pull qinsikai/interesting-talks:test;
+          
+            docker images --filter "reference=qinsikai/interesting-talks" --format "{{.ID}} {{.Tag}}" |
+            awk '$2 == "<none>" {print $1}' |
+            xargs -r docker rmi -f
+  
             if docker ps -aq --filter name=interesting-talks; then
               docker stop interesting-talks || true
               docker rm -f interesting-talks || true
