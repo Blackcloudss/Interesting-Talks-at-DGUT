@@ -52,5 +52,6 @@ jobs:
             docker run -d \
               --name interesting-talks \
               -p 8085:8080 \
+              -v ./config.yaml:/app/config.yaml \
               qinsikai/interesting-talks:test
             EOF
