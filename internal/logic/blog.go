@@ -225,6 +225,25 @@ func (l *BlogLogic) GetMyBlogs(ctx context.Context, req types.GetMyBlogsReq, Use
 	return resp, nil
 }
 
+// GetMyBlogs 获取其他用户发布的帖子
+func (l *BlogLogic) GetBlogsByUserID(ctx context.Context, req types.GetBlogsByUserIDReq) (resp *types.GetBlogsByUserIDResp, err error) {
+	defer utils.RecordTime(time.Now())()
+
+	blogs, total, err := repo.NewBlogRepo(global.DB).GetBlogsByUserID(req.UserID, req.Page, req.PageSize)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "GetMyBlogs failed: %v", err)
+		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
+
+	resp = &types.GetBlogsByUserIDResp{
+		Blogs:    blogs,
+		Total:    total,
+		Page:     req.Page,
+		PageSize: req.PageSize,
+	}
+	return resp, nil
+}
+
 // CollectBlog 收藏帖子
 func (l *BlogLogic) CollectBlog(ctx context.Context, req types.CollectBlogReq, UserID int64) (resp *types.CollectBlogResp, err error) {
 	defer utils.RecordTime(time.Now())()
