@@ -45,8 +45,8 @@ jobs:
               docker stop interesting-talks || true
               docker rm -f interesting-talks || true
             fi;
-            docker run -d\
-            --name interesting-talks\
-            -p 8085:8080\
+            docker run -d \
+            --name interesting-talks \
+            -p 8085:8080 \
             qinsikai/interesting-talks:test
             "
