@@ -1,6 +1,7 @@
 package global
 
 import (
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/filter_swords"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/snowflake"
 	"time"
 )
@@ -37,3 +38,5 @@ var TOURIST_URLS = []string{}
 var STUDENT_URLS = []string{}
 
 var MANAGER_URLS = []string{}
+
+var Filter = filter_swords.New()

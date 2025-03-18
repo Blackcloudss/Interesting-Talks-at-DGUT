@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"gorm.io/gorm"
@@ -17,8 +18,12 @@ func NewCommentRepo(db *gorm.DB) *CommentRepo {
 }
 
 // CreateComment 创建评论并更新帖子的评论数
+// CreateComment 创建评论并更新帖子的评论数
 func (r *CommentRepo) CreateComment(req types.CreateCommentReq) (comment model.Comment, err error) {
 	err = r.DB.Transaction(func(tx *gorm.DB) error {
+		// 对评论内容进行敏感词过滤替换
+		req.Content = global.Filter.Replace(req.Content, '*')
+
 		// 创建评论记录
 		comment := model.Comment{
 			AuthorID: req.UserID,

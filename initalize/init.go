@@ -17,6 +17,7 @@ func Init() {
 	InitLog(global.Config)
 	InitDataBase(*global.Config)
 	InitRedis(*global.Config)
+	InitFilter() //敏感词过滤器
 }
 
 func InitPath() {

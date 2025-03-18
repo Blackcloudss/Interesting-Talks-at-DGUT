@@ -62,5 +62,27 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.PUT("/common/update", api.UpdateCommonProfile)  // 更新基本信息
 		rg.PUT("/private/update", api.UpdateDetailProfile) // 更新隐私信息
 	})
+	//帖子相关路由
+	routeManager.RegisterBlogRoutes(func(rg *gin.RouterGroup) {
+		rg.POST("/create", api.CreateBlogHandler)          // 创建帖子
+		rg.PUT("/update", api.UpdateBlogHandler)           // 更新帖子
+		rg.DELETE("/delete", api.DeleteBlogHandler)        // 删除帖子
+		rg.GET("/get", api.GetBlogByIDHandler)             // 获取帖子详情
+		rg.GET("/list", api.GetBlogsHandler)               // 分页显示帖子
+		rg.GET("/list_by_tag", api.GetBlogsByTagHandler)   // 根据标签显示帖子列表
+		rg.GET("/my_blogs", api.GetMyBlogsHandler)         // 获取当前用户发布的帖子
+		rg.POST("/collect", api.CollectBlogHandler)        // 收藏帖子
+		rg.POST("/uncollect", api.UncollectBlogHandler)    // 取消收藏帖子
+		rg.GET("/collected", api.GetCollectedBlogsHandler) // 获取用户收藏的帖子
+		rg.POST("/like", api.LikeBlogHandler)              // 点赞帖子
+		rg.POST("/unlike", api.UnlikeBlogHandler)          // 取消点赞
+	})
+
+	//评论相关路由
+	routeManager.RegisterCommentRoutes(func(rg *gin.RouterGroup) {
+		rg.POST("/create", api.CreateComment)   // 创建评论
+		rg.DELETE("/delete", api.DeleteComment) // 删除评论
+		rg.GET("/list", api.GetCommentList)     // 获取评论列表
+	})
 
 }
