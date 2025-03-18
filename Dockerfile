@@ -35,7 +35,6 @@ WORKDIR /app
 
 COPY --from=builder /app/interesting-talks ./
 COPY --chmod=644 config.yaml ./
-RUN cat /app/config.yaml
 
 #声明容器运行时监听 8080 端口
 EXPOSE 8080

@@ -18,8 +18,9 @@ jobs:
       - name: Write config file
         working-directory: .
         run: |
-          echo "${{ secrets.CONFIG_YAML }}" > config.yaml
+          echo '${{ secrets.CONFIG_YAML }}' > config.yaml
           chmod 644 config.yaml
+          cat config.yaml
 
       - name: Check generated files
         working-directory: .
