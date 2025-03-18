@@ -28,7 +28,7 @@ type Collection struct {
 
 type Comment struct {
 	CommonModel
-	BlogID   int64  `gorm:"not null" json:"blog_id"`           // 所属帖子ID
-	AuthorID int64  `gorm:"not null" json:"author_id"`         // 评论作者ID（修正字段名）
-	Content  string `gorm:"type:text;not null" json:"content"` // 评论内容
+	BlogID  int64  `gorm:"not null" json:"blog_id"`           // 所属帖子ID
+	UserID  int64  `gorm:"not null" json:"user_id"`           // 评论作者ID（修正字段名）
+	Content string `gorm:"type:text;not null" json:"content"` // 评论内容
 }

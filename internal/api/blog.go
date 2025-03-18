@@ -6,6 +6,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/image"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,9 +34,9 @@ func CreateBlogHandler(c *gin.Context) {
 			imageUrls = append(imageUrls, imageUrl)
 		}
 	}
-
+	UserID := jwt.GetUserId(c)
 	zlog.CtxInfof(ctx, "CreateBlog request: %+v", req)
-	resp, err := logic.NewBlogLogic().CreateBlog(ctx, req, imageUrls)
+	resp, err := logic.NewBlogLogic().CreateBlog(ctx, req, UserID, imageUrls)
 	response.Response(c, resp, err)
 	return
 }
@@ -140,7 +141,9 @@ func GetMyBlogsHandler(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "GetMyBlogs request: %+v", req)
-	resp, err := logic.NewBlogLogic().GetMyBlogs(ctx, req)
+
+	UserID := jwt.GetUserId(c)
+	resp, err := logic.NewBlogLogic().GetMyBlogs(ctx, req, UserID)
 	response.Response(c, resp, err)
 	return
 }
@@ -155,10 +158,9 @@ func CollectBlogHandler(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "CollectBlog request: %+v", req)
-	err = logic.NewBlogLogic().CollectBlog(ctx, req)
-	resp := types.CollectBlogResp{
-		Success: err == nil,
-	}
+
+	UserID := jwt.GetUserId(c)
+	resp, err := logic.NewBlogLogic().CollectBlog(ctx, req, UserID)
 	response.Response(c, resp, err)
 	return
 }
@@ -173,10 +175,8 @@ func UncollectBlogHandler(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "UncollectBlog request: %+v", req)
-	err = logic.NewBlogLogic().UncollectBlog(ctx, req)
-	resp := types.UncollectBlogResp{
-		Success: err == nil,
-	}
+	UserID := jwt.GetUserId(c)
+	resp, err := logic.NewBlogLogic().UncollectBlog(ctx, req, UserID)
 	response.Response(c, resp, err)
 	return
 }
@@ -191,7 +191,8 @@ func GetCollectedBlogsHandler(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "GetCollectedBlogs request: %+v", req)
-	resp, err := logic.NewBlogLogic().GetCollectedBlogs(ctx, req)
+	UserID := jwt.GetUserId(c)
+	resp, err := logic.NewBlogLogic().GetCollectedBlogs(ctx, req, UserID)
 	response.Response(c, resp, err)
 	return
 }
@@ -206,7 +207,8 @@ func LikeBlogHandler(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "LikeBlog request: %+v", req)
-	resp, err := logic.NewBlogLogic().LikeBlog(ctx, req)
+	UserID := jwt.GetUserId(c)
+	resp, err := logic.NewBlogLogic().LikeBlog(ctx, req, UserID)
 	response.Response(c, resp, err)
 	return
 }
@@ -221,7 +223,8 @@ func UnlikeBlogHandler(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "UnlikeBlog request: %+v", req)
-	resp, err := logic.NewBlogLogic().UnlikeBlog(ctx, req)
+	UserID := jwt.GetUserId(c)
+	resp, err := logic.NewBlogLogic().UnlikeBlog(ctx, req, UserID)
 	response.Response(c, resp, err)
 	return
 }

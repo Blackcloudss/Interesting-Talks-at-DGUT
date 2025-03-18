@@ -7,7 +7,6 @@ import (
 
 // CreateBlogReq 创建帖子请求体
 type CreateBlogReq struct {
-	UserID         int                     `json:"user_id"`
 	Content        string                  `json:"content"`
 	Tag            string                  `json:"tag"`             // 帖子分区（主标签）
 	SubTag         string                  `json:"sub_tag"`         // 子标签
@@ -86,7 +85,6 @@ type GetBlogsByTagResp struct {
 
 // GetMyBlogsReq 获取当前用户发布的帖子请求体
 type GetMyBlogsReq struct {
-	UserID   int `json:"user_id"`
 	Page     int `json:"page"`
 	PageSize int `json:"page_size"`
 }
@@ -102,7 +100,6 @@ type GetMyBlogsResp struct {
 
 // CollectBlogReq 收藏帖子请求体
 type CollectBlogReq struct {
-	UserID int   `json:"user_id"`
 	BlogID int64 `json:"blog_id"`
 }
 
@@ -114,7 +111,6 @@ type CollectBlogResp struct {
 
 // UncollectBlogReq 取消收藏帖子请求体
 type UncollectBlogReq struct {
-	UserID int   `json:"user_id"`
 	BlogID int64 `json:"blog_id"`
 }
 
@@ -125,7 +121,7 @@ type UncollectBlogResp struct {
 
 // GetCollectedBlogsReq 获取用户收藏的帖子请求体
 type GetCollectedBlogsReq struct {
-	UserID int `json:"user_id"`
+	//UserID int `json:"user_id"`
 }
 
 // GetCollectedBlogsResp 获取用户收藏的帖子响应体
@@ -136,7 +132,6 @@ type GetCollectedBlogsResp struct {
 
 // LikeBlogReq 点赞帖子请求体
 type LikeBlogReq struct {
-	UserID int   `json:"user_id"`
 	BlogID int64 `json:"blog_id"`
 }
 
@@ -148,12 +143,10 @@ type LikeBlogResp struct {
 
 // UnlikeBlogReq 取消点赞请求体
 type UnlikeBlogReq struct {
-	UserID int   `json:"user_id"`
 	BlogID int64 `json:"blog_id"`
 }
 
 // UnlikeBlogResp 取消点赞响应体
 type UnlikeBlogResp struct {
-	BlogID  int64 `json:"blog_id"`
-	Success bool  `json:"success"`
+	Success bool `json:"success"`
 }
