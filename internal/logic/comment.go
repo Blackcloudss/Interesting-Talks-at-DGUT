@@ -44,7 +44,10 @@ func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommen
 	}
 
 	zlog.CtxInfof(ctx, "Comment created successfully (commentID: %d, blogID: %d)", comment.ID, comment.BlogID)
-	return &types.CreateCommentResp{CommentID: comment.ID}, nil
+	resp := &types.CreateCommentResp{
+		Comment: comment,
+	}
+	return resp, nil
 }
 
 // DeleteComment 删除评论

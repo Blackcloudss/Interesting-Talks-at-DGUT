@@ -10,7 +10,7 @@ type CreateCommentReq struct {
 
 // CreateCommentResp 创建评论响应结构体
 type CreateCommentResp struct {
-	CommentID int64 `json:"commentID"`
+	Comment model.Comment `json:"comment"`
 }
 
 // DeleteCommentReq 删除评论请求结构体
