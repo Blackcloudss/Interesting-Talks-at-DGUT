@@ -60,5 +60,6 @@ jobs:
             docker run -d \
               --name interesting-talks \
               -p 8085:8080 \
+              -v /data/images:/app/images \
               qinsikai/interesting-talks:test
             EOF
