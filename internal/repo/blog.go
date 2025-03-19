@@ -67,15 +67,22 @@ func (r *BlogRepo) GetBlogs(page, pageSize int) ([]model.Blog, int64, error) {
 }
 
 // GetBlogsByTag 根据标签获取帖子列表
-func (r *BlogRepo) GetBlogsByTag(subTag string) ([]model.Blog, error) {
+func (r *BlogRepo) GetBlogsByTag(subTag string, page int, pageSize int) ([]model.Blog, int64, error) {
 	var blogs []model.Blog
+	var total int64
 
-	// 查询符合条件的帖子
-	if err := r.DB.Model(&model.Blog{}).Where("sub_tag = ?", subTag).Order("created_at DESC").Find(&blogs).Error; err != nil {
-		return nil, err
+	// 查询符合条件的帖子总数
+	if err := r.DB.Model(&model.Blog{}).Where("sub_tag = ?", subTag).Count(&total).Error; err != nil {
+		return nil, 0, err
 	}
 
-	return blogs, nil
+	// 查询分页数据
+	if err := r.DB.Model(&model.Blog{}).Where("sub_tag = ?", subTag).Order("created_at DESC").
+		Offset((page - 1) * pageSize).Limit(pageSize).Find(&blogs).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return blogs, total, nil
 }
 
 // GetBlogsByUserID 根据用户ID分页获取帖子列表
@@ -170,14 +177,31 @@ func (r *BlogRepo) UncollectBlog(userID, blogID int64) error {
 	return r.DB.Model(&model.Blog{}).Where("id = ?", blogID).Update("be_collected", gorm.Expr("be_collected - 1")).Error
 }
 
-// GetCollectedBlogs 获取用户收藏的帖子
-func (r *BlogRepo) GetCollectedBlogs(userID int64) ([]model.Blog, error) {
+// GetCollectedBlogs 获取用户收藏的帖子（分页）
+func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]model.Blog, int64, error) {
 	var blogs []model.Blog
-	err := r.DB.Model(&model.Blog{}).
+	var total int64
+
+	// 查询用户收藏的帖子总数
+	if err := r.DB.Model(&model.Blog{}).
 		Joins("inner join collections on collections.blog_id = blogs.id").
 		Where("collections.user_id = ?", userID).
-		Find(&blogs).Error
-	return blogs, err
+		Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// 查询分页数据
+	if err := r.DB.Model(&model.Blog{}).
+		Joins("inner join collections on collections.blog_id = blogs.id").
+		Where("collections.user_id = ?", userID).
+		Order("blogs.created_at DESC").
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Find(&blogs).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return blogs, total, nil
 }
 
 // IsBlogLiked 检查用户是否已经点赞某个帖子
@@ -268,6 +292,5 @@ func (r *BlogRepo) UnlikeBlog(userID, blogID int64) error {
 		tx.Rollback()
 		return err
 	}
-
 	return tx.Commit().Error
 }
