@@ -44,10 +44,13 @@ var (
 	GET_WXATOKEN_FAULT = MsgCode{50002, "获取微信的access_token失败"}
 
 	/* 内部错误 60000 ~ 69999 */
-	INTERNAL_ERROR              = MsgCode{60001, "内部错误, check log"}
-	INTERNAL_FILE_UPLOAD_ERROR  = MsgCode{60002, "文件上传失败"}
-	INTERANL_IMAGE_UPLOAD_ERROR = MsgCode{60003, "图片上传失败"}
-	SNOWFLAKE_ID_GENERATE_ERROR = MsgCode{60004, "snowflake id生成失败"}
-	DATABASE_ERROR              = MsgCode{60005, "数据库错误"}
-	REDIS_ERROR                 = MsgCode{60006, "redis错误"}
+	INTERNAL_ERROR               = MsgCode{60001, "内部错误, check log"}
+	INTERNAL_FILE_UPLOAD_ERROR   = MsgCode{60002, "文件上传失败"}
+	INTERANL_IMAGE_UPLOAD_ERROR  = MsgCode{60003, "图片上传失败"}
+	SNOWFLAKE_ID_GENERATE_ERROR  = MsgCode{60004, "snowflake id生成失败"}
+	DATABASE_ERROR               = MsgCode{60005, "数据库错误"}
+	REDIS_ERROR                  = MsgCode{60006, "redis错误"}
+	WEBSOCKET_UPGRADE_FAIL       = MsgCode{60007, "websocket升级失败"}
+	WEBSOCKET_READ_COMMENT_FAIL  = MsgCode{60008, "websocket读取消息失败"}
+	WEBSOCKET_WRITE_COMMENT_FAIL = MsgCode{60009, "websocket写入消息失败"}
 )

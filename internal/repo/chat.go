@@ -9,16 +9,16 @@ import (
 )
 
 const (
-	FOLLOWER_ID = "follower_id"
-	FOLLOWED_ID = "followed_id"
-	IS_FRiEND   = "is_friend"
-	TRUE        = 1
+	SENDER     = "sender"
+	RECEIVER   = "receiver"
+	CONTENT    = "content"
+	CREATED_AT = "created_at"
 )
 
 // @Title        chat.go
 // @Description
-// @Create       XdpCs 2025-03-19 下午3:21
-// @Update       XdpCs 2025-03-19 下午3:21
+// @Create       XdpCs 2025-03-20 上午12:23
+// @Update       XdpCs 2025-03-20 上午12:23
 type ChatRepo struct {
 	DB *gorm.DB
 }
@@ -27,45 +27,39 @@ func NewChatRepo(db *gorm.DB) *ChatRepo {
 	return &ChatRepo{DB: db}
 }
 
-// GetFriendsId
-//
-//	@Description: 获取好友ID
-//	@receiver r
-//	@param UserId
-//	@return FriendsId
-//	@return err
-func (r *ChatRepo) GetFriendsId(UserId int64) (FriendsId []int64, err error) {
-	err = r.DB.Model(&model.Follow{}).
-		Where(fmt.Sprintf("%s = ? AND %s = ?", FOLLOWER_ID, IS_FRiEND), UserId, TRUE).
-		Pluck(FOLLOWED_ID, &FriendsId).
+func (r *ChatRepo) GetMessagesHistory(SenderID int64, ReceiverID int64, page int, size int) (resp []types.MessageHistory, err error) {
+	err = r.DB.Model(&model.Message{}).
+		Select(SENDER, RECEIVER, CONTENT, CREATED_AT).
+		Where(fmt.Sprintf("%s = ? AND %s = ?"), SenderID, ReceiverID).Or(fmt.Sprintf("%s = ? AND %s = ?"), ReceiverID, SenderID).
+		Order("created_at DESC").
+		Limit(size).
+		Offset((page - 1) * size).
+		Find(&resp).
 		Error
 	if err != nil {
-		zlog.Errorf("查询用户好友失败：%v", err)
-		return FriendsId, err
+		zlog.Errorf("获取聊天记录失败:%v", err)
+		return nil, err
 	}
 	return
 }
 
-// GetFriendList
+// SaveMessage
 //
-//	@Description: 获取好友信息
+//	@Description: 保存聊天消息
 //	@receiver r
-//	@param FriendsID
-//	@return Friends
+//	@param SenderID
+//	@param msg
 //	@return err
-func (r *ChatRepo) GetFriendList(FriendsID []int64) (Friends []types.FriendInfo, err error) {
-	var Friend types.FriendInfo
-	for _, FriendId := range FriendsID {
-		err = r.DB.Model(&model.UserDisplay{}).
-			Select(ID, AVATAR, NICKNAME, TAG).
-			Where(fmt.Sprintf("%s = ?", ID), FriendId).
-			First(&Friend).
-			Error
-		if err != nil {
-			zlog.Errorf("查询用户好友信息失败：%v", err)
-			return Friends, err
-		}
-		Friends = append(Friends, Friend)
+func (r *ChatRepo) SaveMessage(SenderID int64, msg types.WSMessage) (err error) {
+	// 保存消息
+	err = r.DB.Create(&model.Message{
+		Sender:   SenderID,
+		Receiver: msg.To,
+		Content:  msg.Content,
+	}).Error
+	if err != nil {
+		zlog.Errorf("保存聊天消息失败:%v", err)
+		return err
 	}
-	return
+	return nil
 }
