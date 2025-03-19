@@ -53,11 +53,11 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//用户信息相关路由
 	routeManager.RegisterProfileRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken())          // 检查 Atoken
-		rg.GET("/phone", api.GetPhone)            //获取用户手机号（授权时使用）
-		rg.GET("/userinfo", api.GetUserInfo)      //获取用户的微信头像和微信昵称（授权时使用）
-		rg.Use(middleware.PermissionMiddleware()) // 检查权限
+		rg.Use(middleware.CheckAtoken())      // 检查 Atoken
+		rg.GET("/phone", api.GetPhone)        // 获取用户手机号（授权时使用）
+		rg.PUT("/userinfo", api.SaveUserInfo) // 保存用户的微信头像和微信昵称（授权时使用）
 
+		rg.Use(middleware.PermissionMiddleware()) // 检查权限
 		CommonProfile := rg.Group("/common")
 		{
 			CommonProfile.GET("/show", api.GetCommonProfile)      // 获取用户基本信息
@@ -69,6 +69,22 @@ func registerRoutes(routeManager *manager.RouteManager) {
 			PrivateProfile.GET("/show", api.GetPrivateProfile)      // 获取用户隐私信息
 			PrivateProfile.PUT("/update", api.UpdatePrivateProfile) // 更新隐私信息
 		}
+
+	})
+
+	//聊天相关路由
+	routeManager.RegisterChatRoutes(func(rg *gin.RouterGroup) {
+		rg.Use(middleware.CheckAtoken())           // 检查 Atoken
+		rg.Use(middleware.PermissionMiddleware())  // 检查权限
+		rg.GET("/friends", api.GetFriendList)      // 获取好友列表
+		rg.GET("/messages", api.GetMessageHistory) // 获取聊天记录
+		rg.GET("/wxchat", api.WebSocketHandler)    // 建立WebSocket连接，和指定好友聊天
+	})
+
+	//AI相关路由
+	routeManager.RegisterAIRoutes(func(rg *gin.RouterGroup) {
+		rg.Use(middleware.CheckAtoken()) // 检查 Atoken
+		rg.GET("/chat", api.AIChat)
 	})
 
 	//帖子相关路由

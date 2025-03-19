@@ -15,7 +15,7 @@ import (
 
 const (
 	IMAGE_PATH = "images"
-	IMAGE_SIZE = 1024 * 1024 * 2
+	IMAGE_SIZE = 1024 * 1024 * 5
 )
 
 // @Title        image.go

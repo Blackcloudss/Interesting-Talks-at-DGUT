@@ -26,8 +26,12 @@ type WechatLoginResp struct {
 	Role   string `json:"role"`   // 用户身份
 }
 
-// 生成小程序码的请求参数
+// 获取小程序码 入参
 type QRCodeReq struct {
+}
+
+// 生成小程序码的参数
+type QRCode struct {
 	Scene     string    `json:"scene"`      // 必填，场景值（长度≤32字符）
 	Page      string    `json:"page"`       // 可选，不填默认跳转主页
 	Width     int       `json:"width"`      // 可选，二维码宽度（默认430px）
@@ -42,7 +46,7 @@ type LineColor struct {
 	B int `json:"b"`
 }
 
-// 生成小程序码的响应参数
+// 生成小程序码的响应参数 获取小程序码 出参
 type QRCodeResp struct {
 	Errcode int    `json:"errcode"` // 错误码
 	Errmsg  string `json:"errmsg"`  // 错误信息

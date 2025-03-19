@@ -39,7 +39,7 @@ func NewUserLogic() *UserLogic {
 }
 
 // 获取微信头像，昵称
-func (l *UserLogic) GetUserInfo(ctx context.Context, UserId int64, req types.UserInfoReq) (resp types.UserInfoResp, err error) {
+func (l *UserLogic) SaveUserInfo(ctx context.Context, UserId int64, req types.UserInfoReq) (resp types.UserInfoResp, err error) {
 	defer utils.RecordTime(time.Now())()
 	OpenId, err := repo.NewUserRepo(global.DB).GetOpenId(UserId)
 	if err != nil {

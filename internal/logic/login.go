@@ -107,7 +107,7 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 	return resp, nil
 }
 
-func (l *WechatLogic) GetQRCode(ctx context.Context, req types.QRCodeReq) (resp *types.QRCodeResp, err error) {
+func (l *WechatLogic) GetQRCode(ctx context.Context) (resp *types.QRCodeResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
 	// 获取微信access_token
@@ -119,7 +119,7 @@ func (l *WechatLogic) GetQRCode(ctx context.Context, req types.QRCodeReq) (resp 
 
 	//用雪花算法生成随机且唯一的场景值
 	scene := snowflake.GetString12Id(global.Node)
-	req = types.QRCodeReq{
+	req := types.QRCode{
 		Page:      "pages/index/index", // 默认跳转到主页面
 		Scene:     scene,
 		Width:     280,
