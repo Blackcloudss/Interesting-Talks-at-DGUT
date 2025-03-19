@@ -30,3 +30,15 @@ func (r *ImageRepo) GetImagesByBlogID(blogID int64) ([]*model.Image, error) {
 	result := r.DB.Where("blog_id = ?", blogID).Find(&images)
 	return images, result.Error
 }
+
+func (r *ImageRepo) GetImagePathsByBlogID(blogID int64) ([]string, error) {
+	var imagePaths []string
+	if err := r.DB.Model(&model.Image{}).Where("blog_id = ?", blogID).Pluck("path", &imagePaths).Error; err != nil {
+		return nil, err
+	}
+	return imagePaths, nil
+}
+
+func (r *ImageRepo) DeleteImagesByBlogID(id int64) error {
+
+}
