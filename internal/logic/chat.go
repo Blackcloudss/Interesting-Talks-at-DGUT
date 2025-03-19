@@ -3,12 +3,13 @@ package logic
 import (
 	"context"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/api"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
+	"github.com/gorilla/websocket"
+	"sync"
 	"time"
 )
 
@@ -18,6 +19,9 @@ var (
 	GET_HISTORY_MESSAGE = response.MsgCode{51001, "获取聊天记录失败"}
 	SAVE_MESSAGE_FAILED = response.MsgCode{51004, "存储消息失败"}
 	PUSH_MESSAGE_FAILED = response.MsgCode{51005, "推送消息失败"}
+
+	mutex   sync.Mutex
+	clients = make(map[int64]*websocket.Conn)
 )
 
 // @Title        friend.go
@@ -82,7 +86,7 @@ func (l *Chatlogic) SendMessage(ctx context.Context, SenderID int64, msg types.W
 	}
 
 	// 推送消息
-	err = api.PushMessage(msg.To, types.WSMessageResp{
+	err = PushMessage(msg.To, types.WSMessageResp{
 		From:    SenderID,
 		Content: msg.Content,
 		Time:    time.Now().Unix(), // 当前时间的时间戳
@@ -94,5 +98,24 @@ func (l *Chatlogic) SendMessage(ctx context.Context, SenderID int64, msg types.W
 	}
 	tx.Commit()
 
+	return nil
+}
+
+// PushMessage
+//
+//	@Description: 把消息发送给接收者
+//	@param receiverID
+//	@param resp
+func PushMessage(receiverID int64, resp types.WSMessageResp) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if conn, exists := clients[receiverID]; exists {
+		err := conn.WriteJSON(resp)
+		if err != nil {
+			zlog.Errorf("PushMessage error: %v", err)
+			return err
+		}
+	}
 	return nil
 }

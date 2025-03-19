@@ -86,22 +86,3 @@ func WebSocketHandler(c *gin.Context) {
 		}
 	}
 }
-
-// PushMessage
-//
-//	@Description: 把消息发送给接收者
-//	@param receiverID
-//	@param resp
-func PushMessage(receiverID int64, resp types.WSMessageResp) error {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	if conn, exists := clients[receiverID]; exists {
-		err := conn.WriteJSON(resp)
-		if err != nil {
-			zlog.Errorf("PushMessage error: %v", err)
-			return err
-		}
-	}
-	return nil
-}
