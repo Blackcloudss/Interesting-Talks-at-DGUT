@@ -1,49 +1,43 @@
 package types
 
-import "github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
-
-// CreateNoticeReq 创建通知请求结构体
+// CreateNoticeReq 创建公告请求结构体
 type CreateNoticeReq struct {
-	Title   string `json:"title"`   // 通知标题
-	Content string `json:"content"` // 通知内容
-	UserID  int64  `json:"user_id"` // 用户ID
+	Content string `json:"content"` // 公告内容
 }
 
-// CreateNoticeResp 创建通知响应结构体
+// CreateNoticeResp 创建公告响应结构体
 type CreateNoticeResp struct {
-	Notice model.Notice `json:"notice"`
+	ID       int64 `json:"id"`
+	CreateAt int64 `json:"create_at"`
 }
 
-// UpdateNoticeReq 更新通知请求结构体
+// UpdateNoticeReq 更新公告请求结构体
 type UpdateNoticeReq struct {
-	ID      int64  `json:"id"`      // 通知ID
-	UserID  int64  `json:"user_id"` // 用户ID
-	Title   string `json:"title"`   // 通知标题
-	Content string `json:"content"` // 通知内容
+	ID      int64  `json:"id"`
+	Content string `json:"content"`
 }
 
 // UpdateNoticeResp 更新通知响应结构体
 type UpdateNoticeResp struct {
-	Notice model.Notice `json:"notice"`
+	UpdateAt int64 `json:"update_at"`
 }
 
-// DeleteNoticeReq 删除通知请求结构体
+// DeleteNoticeReq 删除公告请求结构体
 type DeleteNoticeReq struct {
-	ID     int64 `json:"id"`      // 通知ID
-	UserID int64 `json:"user_id"` // 用户ID
+	ID int64 `json:"id"` // 公告ID
 }
 
 // DeleteNoticeResp 删除通知响应结构体
 type DeleteNoticeResp struct {
-	Success bool `json:"success"`
 }
 
 // GetNoticeReq 获取通知请求结构体
 type GetNoticeReq struct {
-	ID int64 `json:"id"` // 通知ID
+	ID int64 `json:"id"` // 公告ID
 }
 
 // GetNoticeResp 获取通知响应结构体
 type GetNoticeResp struct {
-	Notice model.Notice `json:"notice"`
+	UpdateAt int64  `json:"update_at"`
+	Content  string `json:"content"`
 }
