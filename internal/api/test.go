@@ -18,6 +18,8 @@ func Test(c *gin.Context) {
 
 	req, err := types.BindReq[types.TestO1Req](c)
 	if err != nil {
+		zlog.CtxErrorf(ctx, "Test request error: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "Test request: %v", req)
