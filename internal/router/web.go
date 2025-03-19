@@ -107,10 +107,22 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//评论相关路由
 	routeManager.RegisterCommentRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken())        // 检查 Atoken
-		rg.POST("/create", api.CreateComment)   // 创建评论
-		rg.DELETE("/delete", api.DeleteComment) // 删除评论
-		rg.GET("/list", api.GetCommentList)     // 获取评论列表
+		rg.Use(middleware.CheckAtoken())             // 检查 Atoken
+		rg.POST("/create", api.CreateComment)        // 创建评论
+		rg.DELETE("/delete", api.DeleteComment)      // 删除评论
+		rg.GET("/list", api.GetCommentList)          // 获取评论列表
+		rg.POST("/like ", api.LikeCommentHandler)    //点赞评论
+		rg.POST("/unlike", api.UnlikeCommentHandler) //取消点赞评论
+	})
+
+	//公告相关路由
+	routeManager.RegisterNoticeRoutes(func(rg *gin.RouterGroup) {
+		rg.Use(middleware.CheckAtoken())
+		rg.POST("/create", api.CreateNoticeHandler)   //创建公告
+		rg.PUT("/update", api.UpdateNoticeHandler)    //修改公告
+		rg.DELETE("/delete", api.DeleteNoticeHandler) //删除公告
+		rg.GET("/get", api.GetNoticeHandler)          //获取公告
+
 	})
 
 }
