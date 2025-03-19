@@ -16,8 +16,8 @@ type CreateBlogReq struct {
 
 // CreateBlogResp 创建帖子响应体
 type CreateBlogResp struct {
-	Blog   model.Blog    `json:"blog"`
-	Images []model.Image `json:"images"`
+	BlogID   int64 `json:"blog_id"`
+	CreateAt int64 `json:"create_at"`
 }
 
 // UpdateBlogReq 更新帖子请求体
@@ -32,8 +32,7 @@ type UpdateBlogReq struct {
 
 // UpdateBlogResp 更新帖子响应体
 type UpdateBlogResp struct {
-	Blog   model.Blog    `json:"blog"`
-	Images []model.Image `json:"images"`
+	UpdateAt int64 `json:"update_at"`
 }
 
 // DeleteBlogReq 删除帖子请求体
@@ -43,7 +42,6 @@ type DeleteBlogReq struct {
 
 // DeleteBlogResp 删除帖子响应体
 type DeleteBlogResp struct {
-	Success bool `json:"success"`
 }
 
 // GetBlogByIDReq 获取帖子详情请求体
@@ -53,86 +51,71 @@ type GetBlogByIDReq struct {
 
 // GetBlogByIDResp 获取帖子详情响应体
 type GetBlogByIDResp struct {
-	Blog   model.Blog     `json:"blog"`
-	Images []*model.Image `json:"images"`
+	Blog   model.Blog     `json:"blog"`   // 帖子详情
+	Images []*model.Image `json:"images"` // 帖子的图片列表
 }
 
 // GetBlogsReq 分页显示帖子请求体
 type GetBlogsReq struct {
-	Page     int `json:"page"`
-	PageSize int `json:"page_size"`
+	PageReq
 }
 
 // GetBlogsResp 分页显示帖子响应体
 type GetBlogsResp struct {
-	Blogs    []model.Blog             `json:"list"`      // 帖子列表
-	Images   map[int64][]*model.Image `json:"images"`    // 每个帖子的图片列表
-	Total    int64                    `json:"total"`     // 总帖子数
-	Page     int                      `json:"page"`      // 当前页码
-	PageSize int                      `json:"page_size"` // 每页大小
+	Blogs  []model.Blog             `json:"blogs"`  // 帖子列表
+	Images map[int64][]*model.Image `json:"images"` // 每个帖子的图片列表
+	Total  int64                    `json:"total"`  // 总帖子数
+	PageReq
 }
 
 // GetBlogsByTagReq 根据标签显示帖子列表请求体
 type GetBlogsByTagReq struct {
-	SubTag   string `json:"subtag"`
-	Page     int    `json:"page"`
-	PageSize int    `json:"page_size"`
+	SubTag string `json:"subtag"`
+	PageReq
 }
 
 // GetBlogsByTagResp 根据标签显示帖子列表响应体
 type GetBlogsByTagResp struct {
-	Blogs    []model.Blog             `json:"list"`
-	Images   map[int64][]*model.Image `json:"images"`
-	Total    int64                    `json:"total"`
-	Page     int                      `json:"page"`
-	PageSize int                      `json:"page_size"`
+	Blogs  []model.Blog             `json:"blogs"`  // 帖子列表
+	Images map[int64][]*model.Image `json:"images"` // 每个帖子的图片列表
+	Total  int64                    `json:"total"`  // 总帖子数
+	PageReq
 }
 
 // GetMyBlogsReq 获取当前用户发布的帖子请求体
 type GetMyBlogsReq struct {
-	Page     int `json:"page"`
-	PageSize int `json:"page_size"`
+	PageReq
 }
 
 // GetMyBlogsResp 获取当前用户发布的帖子响应体
 type GetMyBlogsResp struct {
-	Blogs    []model.Blog             `json:"list"`
-	Images   map[int64][]*model.Image `json:"images"`
-	Total    int64                    `json:"total"`
-	Page     int                      `json:"page"`
-	PageSize int                      `json:"page_size"`
+	Blogs  []model.Blog             `json:"blogs"`  // 帖子列表
+	Images map[int64][]*model.Image `json:"images"` // 每个帖子的图片列表
+	Total  int64                    `json:"total"`  // 总帖子数
+	PageReq
 }
 
-// 获取其他用户帖子
+// GetBlogsByUserIDReq 获取其他用户发布的帖子请求体
 type GetBlogsByUserIDReq struct {
-	UserID   int64 `json:"user_id"`
-	Page     int   `json:"page"`
-	PageSize int   `json:"page_size"`
+	UserID int64 `json:"user_id"`
+	PageReq
 }
 
-// GetMyBlogsResp 获取其他用户发布的帖子响应体
+// GetBlogsByUserIDResp 获取其他用户发布的帖子响应体
 type GetBlogsByUserIDResp struct {
-	Blogs    []model.Blog             `json:"list"`
-	Images   map[int64][]*model.Image `json:"images"`
-	Total    int64                    `json:"total"`
-	Page     int                      `json:"page"`
-	PageSize int                      `json:"page_size"`
+	Blogs  []model.Blog             `json:"blogs"`  // 帖子列表
+	Images map[int64][]*model.Image `json:"images"` // 每个帖子的图片列表
+	Total  int64                    `json:"total"`  // 总帖子数
+	PageReq
 }
 
 // CollectBlogReq 收藏帖子请求体
 type CollectBlogReq struct {
-	Blogs    []model.Blog             `json:"list"`
-	Images   map[int64][]*model.Image `json:"images"`
-	Total    int64                    `json:"total"`
-	Page     int                      `json:"page"`
-	PageSize int                      `json:"page_size"`
-	BlogID   int64                    `json:"blog_id"`
+	BlogID int64 `json:"blog_id"`
 }
 
 // CollectBlogResp 收藏帖子响应体
 type CollectBlogResp struct {
-	Collection model.Collection `json:"collection"`
-	Success    bool             `json:"success"`
 }
 
 // UncollectBlogReq 取消收藏帖子请求体
@@ -142,22 +125,19 @@ type UncollectBlogReq struct {
 
 // UncollectBlogResp 取消收藏帖子响应体
 type UncollectBlogResp struct {
-	Success bool `json:"success"`
 }
 
 // GetCollectedBlogsReq 获取用户收藏的帖子请求体
 type GetCollectedBlogsReq struct {
-	Page     int `json:"page"`
-	PageSize int `json:"page_size"`
+	PageReq
 }
 
 // GetCollectedBlogsResp 获取用户收藏的帖子响应体
 type GetCollectedBlogsResp struct {
-	Blogs    []model.Blog             `json:"list"`
-	Images   map[int64][]*model.Image `json:"images"`
-	Total    int64                    `json:"total"`
-	Page     int                      `json:"page"`
-	PageSize int                      `json:"page_size"`
+	Blogs  []model.Blog             `json:"blogs"`  // 帖子列表
+	Images map[int64][]*model.Image `json:"images"` // 每个帖子的图片列表
+	Total  int64                    `json:"total"`  // 总帖子数
+	PageReq
 }
 
 // LikeBlogReq 点赞帖子请求体
@@ -167,8 +147,6 @@ type LikeBlogReq struct {
 
 // LikeBlogResp 点赞帖子响应体
 type LikeBlogResp struct {
-	Success bool       `json:"success"`
-	Like    model.Like `json:"like"`
 }
 
 // UnlikeBlogReq 取消点赞请求体
@@ -178,5 +156,4 @@ type UnlikeBlogReq struct {
 
 // UnlikeBlogResp 取消点赞响应体
 type UnlikeBlogResp struct {
-	Success bool `json:"success"`
 }

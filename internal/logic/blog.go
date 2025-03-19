@@ -66,8 +66,8 @@ func (l *BlogLogic) CreateBlog(ctx context.Context, req types.CreateBlogReq, Use
 	}
 
 	resp = &types.CreateBlogResp{
-		Blog:   *blog,
-		Images: images,
+		BlogID:   blog.ID,
+		CreateAt: blog.CreatedAt.Unix(),
 	}
 	return resp, nil
 }
@@ -112,8 +112,7 @@ func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq, ima
 	}
 
 	resp = &types.UpdateBlogResp{
-		Blog:   *blog,
-		Images: images,
+		UpdateAt: blog.CreatedAt.Unix(),
 	}
 	return resp, nil
 }
@@ -194,11 +193,13 @@ func (l *BlogLogic) GetBlogs(ctx context.Context, req types.GetBlogsReq) (resp *
 	}
 
 	resp = &types.GetBlogsResp{
-		Blogs:    blogs,
-		Images:   imagesMap,
-		Total:    total,
-		Page:     req.Page,
-		PageSize: req.PageSize,
+		Blogs:  blogs,
+		Images: imagesMap,
+		Total:  total,
+		PageReq: types.PageReq{
+			Page:     req.Page,
+			PageSize: req.PageSize,
+		},
 	}
 	return resp, nil
 }
@@ -227,11 +228,13 @@ func (l *BlogLogic) GetBlogsByTag(ctx context.Context, req types.GetBlogsByTagRe
 	}
 
 	resp = &types.GetBlogsByTagResp{
-		Blogs:    blogs,
-		Images:   imagesMap,
-		Total:    total,
-		Page:     req.Page,
-		PageSize: req.PageSize,
+		Blogs:  blogs,
+		Images: imagesMap,
+		Total:  total,
+		PageReq: types.PageReq{
+			Page:     req.Page,
+			PageSize: req.PageSize,
+		},
 	}
 
 	return resp, nil
@@ -260,11 +263,13 @@ func (l *BlogLogic) GetMyBlogs(ctx context.Context, req types.GetMyBlogsReq, Use
 	}
 
 	resp = &types.GetMyBlogsResp{
-		Blogs:    blogs,
-		Images:   imagesMap,
-		Total:    total,
-		Page:     req.Page,
-		PageSize: req.PageSize,
+		Blogs:  blogs,
+		Images: imagesMap,
+		Total:  total,
+		PageReq: types.PageReq{
+			Page:     req.Page,
+			PageSize: req.PageSize,
+		},
 	}
 	return resp, nil
 }
@@ -292,11 +297,13 @@ func (l *BlogLogic) GetBlogsByUserID(ctx context.Context, req types.GetBlogsByUs
 	}
 
 	resp = &types.GetBlogsByUserIDResp{
-		Blogs:    blogs,
-		Images:   imagesMap,
-		Total:    total,
-		Page:     req.Page,
-		PageSize: req.PageSize,
+		Blogs:  blogs,
+		Images: imagesMap,
+		Total:  total,
+		PageReq: types.PageReq{
+			Page:     req.Page,
+			PageSize: req.PageSize,
+		},
 	}
 	return resp, nil
 }
@@ -310,9 +317,6 @@ func (l *BlogLogic) CollectBlog(ctx context.Context, req types.CollectBlogReq, U
 		zlog.CtxErrorf(ctx, "CollectBlog failed: %v", err)
 		return nil, response.ErrResp(err, codeCollectFailed)
 	}
-	resp = &types.CollectBlogResp{
-		Success: true,
-	}
 	return resp, nil
 }
 
@@ -324,9 +328,6 @@ func (l *BlogLogic) UncollectBlog(ctx context.Context, req types.UncollectBlogRe
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UncollectBlog failed:%v", err)
 		return nil, response.ErrResp(err, codeUncollectFailed)
-	}
-	resp = &types.UncollectBlogResp{
-		Success: true,
 	}
 	return resp, nil
 }
@@ -355,11 +356,13 @@ func (l *BlogLogic) GetCollectedBlogs(ctx context.Context, req types.GetCollecte
 	}
 
 	resp = &types.GetCollectedBlogsResp{
-		Blogs:    blogs,
-		Images:   imagesMap, // 使用映射存储每个帖子的图片
-		Total:    total,
-		Page:     req.Page,
-		PageSize: req.PageSize,
+		Blogs:  blogs,
+		Images: imagesMap, // 使用映射存储每个帖子的图片
+		Total:  total,
+		PageReq: types.PageReq{
+			Page:     req.Page,
+			PageSize: req.PageSize,
+		},
 	}
 	return resp, nil
 }
@@ -373,10 +376,6 @@ func (l *BlogLogic) LikeBlog(ctx context.Context, req types.LikeBlogReq, UserID 
 		zlog.CtxErrorf(ctx, "LikeBlog failed: %v", err)
 		return nil, response.ErrResp(err, codeLikeFailed)
 	}
-
-	resp = &types.LikeBlogResp{
-		Success: true,
-	}
 	return resp, nil
 }
 
@@ -388,10 +387,6 @@ func (l *BlogLogic) UnlikeBlog(ctx context.Context, req types.UnlikeBlogReq, Use
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UnlikeBlog failed: %v", err)
 		return nil, response.ErrResp(err, codeUnlikeFailed)
-	}
-
-	resp = &types.UnlikeBlogResp{
-		Success: true,
 	}
 	return resp, nil
 }
