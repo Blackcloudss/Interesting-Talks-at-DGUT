@@ -25,10 +25,3 @@ type Collection struct {
 	BlogID      int64 ` json:"blog_id"`                          // 对应的BlogID
 	IsCollected bool  `gorm:"default:false" json:"is_collected"` // 是否被收藏，默认为false
 }
-
-type Comment struct {
-	CommonModel
-	BlogID  int64  `gorm:"not null" json:"blog_id"`           // 所属帖子ID
-	UserID  int64  `gorm:"not null" json:"user_id"`           // 评论作者ID（修正字段名）
-	Content string `gorm:"type:text;not null" json:"content"` // 评论内容
-}
