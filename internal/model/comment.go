@@ -15,4 +15,5 @@ type CommentLike struct {
 	CommonModel
 	CommentID int64 `gorm:"not null" json:"comment_id"` // 所属评论ID
 	UserID    int64 `gorm:"not null" json:"user_id"`    // 点赞用户ID
+	IsLiked   bool  `gorm:"default:false"`
 }
