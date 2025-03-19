@@ -75,7 +75,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	//聊天相关路由
 	routeManager.RegisterChatRoutes(func(rg *gin.RouterGroup) {
 		rg.Use(middleware.CheckAtoken()) // 检查 Atoken
-
+		rg.GET("/list")                  // 获取好友列表
 	})
 
 	//AI相关路由
