@@ -41,10 +41,10 @@ func (l *Phonelogic) GetPhone(ctx context.Context, req types.WxPhoneReq, UserId 
 	defer utils.RecordTime(time.Now())()
 
 	//检验redis中是否有Wxaccess_token,如果没有，需要重新获取
-	req.WxAtoken, err = jwt.JudgeWxAtoken(ctx)
+	WxAtoken, err := jwt.JudgeWxAtoken(ctx)
 
 	//调用微信的getPhoneNumber接口
-	result, err := l.GetPhoneNumber(ctx, req.WxAtoken, req.Code)
+	result, err := l.GetPhoneNumber(ctx, WxAtoken, req.Code)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "调用微信getPhoneNumber接口失败：%v", err)
 		return nil, response.ErrResp(err, GET_PHONE_FAULT)

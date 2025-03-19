@@ -90,7 +90,7 @@ func UpdatePrivateProfile(c *gin.Context) {
 }
 
 // 获取用户的微信头像和微信昵称（授权时使用）
-func GetUserInfo(c *gin.Context) {
+func SaveUserInfo(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	userid := jwt.GetUserId(c)
 	// 获取 用户加密信息
@@ -101,6 +101,6 @@ func GetUserInfo(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "GetUserInfo request: %v", req)
-	resp, err := logic.NewUserLogic().GetUserInfo(ctx, userid, req)
+	resp, err := logic.NewUserLogic().SaveUserInfo(ctx, userid, req)
 	response.Response(c, resp, err)
 }

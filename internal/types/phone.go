@@ -5,13 +5,12 @@ package types
 // @Create       XdpCs 2025-03-11 上午9:12
 // @Update       XdpCs 2025-03-11 上午9:12
 
-// 调用微信getPhoneNumber接口获取手机号
+// 获取手机号 入参
 type WxPhoneReq struct {
-	WxAtoken string `json:"atoken"` // 微信开发平台的Atoken
-	Code     string `json:"code"`   //动态令牌   --与js_code不同,二者不能混用
+	Code string `json:"code"` //动态令牌   --与js_code不同,二者不能混用
 }
 
-// 将手机号传回给前端
+// 获取手机号 出参
 type WxPhoneResp struct {
 	PurePhoneNumber string `json:"purePhoneNumber"` //没有区号的手机号
 }
