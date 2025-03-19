@@ -73,19 +73,20 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//帖子相关路由
 	routeManager.RegisterBlogRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken())                   // 检查 Atoken
-		rg.POST("/create", api.CreateBlogHandler)          // 创建帖子
-		rg.PUT("/update", api.UpdateBlogHandler)           // 更新帖子
-		rg.DELETE("/delete", api.DeleteBlogHandler)        // 删除帖子
-		rg.GET("/get", api.GetBlogByIDHandler)             // 获取帖子详情
-		rg.GET("/list", api.GetBlogsHandler)               // 分页显示帖子
-		rg.GET("/list_by_tag", api.GetBlogsByTagHandler)   // 根据标签显示帖子列表
-		rg.GET("/my_blogs", api.GetMyBlogsHandler)         // 获取当前用户发布的帖子
-		rg.POST("/collect", api.CollectBlogHandler)        // 收藏帖子
-		rg.POST("/uncollect", api.UncollectBlogHandler)    // 取消收藏帖子
-		rg.GET("/collected", api.GetCollectedBlogsHandler) // 获取用户收藏的帖子
-		rg.POST("/like", api.LikeBlogHandler)              // 点赞帖子
-		rg.POST("/unlike", api.UnlikeBlogHandler)          // 取消点赞
+		rg.Use(middleware.CheckAtoken())                    // 检查 Atoken
+		rg.POST("/create", api.CreateBlogHandler)           // 创建帖子
+		rg.PUT("/update", api.UpdateBlogHandler)            // 更新帖子
+		rg.DELETE("/delete", api.DeleteBlogHandler)         // 删除帖子
+		rg.GET("/get", api.GetBlogByIDHandler)              // 获取帖子详情
+		rg.GET("/list", api.GetBlogsHandler)                // 分页显示帖子
+		rg.GET("/list_by_tag", api.GetBlogsByTagHandler)    // 根据标签显示帖子列表
+		rg.GET("/my_blogs", api.GetMyBlogsHandler)          // 获取当前用户发布的帖子
+		rg.GET("/other_blogs", api.GetBlogsByUserIDHandler) //获取其他用户的帖子
+		rg.POST("/collect", api.CollectBlogHandler)         // 收藏帖子
+		rg.POST("/uncollect", api.UncollectBlogHandler)     // 取消收藏帖子
+		rg.GET("/collected", api.GetCollectedBlogsHandler)  // 获取用户收藏的帖子
+		rg.POST("/like", api.LikeBlogHandler)               // 点赞帖子
+		rg.POST("/unlike", api.UnlikeBlogHandler)           // 取消点赞
 	})
 
 	//评论相关路由

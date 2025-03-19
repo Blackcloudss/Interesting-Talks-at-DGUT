@@ -45,7 +45,8 @@ func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommen
 
 	zlog.CtxInfof(ctx, "Comment created successfully (commentID: %d, blogID: %d)", comment.ID, comment.BlogID)
 	resp := &types.CreateCommentResp{
-		Comment: comment,
+		CommentID: comment.ID,
+		CreatedAt: comment.CreatedAt.Unix(),
 	}
 	return resp, nil
 }

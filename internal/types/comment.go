@@ -10,7 +10,8 @@ type CreateCommentReq struct {
 
 // CreateCommentResp 创建评论响应结构体
 type CreateCommentResp struct {
-	Comment model.Comment `json:"comment"`
+	CommentID int64 `json:"commentID"`
+	CreatedAt int64 `json:"createdAt"`
 }
 
 // DeleteCommentReq 删除评论请求结构体
@@ -20,7 +21,6 @@ type DeleteCommentReq struct {
 
 // DeleteCommentResp 删除评论响应结构体
 type DeleteCommentResp struct {
-	Success bool `json:"success"`
 }
 
 // GetCommentListReq 获取评论列表请求体
