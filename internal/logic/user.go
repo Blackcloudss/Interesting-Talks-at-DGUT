@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
@@ -13,6 +14,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/image"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/userinfo"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -25,6 +27,8 @@ var (
 	UPDATE_COMMON_PROFILE  = response.MsgCode{50008, "更改用户公基本信息失败"}
 	GET_PRIVATE_PROFILE    = response.MsgCode{50009, "获取用户隐私信息失败"}
 	UPDATE_PRIVATE_PROFILE = response.MsgCode{50010, "更改用户隐私信息失败"}
+	UPDATE_ROLE_FAILED     = response.MsgCode{50011, "更改用户身份失败"}
+	USER_ROLE_FAILED       = response.MsgCode{50012, "用户身份不是两个指定身份"}
 )
 
 // @Title        user.go
@@ -157,5 +161,45 @@ func (l *UserLogic) UpdatePrivateProfile(ctx context.Context, UserId int64, req 
 		return resp, response.ErrResp(err, UPDATE_PRIVATE_PROFILE)
 	}
 	resp.Role = role
+	return
+}
+
+// UpdateOtherRole
+//
+//	@Description: 更改其他用户的身份
+//	@receiver l
+//	@param ctx
+//	@param req
+//	@return resp
+//	@return err
+func (l *UserLogic) UpdateOtherRole(ctx context.Context, req types.UpdateOtherRoleReq) (resp types.UpdateOtherRoleResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// 获取用户身份
+	Role, err := repo.NewUserRepo(global.DB).GetUserRole(req.OtherID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "获取用户身份失败: %v", err)
+		return resp, response.ErrResp(err, GET_USER_ROLE)
+	}
+	if Role == "student" {
+		Role = "manager"
+	} else if Role == "manager" {
+		Role = "student"
+	} else {
+		zlog.CtxErrorf(ctx, "用户身份不对: %v", err)
+		return resp, response.ErrResp(err, USER_ROLE_FAILED)
+	}
+
+	// 更改用户身份
+	err = repo.NewUserRepo(global.DB).UpdateOtherRole(req.OtherID, Role)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.CtxWarnf(ctx, "找不到用户: %v", err)
+			return resp, response.ErrResp(err, codeUserNotFound)
+		} else {
+			zlog.CtxErrorf(ctx, "更改用户身份失败: %v", err)
+			return resp, response.ErrResp(err, UPDATE_ROLE_FAILED)
+		}
+	}
+	resp.Role = Role
 	return
 }

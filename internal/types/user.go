@@ -94,3 +94,13 @@ type UpdatePrivateProfileReq struct {
 type UpdatePrivateProfileResp struct {
 	Role string `json:"role"` // 用户身份
 }
+
+// 更改其他用户身份 入参
+type UpdateOtherRoleReq struct {
+	OtherID int64 `json:"otherid"` //其他用户ID
+}
+
+// 更改其他用户身份 出参
+type UpdateOtherRoleResp struct {
+	Role string `json:"role"` // 当前用户身份
+}

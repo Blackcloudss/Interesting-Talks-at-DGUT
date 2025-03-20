@@ -22,6 +22,7 @@ import (
 
 var (
 	REDIS_SET_FAULT = response.MsgCode{50001, "redis存取SessionKey失败"}
+	GET_USER_ROLE   = response.MsgCode{50006, "获取用户角色失败"}
 )
 
 const (
@@ -93,6 +94,10 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 	}
 	//获取用户角色
 	resp.Role, err = repo.NewUserRepo(global.DB).GetUserRole(UserId)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "获取用户角色失败: %v", err)
+		return resp, response.ErrResp(err, GET_USER_ROLE)
+	}
 
 	//把用户新的Sessionkey放进Redis
 	if err = global.Rdb.Set(ctx, fmt.Sprintf(global.REDIS_SESSIONKEY, C2S.Openid), C2S.SessionKey, global.SESSIONKEY_EFFECTIVE_TIME).Err(); err != nil {

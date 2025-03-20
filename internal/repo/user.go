@@ -283,6 +283,13 @@ func (r *UserRepo) UpdatePrivateProfile(UserId int64, req types.UpdatePrivatePro
 	return Role, nil
 }
 
+// GetUserRole
+//
+//	@Description: 获取用户角色身份
+//	@receiver r
+//	@param userID
+//	@return string
+//	@return error
 func (r *UserRepo) GetUserRole(userID int64) (string, error) {
 	var role string
 	err := global.DB.Model(&model.UserDisplay{}).
@@ -303,4 +310,28 @@ func (r *UserRepo) GetUserRole(userID int64) (string, error) {
 		return "", err
 	}
 	return role, nil
+}
+
+// UpdateOtherRole
+//
+//	@Description: 更改用户角色身份
+//	@receiver r
+//	@param UserID
+//	@param Role
+//	@return error
+func (r *UserRepo) UpdateOtherRole(UserID int64, Role string) error {
+	err := global.DB.Model(&model.UserDisplay{}).
+		Where(model.UserDisplay{
+			CommonModel: model.CommonModel{
+				ID: UserID,
+			},
+		}).
+		Updates(&model.UserDisplay{
+			Role: Role,
+		}).Error
+	if err != nil {
+		zlog.Errorf("更新用户角色失败：%v", err)
+		return err
+	}
+	return nil
 }

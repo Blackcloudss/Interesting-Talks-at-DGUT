@@ -104,3 +104,17 @@ func SaveUserInfo(c *gin.Context) {
 	resp, err := logic.NewUserLogic().SaveUserInfo(ctx, userid, req)
 	response.Response(c, resp, err)
 }
+
+// 更改其他用户的身份
+func UpdateOtherRole(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.UpdateOtherRoleReq](c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "UpdateOtherRole error: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
+		return
+	}
+	zlog.CtxInfof(ctx, "UpdateOtherRole request: %v", req)
+	resp, err := logic.NewUserLogic().UpdateOtherRole(ctx, req)
+	response.Response(c, resp, err)
+}

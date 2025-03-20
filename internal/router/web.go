@@ -58,6 +58,8 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.PUT("/userinfo", api.SaveUserInfo) // 保存用户的微信头像和微信昵称（授权时使用）
 
 		rg.Use(middleware.PermissionMiddleware()) // 检查权限
+		rg.PUT("/role", api.UpdateOtherRole)      // 修改其他用户角色
+
 		CommonProfile := rg.Group("/common")
 		{
 			CommonProfile.GET("/show", api.GetCommonProfile)      // 获取用户基本信息
