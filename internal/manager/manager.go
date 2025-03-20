@@ -24,6 +24,7 @@ type RouteManager struct {
 	BlogRoutes    *gin.RouterGroup // 博客相关路由组
 	CommentRoutes *gin.RouterGroup // 评论相关路由组
 	NoticeRoutes  *gin.RouterGroup // 公告相关路由组
+	FollowRoutes  *gin.RouterGroup //关注相关路由
 }
 
 // NewRouteManager 创建一个新的 RouteManager 实例，包含各业务功能的路由组
@@ -37,6 +38,7 @@ func NewRouteManager(router *gin.Engine) *RouteManager {
 		CommentRoutes: router.Group("/api/comment"), // 初始化评论路由组
 		AIRoutes:      router.Group("/api/ai"),      // 初始化AI路由组
 		NoticeRoutes:  router.Group("/api/notice"),  //公告相关路由
+		FollowRoutes:  router.Group("/api/follow"),  //关注模块相关路由
 	}
 }
 
@@ -78,6 +80,11 @@ func (rm *RouteManager) RegisterAIRoutes(handler PathHandler) {
 // RegisterCommentRoutes 注册公告相关路由
 func (rm *RouteManager) RegisterNoticeRoutes(handler PathHandler) {
 	handler(rm.NoticeRoutes)
+}
+
+// 注册关注模块相关路由
+func (rm *RouteManager) RegisterFollowRoutes(handler PathHandler) {
+	handler(rm.FollowRoutes)
 }
 
 // RequestGlobalMiddleware 注册全局中间件，应用于所有路由

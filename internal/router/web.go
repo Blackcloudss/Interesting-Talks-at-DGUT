@@ -122,7 +122,17 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.PUT("/update", api.UpdateNoticeHandler)    //修改公告
 		rg.DELETE("/delete", api.DeleteNoticeHandler) //删除公告
 		rg.GET("/get", api.GetNoticeHandler)          //获取公告
+	})
 
+	//关注相关路由
+	routeManager.RegisterFollowRoutes(func(rg *gin.RouterGroup) {
+		rg.Use(middleware.CheckAtoken())
+		rg.POST("/follow", api.FollowHandler)                      // 关注用户
+		rg.POST("/unfollow", api.UnfollowHandler)                  // 取消关注用户
+		rg.GET("/followings", api.GetFollowingsHandler)            // 获取当前用户关注的用户列表
+		rg.GET("/followers", api.GetFollowersHandler)              // 获取当前用户的粉丝列表
+		rg.GET("/followings/other", api.GetOtherFollowingsHandler) // 获取其他用户关注的用户列表
+		rg.GET("/followers/other", api.GetOtherFollowersHandler)   // 获取其他用户的粉丝列表
 	})
 
 }
