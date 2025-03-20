@@ -7,64 +7,82 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"net/http"
+	"sync"
 )
 
-// @Title        chat.go
-// @Description
-// @Create       XdpCs 2025-03-19 下午3:04
-// @Update       XdpCs 2025-03-19 下午3:04
-//
-// GetFriendList
-//
-//	@Description: 获取好友列表
-//	@param c
-func GetFriendList(c *gin.Context) {
+// @Description: 加载历史消息
+// @param c
+func GetHistoryMessage(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	UserID := jwt.GetUserId(c)
-	req, err := types.BindReq[types.GetFriendListReq](c)
+	req, err := types.BindReq[types.GetMessageReq](c)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "GetFriendList request error: %v", err)
+		zlog.CtxErrorf(ctx, "GetMessageHistory request error: %v", err)
 		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
-	zlog.CtxInfof(ctx, "GetFriendList request: %v", req)
-	resp, err := logic.NewChatlogic().GetFriendList(ctx, UserID)
+	zlog.CtxInfof(ctx, "GetMessageHistory request: %v", req)
+	resp, err := logic.NewChatlogic().GetMessagesHistory(ctx, UserID, req)
 	response.Response(c, resp, err)
 	return
 }
 
-// GetFriendList
-//
-//	@Description: 加载历史消息
-//	@param c
-func GetMessageHistory(c *gin.Context) {
-	//ctx := zlog.GetCtxFromGin(c)
-	//req, err := types.BindReq[types.Tes](c)
-	//if err != nil {
-	//	zlog.CtxErrorf(ctx, "GetMessageHistory request error: %v", err)
-	//	response.NewResponse(c).Error(response.PARAM_NOT_VALID)
-	//	return
-	//}
-	//zlog.CtxInfof(ctx, "GetMessageHistory request: %v", req)
-	//resp, err := logic.NewChatlogic().TestLoc(ctx, req)
-	//response.Response(c, resp, err)
-	//return
-}
+var (
+	upgrader = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+	clients = make(map[int64]*websocket.Conn)
+	mutex   sync.Mutex
+)
 
 // GetFriendList
 //
 //	@Description: 建立Websocket连接，与好友聊天
 //	@param c
 func WebSocketHandler(c *gin.Context) {
-	//ctx := zlog.GetCtxFromGin(c)
-	//req, err := types.BindReq[types.Tes](c)
-	//if err != nil {
-	//	zlog.CtxErrorf(ctx, "WebSocketHandler request error: %v", err)
-	//	response.NewResponse(c).Error(response.PARAM_NOT_VALID)
-	//	return
-	//}
-	//zlog.CtxInfof(ctx, "WebSocketHandler request: %v", req)
-	//resp, err := logic.NewChatlogic().TestLoc(ctx, req)
-	//response.Response(c, resp, err)
-	//return
+	ctx := zlog.GetCtxFromGin(c)
+	UserId := jwt.GetUserId(c)
+	// 升级 HTTP 连接为 WebSocket 连接
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "WebSocketHandler error: %v", err)
+		response.NewResponse(c).Error(response.WEBSOCKET_UPGRADE_FAIL)
+		return
+	}
+	defer conn.Close()
+
+	// 注册连接
+	mutex.Lock()
+	clients[UserId] = conn
+	mutex.Unlock()
+
+	// 消息处理循环
+	for {
+		var msg types.WSMessage
+		// 读取客户端消息
+		if err = conn.ReadJSON(&msg); err != nil {
+			zlog.CtxErrorf(ctx, "WebSocketHandler error: %v", err)
+			response.NewResponse(c).Error(response.WEBSOCKET_READ_COMMENT_FAIL)
+			return
+		}
+		// 检测接收者ID
+		if msg.To == 0 {
+			response.NewResponse(c).Error(response.PARAM_NOT_VALID)
+		}
+		// 发送消息给接收者
+		if err = logic.NewChatlogic().SendMessage(ctx, UserId, msg); err != nil {
+			zlog.CtxErrorf(ctx, "WebSocketHandler error: %v", err)
+			err = conn.WriteJSON(types.WSError{ERROR: err.Error()})
+			if err != nil {
+				zlog.CtxErrorf(ctx, "WebSocketHandler error: %v", err)
+				response.NewResponse(c).Error(response.WEBSOCKET_WRITE_COMMENT_FAIL)
+				return
+			}
+			return
+		}
+	}
 }

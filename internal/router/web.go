@@ -58,6 +58,8 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.PUT("/userinfo", api.SaveUserInfo) // 保存用户的微信头像和微信昵称（授权时使用）
 
 		rg.Use(middleware.PermissionMiddleware()) // 检查权限
+		rg.PUT("/role", api.UpdateOtherRole)      // 修改其他用户角色
+
 		CommonProfile := rg.Group("/common")
 		{
 			CommonProfile.GET("/show", api.GetCommonProfile)      // 获取用户基本信息
@@ -77,14 +79,14 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.Use(middleware.CheckAtoken())           // 检查 Atoken
 		rg.Use(middleware.PermissionMiddleware())  // 检查权限
 		rg.GET("/friends", api.GetFriendList)      // 获取好友列表
-		rg.GET("/messages", api.GetMessageHistory) // 获取聊天记录
+		rg.GET("/messages", api.GetHistoryMessage) // 获取聊天记录
 		rg.GET("/wxchat", api.WebSocketHandler)    // 建立WebSocket连接，和指定好友聊天
 	})
 
 	//AI相关路由
 	routeManager.RegisterAIRoutes(func(rg *gin.RouterGroup) {
 		rg.Use(middleware.CheckAtoken()) // 检查 Atoken
-		rg.GET("/chat", api.AIChat)
+		rg.GET("/chat", api.AIChat)      //跟 AI聊天
 	})
 
 	//帖子相关路由

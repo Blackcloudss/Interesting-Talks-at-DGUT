@@ -1,8 +1,10 @@
 package repo
 
 import (
+	"errors"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"gorm.io/gorm"
 )
 
@@ -22,6 +24,17 @@ func NewTestRepo(db *gorm.DB) *TestRepo {
 
 // GetUserById 数据库操作层，数据库操作层应该与逻辑层解耦 所有数据库和redis的操作应该放在repo包下内执行
 func (r *TestRepo) GetUserById(userId string) (testUser model.Test, err error) {
-	err = global.DB.Model(&model.Test{}).Where(model.Test{UserID: userId}).First(&testUser).Error
+	err = global.DB.Model(&model.Test{}).
+		Where(model.Test{UserID: userId}).
+		First(&testUser).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Errorf("用户不存在：%v", err)
+			return
+		}
+		zlog.Errorf("查询用户失败：%v", err)
+		return
+	}
 	return
 }
