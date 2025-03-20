@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// @Title        const.go
+// @Title        url.go
 // @Description
 // @Create       XdpCs 2025-02-01 下午8:14
 // @Update       XdpCs 2025-02-01 下午8:14
@@ -26,12 +26,16 @@ const (
 	TOKEN_USER_ID             = "UserId"
 )
 
-var Node, _ = snowflake.NewNode(DEFAULT_NODE_ID)
+var (
+	Node, _ = snowflake.NewNode(DEFAULT_NODE_ID)
 
-var TOURIST_URLS = []string{}
+	TOURIST_URLS = []string{}
 
-var STUDENT_URLS = []string{}
+	STUDENT_URLS = []string{}
 
-var MANAGER_URLS = []string{}
+	MANAGER_URLS = []string{
+		"/api/profile/role", // 更改用户角色
+	}
 
-var Filter = filter_swords.New()
+	Filter = filter_swords.New()
+)
