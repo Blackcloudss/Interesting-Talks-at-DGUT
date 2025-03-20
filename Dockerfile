@@ -13,6 +13,8 @@ ENV GO111MODULE=on \
 
 # 下载依赖
 RUN go mod download -x \
+    && go mod tidy \
+    && go mod verify \
     && go version \
     && go env
 
@@ -20,8 +22,7 @@ RUN go mod download -x \
 COPY . .
 
 # 编译
-RUN go mod verify \
-    && go build -v -ldflags="-s -w" -o interesting-talks ./cmd/main.go
+RUN go build -v -ldflags="-s -w" -o interesting-talks ./cmd/main.go
 
 # 执行过程
 FROM alpine:latest

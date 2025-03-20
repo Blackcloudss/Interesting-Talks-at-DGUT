@@ -7,9 +7,9 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/url"
 	"github.com/gin-gonic/gin"
 	"io"
-	"strings"
 )
 
 //权限校验中间件：检查用户是否有权限访问某个资源 -- 涉及到前端判断是否需要渲染的组件
@@ -19,10 +19,9 @@ func PermissionMiddleware() gin.HandlerFunc {
 		ctx := zlog.GetCtxFromGin(c)
 
 		UserId := jwt.GetUserId(c) //正式使用，
-		//var UserId int64          //测试使用
-
+		//var UserId int64          测试使用
+		//var req any               测试使用
 		var Url string
-		//var req any
 		var err error
 
 		// 在请求处理中读取并缓存请求体
@@ -51,18 +50,8 @@ func PermissionMiddleware() gin.HandlerFunc {
 		// 重要!! 将读取的请求体内容重新设置到 c.Request.Body，供后续处理使用
 		c.Request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
-		//如果是delete请求，需要截取 url的前面部分
-		if c.Request.Method == "DELETE" {
-			url := c.Request.URL.Path
-			index := strings.Index(url, "/delete")
-			if index != -1 {
-				Url = url[:index+len("/delete")]
-				zlog.CtxInfof(ctx, "Base URL:%v", Url)
-			}
-		} else {
-			Url = c.Request.URL.Path
-			zlog.CtxInfof(ctx, "Base URL:%v", Url)
-		}
+		// 获取当前请求的URL
+		Url = url.GetBaseURL(c)
 
 		// CheckUserPermissions 检查用户权限
 		exist, err := repo.NewCasbinRepo(global.DB).CheckUserPermission(Url, UserId)

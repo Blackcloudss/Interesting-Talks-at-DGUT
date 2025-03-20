@@ -7,6 +7,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/snowflake"
 	"gorm.io/gorm"
 )
 
@@ -62,8 +63,13 @@ func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 				}
 			}()
 
+			//通过雪花算法生成随机昵称id
+			NickId := snowflake.GetInt12Id(global.Node)
 			// 创建用户展示表
-			UserDisplay := &model.UserDisplay{OpenId: Openid}
+			UserDisplay := &model.UserDisplay{
+				OpenId:   Openid,
+				Nickname: fmt.Sprintf("莞星人%d", NickId),
+			}
 			if err = tx.Create(UserDisplay).Error; err != nil {
 				tx.Rollback()
 				zlog.Errorf("创建用户展示表失败：%v", err)

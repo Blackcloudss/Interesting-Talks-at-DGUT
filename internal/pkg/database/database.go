@@ -4,7 +4,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/hook"
 	"gorm.io/gorm"
 )
 
@@ -26,6 +26,6 @@ func InitDataBases(base DataBase, config configs.Config) {
 	}
 	zlog.Infof("初始化数据库成功！")
 	//对该数据库注册 hook
-	utils.RegisterHook(global.DB)
+	hook.RegisterHook(global.DB)
 	return
 }

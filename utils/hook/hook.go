@@ -1,4 +1,4 @@
-package utils
+package hook
 
 import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
