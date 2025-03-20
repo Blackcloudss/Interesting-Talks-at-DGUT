@@ -9,14 +9,15 @@ type Blog struct { // 帖子
 	SubTag         string `gorm:"size:50" json:"sub_tag"`                                // 子标签
 	ViewPermission string `gorm:"type:varchar(20);default:'所有人'" json:"view_permission"` // 访问权限，默认为“所有人”
 	UserID         int64  `json:"user_id"`                                               // 用户ID
+	Title          string `gorm:"size:100;not null" json:"title"`                        //标题
 	Content        string `gorm:"type:text;not null" json:"content"`                     // 内容，不可为空
 }
 
 type Like struct { // 点赞
 	CommonModel
-	UserID  uint64 ` json:"user_id"`
-	BlogID  uint64 ` json:"blog_id"`
-	IsLiked bool   `gorm:"default:false" json:"is_liked"` // 是否被点赞，默认为false
+	UserID  int64 ` json:"user_id"`
+	BlogID  int64 ` json:"blog_id"`
+	IsLiked bool  `gorm:"default:false" json:"is_liked"` // 是否被点赞，默认为false
 }
 
 type Collection struct {

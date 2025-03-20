@@ -53,13 +53,13 @@ func (r *BlogRepo) CheckBlogExists(blogID int64) (*model.Blog, error) {
 	return &blog, nil // 如果帖子存在，返回帖子对象
 }
 
-// GetBlogByID 根据ID获取帖子
+// GetBlogByID 根据ID获取帖子，帖子详情页面
 func (r *BlogRepo) GetBlogByID(blogID int64) (types.BlogResp, error) {
 	var blogResp types.BlogResp
 
 	// 联合查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
-		Select("blogs.id AS BlogID, blogs.updated_at AS UpdatedAt, blogs.be_liked AS BeLiked, blogs.be_collected AS BeCollected, blogs.comment_count AS CommentCount, blogs.tag AS BlogTag, blogs.sub_tag AS SubTag, blogs.view_permission AS ViewPermission, blogs.content AS Content, user_displays.user_id AS UserID, user_displays.nickname AS Nickname, user_displays.avatar AS Avatar, user_displays.tag AS Tag").
+		Select("blogs.*, user_displays.nickname, user_displays.avatar, user_displays.tag").
 		Joins("LEFT JOIN user_displays ON blogs.user_id = user_displays.user_id").
 		Where("blogs.id = ?", blogID).
 		Scan(&blogResp).Error; err != nil {
@@ -69,7 +69,7 @@ func (r *BlogRepo) GetBlogByID(blogID int64) (types.BlogResp, error) {
 	return blogResp, nil
 }
 
-// GetBlogs 分页获取帖子列表
+// GetBlogs 分页获取帖子列表（首页显示）
 func (r *BlogRepo) GetBlogs(page, pageSize int) ([]types.BlogResp, int64, error) {
 	var blogs []types.BlogResp
 	var total int64
@@ -81,7 +81,7 @@ func (r *BlogRepo) GetBlogs(page, pageSize int) ([]types.BlogResp, int64, error)
 
 	// 分页查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
-		Select("blogs.id AS BlogID, blogs.updated_at AS UpdatedAt, blogs.be_liked AS BeLiked, blogs.be_collected AS BeCollected, blogs.comment_count AS CommentCount, blogs.tag AS BlogTag, blogs.sub_tag AS SubTag, blogs.view_permission AS ViewPermission, blogs.content AS Content, user_displays.user_id AS UserID, user_displays.nickname AS Nickname, user_displays.avatar AS Avatar, user_displays.tag AS Tag").
+		Select("blogs.*, user_displays.nickname, user_displays.avatar, user_displays.tag").
 		Joins("LEFT JOIN user_displays ON blogs.user_id = user_displays.user_id").
 		Order("blogs.created_at DESC").
 		Offset((page - 1) * pageSize).
@@ -107,7 +107,7 @@ func (r *BlogRepo) GetBlogsByTag(subTag string, page int, pageSize int) ([]types
 
 	// 分页查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
-		Select("blogs.id AS BlogID, blogs.updated_at AS UpdatedAt, blogs.be_liked AS BeLiked, blogs.be_collected AS BeCollected, blogs.comment_count AS CommentCount, blogs.tag AS BlogTag, blogs.sub_tag AS SubTag, blogs.view_permission AS ViewPermission, blogs.content AS Content, user_displays.user_id AS UserID, user_displays.nickname AS Nickname, user_displays.avatar AS Avatar, user_displays.tag AS Tag").
+		Select("blogs.*, user_displays.nickname, user_displays.avatar, user_displays.tag").
 		Joins("LEFT JOIN user_displays ON blogs.user_id = user_displays.user_id").
 		Where("sub_tag = ?", subTag).
 		Order("blogs.created_at DESC").
@@ -134,7 +134,7 @@ func (r *BlogRepo) GetBlogsByUserID(userID int64, page, pageSize int) ([]types.B
 
 	// 分页查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
-		Select("blogs.id AS BlogID, blogs.updated_at AS UpdatedAt, blogs.be_liked AS BeLiked, blogs.be_collected AS BeCollected, blogs.comment_count AS CommentCount, blogs.tag AS BlogTag, blogs.sub_tag AS SubTag, blogs.view_permission AS ViewPermission, blogs.content AS Content, user_displays.user_id AS UserID, user_displays.nickname AS Nickname, user_displays.avatar AS Avatar, user_displays.tag AS Tag").
+		Select("blogs.*, user_displays.nickname, user_displays.avatar, user_displays.tag").
 		Joins("LEFT JOIN user_displays ON blogs.user_id = user_displays.user_id").
 		Where("blogs.user_id = ?", userID).
 		Order("blogs.created_at DESC").
@@ -237,7 +237,7 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 
 	// 分页查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
-		Select("blogs.id AS BlogID, blogs.updated_at AS UpdatedAt, blogs.be_liked AS BeLiked, blogs.be_collected AS BeCollected, blogs.comment_count AS CommentCount, blogs.tag AS BlogTag, blogs.sub_tag AS SubTag, blogs.view_permission AS ViewPermission, blogs.content AS Content, user_displays.user_id AS UserID, user_displays.nickname AS Nickname, user_displays.avatar AS Avatar, user_displays.tag AS Tag").
+		Select("blogs.*, user_displays.nickname, user_displays.avatar, user_displays.tag").
 		Joins("INNER JOIN collections ON collections.blog_id = blogs.id").
 		Joins("LEFT JOIN user_displays ON blogs.user_id = user_displays.user_id").
 		Where("collections.user_id = ?", userID).
@@ -253,9 +253,11 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 
 // IsBlogLiked 检查用户是否已经点赞某个帖子
 func (r *BlogRepo) IsBlogLiked(userID, blogID int64) (bool, error) {
-	var isLiked bool
-	err := r.DB.Model(&model.Blog{}).Select("is_liked").Where("id = ? AND user_id = ?", blogID, userID).Scan(&isLiked).Error
-	return isLiked, err
+	var count int64
+	err := r.DB.Model(&model.Like{}).
+		Where("user_id = ? AND blog_id = ?", userID, blogID).
+		Count(&count).Error
+	return count > 0, err
 }
 
 // LikeBlog 点赞帖子
@@ -279,65 +281,46 @@ func (r *BlogRepo) LikeBlog(userID, blogID int64) error {
 		}
 	}()
 
-	tx := r.DB.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-			panic(r)
-		}
-	}()
-
 	// 检查是否已经点赞
 	isLiked, err := r.IsBlogLiked(userID, blogID)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 	if isLiked {
-		tx.Rollback()
 		return errors.New("already liked this blog")
 	}
 
-	// 更新帖子的点赞状态和点赞数
-	if err := tx.Model(&model.Blog{}).Where("id = ?", blogID).Updates(map[string]interface{}{
-		"is_liked":   true,
-		"like_count": gorm.Expr("like_count + 1"),
-	}).Error; err != nil {
-		tx.Rollback()
+	// 创建新的点赞记录
+	like := model.Like{
+		UserID: userID,
+		BlogID: blogID,
+	}
+
+	// 插入点赞记录
+	if err := r.DB.Create(&like).Error; err != nil {
 		return err
 	}
 
-	return tx.Commit().Error
+	// 更新帖子的点赞数
+	return r.DB.Model(&model.Blog{}).Where("id = ?", blogID).Update("be_liked", gorm.Expr("be_liked + 1")).Error
 }
 
 // UnlikeBlog 取消点赞
 func (r *BlogRepo) UnlikeBlog(userID, blogID int64) error {
-	tx := r.DB.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
 	// 检查是否已经点赞
 	isLiked, err := r.IsBlogLiked(userID, blogID)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 	if !isLiked {
-		tx.Rollback()
 		return errors.New("not liked this blog")
 	}
 
-	// 更新帖子的点赞状态和点赞数
-	if err := tx.Model(&model.Blog{}).Where("id = ?", blogID).Updates(map[string]interface{}{
-		"is_liked":   false,
-		"like_count": gorm.Expr("like_count - 1"),
-	}).Error; err != nil {
-		tx.Rollback()
+	// 删除点赞记录
+	if err := r.DB.Delete(&model.Like{}, "user_id = ? AND blog_id = ?", userID, blogID).Error; err != nil {
 		return err
 	}
-	return tx.Commit().Error
+
+	// 更新帖子的点赞数
+	return r.DB.Model(&model.Blog{}).Where("id = ?", blogID).Update("be_liked", gorm.Expr("be_liked - 1")).Error
 }

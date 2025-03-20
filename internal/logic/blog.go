@@ -39,6 +39,7 @@ func (l *BlogLogic) CreateBlog(ctx context.Context, req types.CreateBlogReq, Use
 
 	blog := &model.Blog{
 		UserID:         UserID,
+		Title:          req.Title,
 		Content:        req.Content,
 		Tag:            req.Tag,
 		SubTag:         req.SubTag,
@@ -89,6 +90,7 @@ func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq, ima
 	}
 
 	// 更新帖子内容
+	blog.Title = req.Title
 	blog.Content = req.Content
 	blog.Tag = req.Tag
 	blog.SubTag = req.SubTag
@@ -176,7 +178,7 @@ func (l *BlogLogic) GetBlogByID(ctx context.Context, req types.GetBlogByIDReq) (
 	}
 
 	// 获取与帖子关联的所有图片路径
-	imagePaths, err := repo.NewImageRepo(global.DB).GetImagePathsByBlogID(blog.BlogID)
+	imagePaths, err := repo.NewImageRepo(global.DB).GetImagePathsByBlogID(req.ID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Get image paths by blog ID failed: %v", err)
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
@@ -184,22 +186,8 @@ func (l *BlogLogic) GetBlogByID(ctx context.Context, req types.GetBlogByIDReq) (
 
 	// 构造响应体
 	resp = &types.GetBlogByIDResp{
-		BlogResp: types.BlogResp{
-			BlogID:         blog.BlogID,
-			UpdatedAt:      blog.UpdatedAt,
-			BeLiked:        blog.BeLiked,
-			BeCollected:    blog.BeCollected,
-			CommentCount:   blog.CommentCount,
-			BlogTag:        blog.BlogTag,
-			SubTag:         blog.SubTag,
-			ViewPermission: blog.ViewPermission,
-			Content:        blog.Content,
-			UserID:         blog.UserID,
-			Nickname:       blog.Nickname,
-			Avatar:         blog.Avatar,
-			Tag:            blog.Tag,
-		},
-		Images: imagePaths,
+		BlogResp: blog,
+		Images:   imagePaths,
 	}
 	return resp, nil
 }
@@ -214,23 +202,9 @@ func (l *BlogLogic) GetBlogs(ctx context.Context, req types.GetBlogsReq) (resp *
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 
-	// 初始化图片映射
-	imagesMap := make(map[int64][]string)
-
-	// 为每个帖子查询图片
-	for _, blog := range blogs {
-		imagePaths, err := repo.NewImageRepo(global.DB).GetImagePathsByBlogID(blog.BlogID)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "Get images by blog ID failed for blogID %d: %v", blog.BlogID, err)
-			continue // 如果查询失败，跳过当前帖子
-		}
-		imagesMap[blog.BlogID] = imagePaths
-	}
-
 	resp = &types.GetBlogsResp{
-		Blogs:  blogs,
-		Images: imagesMap,
-		Total:  total,
+		Blogs: blogs,
+		Total: total,
 		PageReq: types.PageReq{
 			Page:     req.Page,
 			PageSize: req.PageSize,
@@ -250,23 +224,9 @@ func (l *BlogLogic) GetBlogsByTag(ctx context.Context, req types.GetBlogsByTagRe
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 
-	// 初始化图片映射
-	imagesMap := make(map[int64][]string)
-
-	// 为每个帖子查询图片
-	for _, blog := range blogs {
-		imagePaths, err := repo.NewImageRepo(global.DB).GetImagePathsByBlogID(blog.BlogID)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "Get images by blog ID failed: %v", err)
-			continue // 如果查询失败，跳过当前帖子
-		}
-		imagesMap[blog.BlogID] = imagePaths
-	}
-
 	resp = &types.GetBlogsByTagResp{
-		Blogs:  blogs,
-		Images: imagesMap,
-		Total:  total,
+		Blogs: blogs,
+		Total: total,
 		PageReq: types.PageReq{
 			Page:     req.Page,
 			PageSize: req.PageSize,
@@ -286,23 +246,9 @@ func (l *BlogLogic) GetMyBlogs(ctx context.Context, req types.GetMyBlogsReq, Use
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 
-	// 初始化图片映射
-	imagesMap := make(map[int64][]string)
-
-	// 为每个帖子查询图片
-	for _, blog := range blogs {
-		imagePaths, err := repo.NewImageRepo(global.DB).GetImagePathsByBlogID(blog.BlogID)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "Get images by blog ID failed: %v", err)
-			continue // 如果查询失败，跳过当前帖子
-		}
-		imagesMap[blog.BlogID] = imagePaths
-	}
-
 	resp = &types.GetMyBlogsResp{
-		Blogs:  blogs,
-		Images: imagesMap,
-		Total:  total,
+		Blogs: blogs,
+		Total: total,
 		PageReq: types.PageReq{
 			Page:     req.Page,
 			PageSize: req.PageSize,
@@ -321,23 +267,9 @@ func (l *BlogLogic) GetBlogsByUserID(ctx context.Context, req types.GetBlogsByUs
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 
-	// 初始化图片映射
-	imagesMap := make(map[int64][]string)
-
-	// 为每个帖子查询图片
-	for _, blog := range blogs {
-		imagePaths, err := repo.NewImageRepo(global.DB).GetImagePathsByBlogID(blog.BlogID)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "Get images by blog ID failed: %v", err)
-			continue // 如果查询失败，跳过当前帖子
-		}
-		imagesMap[blog.BlogID] = imagePaths
-	}
-
 	resp = &types.GetBlogsByUserIDResp{
-		Blogs:  blogs,
-		Images: imagesMap,
-		Total:  total,
+		Blogs: blogs,
+		Total: total,
 		PageReq: types.PageReq{
 			Page:     req.Page,
 			PageSize: req.PageSize,
@@ -381,23 +313,9 @@ func (l *BlogLogic) GetCollectedBlogs(ctx context.Context, req types.GetCollecte
 		return nil, response.ErrResp(err, codeGetCollectedFailed)
 	}
 
-	// 初始化图片映射
-	imagesMap := make(map[int64][]string)
-
-	// 为每个帖子查询图片
-	for _, blog := range blogs {
-		imgs, err := repo.NewImageRepo(global.DB).GetImagePathsByBlogID(blog.BlogID)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "Get images by blog ID failed: %v", err)
-			return nil, response.ErrResp(err, response.INTERNAL_ERROR)
-		}
-		imagesMap[blog.BlogID] = imgs // 将图片路径列表存储到映射中
-	}
-
 	resp = &types.GetCollectedBlogsResp{
-		Blogs:  blogs,
-		Images: imagesMap, // 使用映射存储每个帖子的图片
-		Total:  total,
+		Blogs: blogs,
+		Total: total,
 		PageReq: types.PageReq{
 			Page:     req.Page,
 			PageSize: req.PageSize,
