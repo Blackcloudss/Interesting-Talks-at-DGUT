@@ -9,7 +9,7 @@ import (
 type CreateBlogReq struct {
 	Title          string                  `json:"title"` //标题
 	Content        string                  `json:"content"`
-	Tag            string                  `json:"tag"`             // 帖子分区（主标签）
+	BlogTag        string                  `json:"blogtag"`         // 帖子分区（主标签）
 	SubTag         string                  `json:"sub_tag"`         // 子标签
 	ViewPermission string                  `json:"view_permission"` // 访问权限，默认为“所有人”
 	ImageFiles     []*multipart.FileHeader `form:"image_files"`     // 图片文件
@@ -26,7 +26,7 @@ type UpdateBlogReq struct {
 	ID             int64                   `json:"id"`
 	Title          string                  `json:"title"`
 	Content        string                  `json:"content"`
-	Tag            string                  `json:"tag"`
+	BlogTag        string                  `json:"blogtag"`
 	SubTag         string                  `json:"sub_tag"`
 	ViewPermission string                  `json:"view_permission"`
 	ImageFiles     []*multipart.FileHeader `form:"image_files"` // 图片文件

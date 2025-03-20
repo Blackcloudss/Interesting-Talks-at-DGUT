@@ -41,7 +41,7 @@ func (l *BlogLogic) CreateBlog(ctx context.Context, req types.CreateBlogReq, Use
 		UserID:         UserID,
 		Title:          req.Title,
 		Content:        req.Content,
-		Tag:            req.Tag,
+		BlogTag:        req.BlogTag,
 		SubTag:         req.SubTag,
 		ViewPermission: req.ViewPermission,
 	}
@@ -92,7 +92,7 @@ func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq, ima
 	// 更新帖子内容
 	blog.Title = req.Title
 	blog.Content = req.Content
-	blog.Tag = req.Tag
+	blog.BlogTag = req.BlogTag
 	blog.SubTag = req.SubTag
 	blog.ViewPermission = req.ViewPermission
 
