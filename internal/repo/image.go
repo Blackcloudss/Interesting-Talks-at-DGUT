@@ -2,7 +2,10 @@ package repo
 
 import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/image"
 	"gorm.io/gorm"
+	"path/filepath"
 )
 
 type ImageRepo struct {
@@ -39,6 +42,30 @@ func (r *ImageRepo) GetImagePathsByBlogID(blogID int64) ([]string, error) {
 	return imagePaths, nil
 }
 
-func (r *ImageRepo) DeleteImagesByBlogID(id int64) error {
+// DeleteImagesByBlogID 根据blogid删除图片
+func (r *ImageRepo) DeleteImagesByBlogID(blogID int64) error {
+	// 获取所有需要删除的图片路径
+	imagePaths, err := r.GetImagePathsByBlogID(blogID)
+	if err != nil {
+		zlog.Errorf("获取图片路径失败：%v", err)
+		return err
+	}
 
+	// 删除本地文件
+	for _, imagePath := range imagePaths {
+		// 拼接完整的文件路径
+		fullPath := filepath.Join("images", imagePath)
+		if err := image.DeleteLocalFile(fullPath); err != nil {
+			zlog.Errorf("删除本地文件失败：%v", err)
+			return err
+		}
+	}
+
+	// 删除数据库中的记录
+	if err := r.DB.Where("blog_id = ?", blogID).Delete(&model.Image{}).Error; err != nil {
+		zlog.Errorf("删除数据库记录失败：%v", err)
+		return err
+	}
+
+	return nil
 }

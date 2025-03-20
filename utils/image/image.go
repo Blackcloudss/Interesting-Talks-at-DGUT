@@ -98,3 +98,18 @@ func SaveUploadFile(file *multipart.FileHeader, savePath string) error {
 	}
 	return nil
 }
+
+// 删除本地文件
+func DeleteLocalFile(filePath string) error {
+	// 检查文件是否存在
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		zlog.Warnf("文件不存在，无法删除：%s", filePath)
+		return nil // 如果文件不存在，直接返回
+	}
+	// 删除文件
+	if err := os.Remove(filePath); err != nil {
+		zlog.Errorf("删除文件失败：%v", err)
+		return err
+	}
+	return nil
+}
