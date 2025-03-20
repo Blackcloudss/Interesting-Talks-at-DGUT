@@ -24,6 +24,14 @@ const (
 	AUTH_ENUMS_RTOKEN         = "rtoken"
 	DEFAULT_NODE_ID           = 1
 	TOKEN_USER_ID             = "UserId"
+
+	MSGID        = "msg_id"
+	STATUS       = "status"       // 状态
+	MESSAGE      = "message"      // 消息
+	ACK          = "ack"          // 确认
+	ACKNOWLEDGED = "acknowledged" // 确认
+	OFFLINE      = "offline"      // 离线
+	DELIVERED    = "delivered"    // 已送达
 )
 
 var (
