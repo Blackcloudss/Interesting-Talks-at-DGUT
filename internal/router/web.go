@@ -44,6 +44,11 @@ func listen() (*gin.Engine, error) {
 }
 
 func registerRoutes(routeManager *manager.RouteManager) {
+	//测试相关路由
+	routeManager.RegisterTestRoutes(func(rg *gin.RouterGroup) {
+		rg.GET("/display", api.Display) // 测试路由
+	})
+
 	//通用功能相关路由
 	routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
 		rg.POST("/rtoken", api.RefreshToken) //用rtoken刷新atoken和rtoken
@@ -88,7 +93,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	routeManager.RegisterAIRoutes(func(rg *gin.RouterGroup) {
 		rg.Use(middleware.CheckAtoken())                      // 检查 Atoken
 		rg.GET("/chat", api.AIChatStream)                     // AI流式聊天
-		rg.DELETE("/delete/:type", api.DeleteHistoryMessages) // 删除AI聊天记录
+		rg.DELETE("/delete/:type", api.DeleteHistoryMessages) // 删除AI历史聊天记录
 	})
 
 	//帖子相关路由
