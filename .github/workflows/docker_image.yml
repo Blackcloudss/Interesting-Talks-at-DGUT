@@ -37,7 +37,7 @@ jobs:
           docker buildx build .
           --platform linux/amd64
           --push
-          --tag qinsikai/interesting-talks:test
+          --tag qinsikai/interesting-forum:test
 
       - name: Deploy to Server
         env:
@@ -49,17 +49,17 @@ jobs:
             chmod 600 ~/.ssh/deploy_key
             ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@$SERVER_IP << 'EOF'
             set -e
-            docker pull qinsikai/interesting-talks:test
-            docker images --filter "reference=qinsikai/interesting-talks" --format "{{.ID}} {{.Tag}}" |
+            docker pull qinsikai/interesting-forum:test
+            docker images --filter "reference=qinsikai/interesting-forum" --format "{{.ID}} {{.Tag}}" |
             awk '$2 == "<none>" {print $1}' |
             xargs -r docker rmi -f || true
-            if docker ps -aq --filter name=interesting-talks; then
-              docker stop interesting-talks || true
-              docker rm -f interesting-talks || true
+            if docker ps -aq --filter name=interesting-forum; then
+              docker stop interesting-forum || true
+              docker rm -f interesting-forum || true
             fi
             docker run -d \
-              --name interesting-talks \
+              --name interesting-forum \
               -p 8085:8080 \
               -v /data/images:/app/images \
-              qinsikai/interesting-talks:test
+              qinsikai/interesting-forum:test
             EOF

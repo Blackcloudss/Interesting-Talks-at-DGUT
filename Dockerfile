@@ -22,7 +22,7 @@ RUN go mod download -x \
 COPY . .
 
 # 编译
-RUN go build -v -ldflags="-s -w" -o interesting-talks ./cmd/main.go
+RUN go build -v -ldflags="-s -w" -o interesting-forum ./cmd/main.go
 
 # 执行过程
 FROM alpine:latest
@@ -34,10 +34,10 @@ RUN apk add --no-cache tzdata && \
 
 WORKDIR /app
 
-COPY --from=builder /app/interesting-talks ./
+COPY --from=builder /app/interesting-forum ./
 COPY --chmod=644 config.yaml ./
 
 #声明容器运行时监听 8080 端口
 EXPOSE 8080
 #启动应用程序
-ENTRYPOINT ["./interesting-talks"]
+ENTRYPOINT ["./interesting-forum"]

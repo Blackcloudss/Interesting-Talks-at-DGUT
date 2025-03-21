@@ -16,6 +16,7 @@ type PathHandler func(rg *gin.RouterGroup)
 
 // RouteManager 管理不同的路由组，按业务功能分组
 type RouteManager struct {
+	TestRoutes    *gin.RouterGroup // 测试路由组
 	CommonRoutes  *gin.RouterGroup // 通用的路由组
 	LoginRoutes   *gin.RouterGroup // 登录相关的路由组
 	ProfileRoutes *gin.RouterGroup // 个人信息相关路由组
@@ -31,6 +32,7 @@ type RouteManager struct {
 // NewRouteManager 创建一个新的 RouteManager 实例，包含各业务功能的路由组
 func NewRouteManager(router *gin.Engine) *RouteManager {
 	return &RouteManager{
+		TestRoutes:    router.Group("/api/test"),    // 初始化测试路由组
 		CommonRoutes:  router.Group("/api/common"),  // 初始化通用路由组
 		LoginRoutes:   router.Group("/api/wxlogin"), // 初始化登录路由组
 		ProfileRoutes: router.Group("/api/profile"), // 初始化个人信息路由组
@@ -42,6 +44,11 @@ func NewRouteManager(router *gin.Engine) *RouteManager {
 		NoticeRoutes:  router.Group("/api/notice"),  //初始化公告相关路由
 		FollowRoutes:  router.Group("/api/follow"),  //初始化关注模块相关路由
 	}
+}
+
+// RegisterTestRoutes 注册测试路由
+func (rm *RouteManager) RegisterTestRoutes(handler PathHandler) {
+	handler(rm.TestRoutes)
 }
 
 // RegisterCommonRoutes 注册通用路由
