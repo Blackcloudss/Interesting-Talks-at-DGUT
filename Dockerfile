@@ -12,14 +12,17 @@ ENV GO111MODULE=on \
     CGO_ENABLED=0
 
 # 下载依赖
-RUN go mod download -x \
-    && go mod tidy \
+RUN go mod download -x
+
+# 完整代码复制（在整理依赖前确保所有代码就位）
+COPY . .
+
+# 整理验证依赖
+RUN go mod tidy \
     && go mod verify \
     && go version \
     && go env
 
-# 复制全部代码
-COPY . .
 
 # 编译
 RUN go build -v -ldflags="-s -w" -o interesting-forum ./cmd/main.go
