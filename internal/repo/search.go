@@ -96,3 +96,9 @@ func (r *SearchRepo) GetSearchHistory(userID int64, page, pageSize int) ([]model
 
 	return history, total, nil
 }
+
+// DeleteSearchHistory 删除指定的搜索历史记录
+func (r *SearchRepo) DeleteSearchHistory(userID int64, historyID int64) error {
+	// 删除指定的搜索历史记录
+	return r.DB.Where("user_id = ? AND id = ?", userID, historyID).Delete(&model.SearchHistory{}).Error
+}

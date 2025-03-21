@@ -43,3 +43,19 @@ func GetSearchHistoryHandler(c *gin.Context) {
 }
 
 //删除搜索历史
+
+// DeleteSearchHistoryHandler 删除指定的搜索历史记录
+func DeleteSearchHistoryHandler(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.DeleteSearchHistoryReq](c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "DeleteSearchHistory request error: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
+		return
+	}
+
+	UserID := jwt.GetUserId(c)
+
+	resp, err := logic.NewSearchLogic().DeleteSearchHistory(ctx, req, UserID)
+	response.Response(c, resp, err)
+}

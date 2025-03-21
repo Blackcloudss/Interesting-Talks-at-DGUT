@@ -65,3 +65,16 @@ func (l *SearchLogic) GetSearchHistory(ctx context.Context, req types.GetSearchH
 	}
 	return resp, nil
 }
+
+func (l *SearchLogic) DeleteSearchHistory(ctx context.Context, req types.DeleteSearchHistoryReq, UserID int64) (resp *types.DeleteSearchHistoryResp, err error) {
+	defer utils.RecordTime(time.Now())()
+
+	// 删除指定的搜索历史记录
+	err = repo.NewSearchRepo(global.DB).DeleteSearchHistory(UserID, req.HistoryID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "DeleteSearchHistory failed: %v", err)
+		return nil, err
+	}
+
+	return resp, nil
+}

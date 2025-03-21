@@ -27,3 +27,9 @@ type GetSearchHistoryResp struct {
 	Total   int64                 `json:"total"`   // 总记录数
 	PageReq
 }
+
+type DeleteSearchHistoryReq struct {
+	HistoryID int64 `json:"history_id"` // 搜索历史记录ID
+}
+
+type DeleteSearchHistoryResp struct{}
