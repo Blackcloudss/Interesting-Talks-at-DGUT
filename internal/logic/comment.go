@@ -23,6 +23,7 @@ var (
 	codeCommentUnlikeFailed = response.MsgCode{Code: 40035, Msg: "取消点赞评论失败"}
 	codeCommentAlreadyLiked = response.MsgCode{Code: 40036, Msg: "已经点赞过该评论"}
 	codeCommentNotLiked     = response.MsgCode{Code: 40037, Msg: "未点赞该评论"}
+	codeGetCommentFail      = response.MsgCode{Code: 40041, Msg: "获取评论失败"}
 )
 
 type CommentLogic struct{}
@@ -145,66 +146,46 @@ func (l *CommentLogic) UnlikeComment(ctx context.Context, req types.UnlikeCommen
 	return &types.UnlikeCommentResp{}, nil
 }
 
-/*
-func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentListReq) (*types.GetCommentListResp, error) {
+// GetCommentList 获取一级评论列表，并显示部分二级评论
+func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentListReq) (resp *types.GetCommentListResp, err error) {
 	defer utils.RecordTime(time.Now())()
-	commentRepo := repo.NewCommentRepo(global.DB)
-	comments, err := commentRepo.GetCommentList(req.BlogID)
+
+	// 调用 repo 层获取一级评论列表
+	commentList, totalCount, err := repo.NewCommentRepo(global.DB).GetFirstCommentList(req)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "GetCommentList failed: %v", err)
-		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
+		zlog.CtxErrorf(ctx, "获取一级评论列表失败: %v", err)
+		return nil, response.ErrResp(err, codeGetCommentFail)
 	}
-	// 递归填充子回复
-	for i := range comments {
-		comments[i].Replies, err = commentRepo.GetRepliesList(comments[i].ID)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "Failed to get replies for comment %d: %v", comments[i].ID, err)
-			return nil, response.ErrResp(err, response.INTERNAL_ERROR)
-		}
+
+	// 构造响应数据
+	resp = &types.GetCommentListResp{
+		TotalCount: totalCount,
+		Page:       req.Page,
+		PageSize:   req.PageSize,
+		Comments:   commentList,
 	}
-	zlog.CtxInfof(ctx, "Comment list with replies retrieved successfully (blogID: %d, count: %d)", req.BlogID, len(comments))
-	resp := &types.GetCommentListResp{
-		Comments: comments,
-	}
-	return resp, nil
-}
-*/
-/*
-func (l *CommentLogic) GetRepliesList(ctx context.Context, req types.GetRepliesListReq) (*types.GetRepliesListResp, error) {
-	defer utils.RecordTime(time.Now())()
-	commentRepo := repo.NewCommentRepo(global.DB)
-	replies, err := commentRepo.GetRepliesList(req.CommentID)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "GetRepliesList failed: %v", err)
-		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
-	}
-	// 递归填充子回复
-	for i := range replies {
-		replies[i].Replies, err = commentRepo.GetRepliesList(replies[i].ID)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "Failed to get replies for reply %d: %v", replies[i].ID, err)
-			return nil, response.ErrResp(err, response.INTERNAL_ERROR)
-		}
-	}
-	zlog.CtxInfof(ctx, "Replies list retrieved successfully (commentID: %d, count: %d)", req.CommentID, len(replies))
-	resp := &types.GetRepliesListResp{
-		Replies: replies,
-	}
+
 	return resp, nil
 }
 
-// GetCommentListByLikes 获取评论列表（按点赞数排序）
-func (l *CommentLogic) GetCommentListByLikes(ctx context.Context, req types.GetCommentListReq) (*types.GetCommentListResp, error) {
+// GetSecondCommentList 获取更多二级评论
+func (l *CommentLogic) GetSecondCommentList(ctx context.Context, req types.GetSecondCommentListReq) (resp *types.GetSecondCommentListResp, err error) {
 	defer utils.RecordTime(time.Now())()
-	commentRepo := repo.NewCommentRepo(global.DB)
-	comments, err := commentRepo.GetCommentListByLikes(req.BlogID)
+
+	// 调用 repo 层获取二级评论列表
+	secondCommentList, totalCount, err := repo.NewCommentRepo(global.DB).GetSecondCommentList(req)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "GetCommentListByLikes failed: %v", err)
-		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
+		zlog.CtxErrorf(ctx, "获取二级评论列表失败: %v", err)
+		return nil, response.ErrResp(err, codeGetCommentFail)
 	}
-	zlog.CtxInfof(ctx, "Comment list by likes retrieved successfully (blogID: %d, count: %d)", req.BlogID, len(comments))
-	resp := &types.GetCommentListResp{
-		Comments: comments,
+
+	// 构造响应数据
+	resp = &types.GetSecondCommentListResp{
+		TotalCount:     totalCount,
+		Page:           req.Page,
+		PageSize:       req.PageSize,
+		SecondComments: secondCommentList,
 	}
+
 	return resp, nil
-}*/
+}
