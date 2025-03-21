@@ -29,7 +29,7 @@ wechat:
   base_url:"https://yourdomain.com/wechat/callback"
 
 ai:
-  model: deepseek-chat
+  model:
   api_key:
-  base_url: "https://api.deepseek.com"
-  func_url: "/chat/completions"
+  base_url:
+  func_url:
