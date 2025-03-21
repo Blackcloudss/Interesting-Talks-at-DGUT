@@ -29,11 +29,12 @@ func Test(c *gin.Context) {
 // @Title        test.go
 func Display(c *gin.Context) {
 	const TEST = "" +
-		"这里是莞工趣坛项目，看到则说明能访问到服务器。" +
+		"Hello(╹ڡ╹ ),这里是莞工趣坛项目，看到则说明能访问到服务器。" +
+		"本项目还有部分功能尚未完成，敬请期待！" +
 		"若后续部分功能无法访问：" +
-		"1.请检查下自身的功能url是否正确" +
-		"2.检查参数是否符合文档" +
-		"如有问题，请联系qsk"
+		"1.请检查下自身的功能url是否正确；" +
+		"2.检查参数是否符合文档。" +
+		"如有其他问题，请联系qsk❄❄"
 	response.Response(c, TEST, nil)
 	return
 }
