@@ -94,15 +94,23 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.PUT("/update", api.UpdateBlogHandler)                              // 更新帖子
 		rg.DELETE("/delete", api.DeleteBlogHandler)                           // 删除帖子
 		rg.GET("/get", api.GetBlogByIDHandler)                                // 获取帖子详情
-		rg.GET("/list", api.GetBlogsHandler)                                  // 分页显示帖子
+		rg.GET("/list", api.GetBlogsHandler)                                  // 首页显示帖子
 		rg.GET("/list_by_tag", api.GetBlogsByTagHandler)                      // 根据标签显示帖子列表
 		rg.GET("/my_blogs", api.GetMyBlogsHandler)                            // 获取当前用户发布的帖子
-		rg.GET("/other_blogs", api.GetBlogsByUserIDHandler)                   //获取其他用户的帖子
+		rg.GET("/other_blogs", api.GetBlogsByUserIDHandler)                   //获取其他用户的帖子（点击其他用户主页可看到）
 		rg.POST("/collect", api.CollectBlogHandler)                           // 收藏帖子
 		rg.POST("/uncollect", api.UncollectBlogHandler)                       // 取消收藏帖子
-		rg.GET("/collected", api.GetCollectedBlogsHandler)                    // 获取用户收藏的帖子
+		rg.GET("/collected", api.GetCollectedBlogsHandler)                    // 获取用户收藏的帖子（我的帖子）
 		rg.POST("/like", api.LikeBlogHandler)                                 // 点赞帖子
 		rg.POST("/unlike", api.UnlikeBlogHandler)                             // 取消点赞
+	})
+
+	//搜索模块相关路由
+	routeManager.RegisterSearchRoutes(func(rg *gin.RouterGroup) {
+		rg.Use(middleware.CheckAtoken())
+		rg.GET("/blogs", api.SearchBlogsHandler)                   //关键词搜索帖子
+		rg.GET("/get_history", api.GetSearchHistoryHandler)        //获取搜索历史
+		rg.POST("/delete_history", api.DeleteSearchHistoryHandler) //删除搜索历史
 	})
 
 	//评论相关路由
@@ -110,9 +118,10 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.Use(middleware.CheckAtoken())                                  // 检查 Atoken
 		rg.POST("/create", middleware.IncreasePoint(), api.CreateComment) // 创建评论
 		rg.DELETE("/delete", api.DeleteComment)                           // 删除评论
-		rg.GET("/list", api.GetCommentList)                               // 获取评论列表
-		rg.POST("/like ", api.LikeCommentHandler)                         //点赞评论
-		rg.POST("/unlike", api.UnlikeCommentHandler)                      //取消点赞评论
+		rg.GET("/list", api.GetCommentList)                               // 获取一级评论列表（显示部分二级评论）
+		rg.GET("/secondlist", api.GetMoreSecondComment)                   //获取更多二级评论
+		rg.POST("/like ", api.LikeComment)                                //点赞评论
+		rg.POST("/unlike", api.UnlikeComment)                             //取消点赞评论
 	})
 
 	//公告相关路由
