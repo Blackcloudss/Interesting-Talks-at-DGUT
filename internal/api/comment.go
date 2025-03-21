@@ -77,8 +77,8 @@ func UnlikeComment(c *gin.Context) {
 // 分页加载：通过滚动事件触发分页加载更多评论。
 //展开二级评论：点击“展开更多”按钮，发送请求加载更多二级评论。
 
-// GetCommentListHandler 获取评论列表
-func GetCommentListHandler(c *gin.Context) {
+// GetCommentList 获取评论列表
+func GetCommentList(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.GetCommentListReq](c)
 	if err != nil {
@@ -93,7 +93,7 @@ func GetCommentListHandler(c *gin.Context) {
 }
 
 // GetMoreSecondCommentHandler 获取更多二级评论
-func GetMoreSecondCommentHandler(c *gin.Context) {
+func GetMoreSecondComment(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.GetSecondCommentListReq](c)
 	if err != nil {

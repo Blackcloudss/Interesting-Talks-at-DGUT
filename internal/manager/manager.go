@@ -22,7 +22,8 @@ type RouteManager struct {
 	ProfileRoutes *gin.RouterGroup // 个人信息相关路由组
 	ChatRoutes    *gin.RouterGroup // 聊天相关路由组
 	AIRoutes      *gin.RouterGroup // AI相关路由组
-	BlogRoutes    *gin.RouterGroup // 博客相关路由组
+	BlogRoutes    *gin.RouterGroup // 帖子相关路由组
+	SearchRoutes  *gin.RouterGroup // 搜索相关路由组
 	CommentRoutes *gin.RouterGroup // 评论相关路由组
 	NoticeRoutes  *gin.RouterGroup // 公告相关路由组
 	FollowRoutes  *gin.RouterGroup //关注相关路由
@@ -37,10 +38,11 @@ func NewRouteManager(router *gin.Engine) *RouteManager {
 		ProfileRoutes: router.Group("/api/profile"), // 初始化个人信息路由组
 		ChatRoutes:    router.Group("/api/chat"),    // 初始化聊天路由组
 		BlogRoutes:    router.Group("/api/blog"),    // 初始化帖子路由组
+		SearchRoutes:  router.Group("/api/search"),  //初始化搜索路由组
 		CommentRoutes: router.Group("/api/comment"), // 初始化评论路由组
 		AIRoutes:      router.Group("/api/ai"),      // 初始化AI路由组
-		NoticeRoutes:  router.Group("/api/notice"),  //公告相关路由
-		FollowRoutes:  router.Group("/api/follow"),  //关注模块相关路由
+		NoticeRoutes:  router.Group("/api/notice"),  //初始化公告相关路由
+		FollowRoutes:  router.Group("/api/follow"),  //初始化关注模块相关路由
 	}
 }
 
@@ -72,6 +74,11 @@ func (rm *RouteManager) RegisterChatRoutes(handler PathHandler) {
 // RegisterBlogRoutes 注册帖子相关路由
 func (rm *RouteManager) RegisterBlogRoutes(handler PathHandler) {
 	handler(rm.BlogRoutes)
+}
+
+// RegisterSearchRoutes 注册搜索相关路由
+func (rm *RouteManager) RegisterSearchRoutes(handler PathHandler) {
+	handler(rm.SearchRoutes)
 }
 
 // RegisterCommentRoutes 注册评论相关路由
