@@ -3,6 +3,7 @@ package types
 import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"mime/multipart"
+	"time"
 )
 
 // CreateBlogReq 创建帖子请求体
@@ -17,8 +18,8 @@ type CreateBlogReq struct {
 
 // CreateBlogResp 创建帖子响应体
 type CreateBlogResp struct {
-	BlogID   int64 `json:"blog_id"`
-	CreateAt int64 `json:"create_at"`
+	BlogID   int64     `json:"blog_id"`
+	CreateAt time.Time `json:"create_at"`
 }
 
 // UpdateBlogReq 更新帖子请求体
@@ -34,7 +35,7 @@ type UpdateBlogReq struct {
 
 // UpdateBlogResp 更新帖子响应体
 type UpdateBlogResp struct {
-	UpdateAt int64 `json:"update_at"`
+	UpdateAt time.Time `json:"update_at"`
 }
 
 // DeleteBlogReq 删除帖子请求体

@@ -69,7 +69,7 @@ func (l *BlogLogic) CreateBlog(ctx context.Context, req types.CreateBlogReq, Use
 
 	resp = &types.CreateBlogResp{
 		BlogID:   blog.ID,
-		CreateAt: blog.CreatedAt.Unix(),
+		CreateAt: blog.CreatedAt,
 	}
 	return resp, nil
 }
@@ -125,7 +125,7 @@ func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq, ima
 
 	// 构造响应体
 	resp = &types.UpdateBlogResp{
-		UpdateAt: blog.UpdatedAt.Unix(), // 使用更新时间
+		UpdateAt: blog.UpdatedAt, // 使用更新时间
 	}
 	return resp, nil
 }

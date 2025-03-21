@@ -11,6 +11,10 @@ type Blog struct { // 帖子
 	UserID         int64  `json:"user_id"`                                               // 用户ID
 	Title          string `gorm:"size:100;not null;index" json:"title"`                  //标题
 	Content        string `gorm:"type:text;not null" json:"content"`                     // 内容，不可为空
+	// 关联一级评论
+	FirstComments []FirstComment `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	// 关联二级评论
+	SecondComments []SecondComment `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 type Like struct { // 点赞
