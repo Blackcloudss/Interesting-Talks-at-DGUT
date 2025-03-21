@@ -48,6 +48,8 @@ type WechatConfig struct {
 }
 
 type AIConfig struct {
-	AppKey string `mapstructure:"app_key"`
-	AppUrl string `mapstructure:"api_URL"`
+	Model   string `mapstructure:"model"`
+	ApiKey  string `mapstructure:"api_key"`
+	BaseUrl string `mapstructure:"base_url"`
+	FuncUrl string `mapstructure:"func_url"`
 }

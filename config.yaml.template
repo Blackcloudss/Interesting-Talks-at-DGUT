@@ -29,5 +29,7 @@ wechat:
   base_url:"https://yourdomain.com/wechat/callback"
 
 ai:
- api_key: ""
- api_URL: "https://api.deepseek.com/v1/chat/completions"
+  model: deepseek-chat
+  api_key:
+  base_url: "https://api.deepseek.com"
+  func_url: "/chat/completions"
