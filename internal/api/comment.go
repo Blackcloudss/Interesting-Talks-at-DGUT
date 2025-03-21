@@ -73,7 +73,36 @@ func UnlikeComment(c *gin.Context) {
 	return
 }
 
-// 获取评论列表，按发布时间排序（分页）
-// 显示一级评论时要显示部分二级评论，点展开更多显示更多二级评论
+// 获取评论列表，按发布时间排序或按点赞数排列（分页）
+// 分页加载：通过滚动事件触发分页加载更多评论。
+//展开二级评论：点击“展开更多”按钮，发送请求加载更多二级评论。
 
-// 获取评论列表（按点赞数排序）（分页）
+// GetCommentListHandler 获取评论列表
+func GetCommentListHandler(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetCommentListReq](c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "GetCommentList request error: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
+		return
+	}
+	zlog.CtxInfof(ctx, "GetCommentList request: %+v", req)
+
+	resp, err := logic.NewCommentLogic().GetCommentList(ctx, req)
+	response.Response(c, resp, err)
+}
+
+// GetMoreSecondCommentHandler 获取更多二级评论
+func GetMoreSecondCommentHandler(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetSecondCommentListReq](c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "GetMoreSecondComment request error: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
+		return
+	}
+	zlog.CtxInfof(ctx, "GetMoreSecondComment request: %+v", req)
+
+	resp, err := logic.NewCommentLogic().GetSecondCommentList(ctx, req)
+	response.Response(c, resp, err)
+}

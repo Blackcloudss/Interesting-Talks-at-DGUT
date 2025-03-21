@@ -5,6 +5,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/pkg/redisx"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -34,7 +35,6 @@ func (r *CommentRepo) CreateFirstComment(comment *model.FirstComment) error {
 		if err := tx.Model(&model.Blog{}).Where("id = ?", comment.BlogID).Update("comment_count", gorm.Expr("comment_count + 1")).Error; err != nil {
 			return err
 		}
-
 		return nil
 	})
 }
@@ -215,40 +215,94 @@ func (r *CommentRepo) GetCommentByID(commentID int64) (*model.FirstComment, *mod
 	return &firstComment, nil, nil
 }
 
-/*
-// GetCommentList 获取评论列表
-func (r *CommentRepo) GetCommentList(blogID int64) ([]model.Comment, error) {
-	var comments []model.Comment
-	if err := r.DB.Where("blog_id = ?", blogID).Order("created_at DESC").Find(&comments).Error; err != nil {
-		zlog.Errorf("Failed to get comment list: %v", err)
-		return nil, err
-	}
-	return comments, nil
-}*/
+// GetFirstCommentList 获取一级评论列表，并显示部分二级评论
+func (r *CommentRepo) GetFirstCommentList(req types.GetCommentListReq) ([]types.CommentDetail, int64, error) {
+	var (
+		firstCommentDetails []types.CommentDetail
+		totalCount          int64
+	)
 
-/*
-// GetRepliesList 获取评论的回复列表
-func (r *CommentRepo) GetRepliesList(commentID int64) ([]model.Comment, error) {
-	var replies []model.Comment
-	err := r.DB.Where("parent_id = ?", commentID).Order("created_at DESC").Find(&replies).Error
-	return replies, err
-}*/
-/*
-// GetCommentListWithReplies 获取评论列表及其回复
-func (r *CommentRepo) GetCommentListWithReplies(blogID int64) ([]model.Comment, error) {
-	var comments []model.Comment
-	err := r.DB.Where("blog_id = ? AND parent_id = 0", blogID).Order("created_at DESC").Find(&comments).Error
-	if err != nil {
-		return nil, err
+	// 查询一级评论总数
+	if err := r.DB.Model(&model.FirstComment{}).Where("blog_id = ?", req.BlogID).Count(&totalCount).Error; err != nil {
+		zlog.Errorf("查询一级评论总数失败：%v", err)
+		return nil, 0, err
 	}
 
-	for i := range comments {
-		replies, err := r.GetRepliesList(comments[i].ID)
-		if err != nil {
-			return nil, err
-		}
-		comments[i].Replies = replies
+	// 查询一级评论列表及用户信息
+	if err := r.DB.Model(&model.FirstComment{}).
+		Select("first_comments.*, user_displays.nickname, user_displays.avatar, user_displays.tag").
+		Joins("LEFT JOIN user_displays ON first_comments.user_id = user_displays.user_id").
+		Where("first_comments.blog_id = ?", req.BlogID).
+		Order(req.SortBy + " DESC").
+		Offset((req.Page - 1) * req.PageSize).
+		Limit(req.PageSize).
+		Scan(&firstCommentDetails).Error; err != nil {
+		zlog.Errorf("查询一级评论列表失败：%v", err)
+		return nil, 0, err
 	}
 
-	return comments, nil
-}*/
+	// 提取一级评论的 ID 列表
+	firstCommentIDs := make([]int64, len(firstCommentDetails))
+	for i, fc := range firstCommentDetails {
+		firstCommentIDs[i] = fc.FirstComment.ID
+	}
+
+	// 查询所有一级评论对应的二级评论（前3条）
+	var secondCommentDetails []types.SecondCommentDetail
+	if err := r.DB.Model(&model.SecondComment{}).
+		Select("second_comments.*, user_displays.nickname, user_displays.avatar, user_displays.tag").
+		Joins("LEFT JOIN user_displays ON second_comments.user_id = user_displays.user_id").
+		Where("second_comments.root_parent_id IN ?", firstCommentIDs).
+		Order("second_comments.created_at ASC").
+		Group("second_comments.root_parent_id").
+		Limit(3).
+		Scan(&secondCommentDetails).Error; err != nil {
+		zlog.Warnf("查询部分二级评论失败：%v", err)
+		secondCommentDetails = []types.SecondCommentDetail{}
+	}
+
+	// 构造二级评论映射
+	secondCommentMap := make(map[int64][]types.SecondCommentDetail)
+	for _, sc := range secondCommentDetails {
+		secondCommentMap[sc.SecondComment.RootParentID] = append(secondCommentMap[sc.SecondComment.RootParentID], sc)
+	}
+
+	// 构造一级评论详情列表
+	for i, fc := range firstCommentDetails {
+		firstCommentDetails[i].SecondComments = secondCommentMap[fc.FirstComment.ID]
+	}
+
+	return firstCommentDetails, totalCount, nil
+}
+
+// GetSecondCommentList 获取更多二级评论
+func (r *CommentRepo) GetSecondCommentList(req types.GetSecondCommentListReq) ([]types.SecondCommentDetail, int64, error) {
+	var (
+		secondCommentDetails []types.SecondCommentDetail
+		totalCount           int64
+	)
+
+	// 查询二级评论总数
+	if err := r.DB.Model(&model.SecondComment{}).
+		Where("root_parent_id = ?", req.RootParentID).
+		Count(&totalCount).Error; err != nil {
+		zlog.Errorf("查询二级评论总数失败：%v", err)
+		return nil, 0, err
+	}
+
+	// 查询二级评论列表及用户信息
+	// 直接将结果映射到 types.SecondCommentDetail
+	if err := r.DB.Model(&model.SecondComment{}).
+		Select("second_comments.*, user_displays.nickname, user_displays.avatar, user_displays.tag").
+		Joins("LEFT JOIN user_displays ON second_comments.user_id = user_displays.user_id").
+		Where("second_comments.root_parent_id = ?", req.RootParentID).
+		Order("second_comments.created_at ASC").
+		Offset((req.Page - 1) * req.PageSize).
+		Limit(req.PageSize).
+		Scan(&secondCommentDetails).Error; err != nil {
+		zlog.Errorf("查询二级评论列表失败：%v", err)
+		return nil, 0, err
+	}
+
+	return secondCommentDetails, totalCount, nil
+}
