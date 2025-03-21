@@ -13,17 +13,22 @@ import (
 
 // 所有常量文件读取位置
 const (
-	DEFAULT_CONFIG_FILE_PATH  = "/config.yaml"
+	DEFAULT_CONFIG_FILE_PATH = "/config.yaml"
+
 	REDIS_SESSIONKEY          = "ITAD:openid.login:%s:string"
+	SESSIONKEY_EFFECTIVE_TIME = time.Hour * 24 * 7
 	REDIS_WXATOKEN_KEY        = "ITAD:WxAtoken"
 	WXATOKEN_EFFECTIVE_TIME   = time.Minute * 108
-	SESSIONKEY_EFFECTIVE_TIME = time.Hour * 24 * 7
-	ATOKEN_EFFECTIVE_TIME     = time.Hour * 12
-	RTOKEN_EFFECTIVE_TIME     = time.Hour * 24 * 30
-	AUTH_ENUMS_ATOKEN         = "atoken"
-	AUTH_ENUMS_RTOKEN         = "rtoken"
-	DEFAULT_NODE_ID           = 1
-	TOKEN_USER_ID             = "UserId"
+	REDIS_MESSAGES_KEY        = "Chat:%s, Type:%v"
+	MESSAGES_EFFECTIVE_TIME   = time.Hour * 24 * 30
+
+	ATOKEN_EFFECTIVE_TIME = time.Hour * 12
+	RTOKEN_EFFECTIVE_TIME = time.Hour * 24 * 30
+
+	AUTH_ENUMS_ATOKEN = "atoken"
+	AUTH_ENUMS_RTOKEN = "rtoken"
+	DEFAULT_NODE_ID   = 1
+	TOKEN_USER_ID     = "UserId"
 
 	MSGID        = "msg_id"
 	STATUS       = "status"       // 状态
