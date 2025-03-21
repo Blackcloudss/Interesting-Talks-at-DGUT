@@ -70,7 +70,6 @@ func registerRoutes(routeManager *manager.RouteManager) {
 			PrivateProfile.GET("/show", api.GetPrivateProfile)      // 获取用户隐私信息
 			PrivateProfile.PUT("/update", api.UpdatePrivateProfile) // 更新隐私信息
 		}
-
 	})
 
 	//聊天相关路由
@@ -83,8 +82,9 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//AI相关路由
 	routeManager.RegisterAIRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken()) // 检查 Atoken
-		rg.GET("/chat", api.AIChat)      //跟 AI聊天
+		rg.Use(middleware.CheckAtoken())     // 检查 Atoken
+		rg.GET("/chat", api.AIChatStream)    // AI流式聊天
+		rg.DELETE("", api.DeleteChatHistory) // 删除AI聊天记录
 	})
 
 	//帖子相关路由

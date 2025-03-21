@@ -2,7 +2,9 @@ package response
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 // @Title        msg_code.go
@@ -83,4 +85,10 @@ func (r *JsonMsgResponse) error(code int, message string) {
 	res.Message = message
 	res.Data = nilStruct{}
 	r.Ctx.JSON(code200, res)
+}
+
+// SendSSEError 发送sse错误信息
+func SendSSEError(c *gin.Context, msg string) {
+	fmt.Fprintf(c.Writer, "event: error\ndata: %s\n\n", msg)
+	c.Writer.(http.Flusher).Flush()
 }

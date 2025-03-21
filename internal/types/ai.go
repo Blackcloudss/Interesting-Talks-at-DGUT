@@ -5,42 +5,44 @@ package types
 // @Create       XdpCs 2025-03-06 上午1:27
 // @Update       XdpCs 2025-03-06 上午1:27
 
-// 定义API请求结构体
-type AIChatReq struct {
-	Model            string    `json:"model"`             //模型名称
-	Messages         []Message `json:"messages"`          //历史消息
-	MaxTokens        int       `json:"max_tokens"`        //最大输出字数
-	FrequencyPenalty float64   `json:"frequency_penalty"` //频率惩罚
-	PresencePenalty  float64   `json:"presence_penalty"`  //存在惩罚
-	Temperature      float64   `json:"temperature"`       //温度
-	TopP             float64   `json:"top_p"`             //贪婪度
-	Stream           bool      `json:"stream"`            //是否流式输出
-	ResponseFormat   Format    `json:"response_format"`   //响应格式
-	Stop             []string  `json:"stop"`              //停止词
+// AI聊天请求体
+type AIChatStreamReq struct {
+	Type            string  `json:"type"`                   // 类型
+	Content         string  `form:"content" json:"content"` // 对话内容
+	PresencePenalty float64 `json:"presence_penalty"`       // 可能值  介于 -2.0 和 2.0 之间的数字。如果该值为正，
+	// 那么新 token 会根据其是否已在已有文本中出现受到相应的惩罚，从而增加模型谈论新主题的可能性。 降低模型重复相同内容的可能性
 }
 
+// API请求结构体
+type AIAPIReq struct {
+	Messages        []Message `json:"messages"`         //对话消息列表
+	Model           string    `json:"model"`            //模型名称
+	PresencePenalty float64   `json:"presence_penalty"` //可能值
+	Temperature     float64   `json:"temperature"`      //温度
+	ResponseFormat  Format    `json:"response_format"`  //响应格式
+	Stream          bool      `json:"stream"`           //是否流式输出
+}
+
+// 对话消息结构体
 type Message struct {
-	Role    string `json:"role"`
+	Role    string `json:"role"` // 角色 ： 1.系统、 2.用户、 3.助手
 	Content string `json:"content"`
 }
 
+// 响应格式  1.text 2.json_object
 type Format struct {
 	Type string `json:"type"`
 }
 
-// 定义API响应结构体
-type AIChatResp struct {
-	Id      string   `json:"id"`
-	Choices []Choice `json:"choices"`
-	Error   Error    `json:"error"`
+// API响应结构体
+type AIChatStreamResp struct {
+	Choices []Choice `json:"choices"` //模型生成的 completion 的选择列表
 }
 
+// 模型生成的 completion 的选择列表
 type Choice struct {
-	Message struct {
-		Content string `json:"content"`
-		Role    string `json:"role"`
-	} `json:"message"`
-}
-type Error struct {
-	Message string `json:"message"`
+	Delta struct {
+		Content string `json:"content"` // completion 增量的内容
+		Role    string `json:"role"`    // 角色
+	} `json:"delta"`
 }
