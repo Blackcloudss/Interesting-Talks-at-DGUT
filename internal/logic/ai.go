@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
@@ -18,6 +19,11 @@ import (
 
 const (
 	MaxHistoryRounds = 10 // 历史对话轮数 定义为 10轮
+)
+
+var (
+	SAVE_HISTORY_MESSAGES   = response.MsgCode{Code: 52001, Msg: "保存历史消息失败"}
+	DELETE_HISTORY_MESSAGES = response.MsgCode{Code: 52002, Msg: "删除历史消息失败"}
 )
 
 // @Title        ai.go
@@ -106,6 +112,7 @@ func (l *AILogic) GetHistoryMessages(ctx context.Context, MessagesKey string, Ty
 			system = prompt.ITAD_PROMPT
 		}
 	} else if err != nil {
+
 		return nil, err
 	}
 
@@ -126,7 +133,7 @@ func (l *AILogic) GetHistoryMessages(ctx context.Context, MessagesKey string, Ty
 	return messages, nil
 }
 
-// 保存历史对话
+// 保存历史消息
 func (l *AILogic) SaveHistoryMessages(ctx context.Context, MessagesKey string, messages []types.Message) (err error) {
 	defer utils.RecordTime(time.Now())()
 	// 排除系统消息
@@ -145,6 +152,29 @@ func (l *AILogic) SaveHistoryMessages(ctx context.Context, MessagesKey string, m
 	pipe.Expire(ctx, MessagesKey+":messages", global.MESSAGES_EFFECTIVE_TIME)
 	// 设置系统键过期时间
 	pipe.Expire(ctx, MessagesKey+":system", global.MESSAGES_EFFECTIVE_TIME)
-	pipe.Exec(ctx)
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "保存历史消息失败：%v", err)
+		return response.ErrResp(err, SAVE_HISTORY_MESSAGES)
+	}
+	return
+}
+
+// 删除历史消息
+func (l *AILogic) DeleteHistoryMessages(ctx context.Context, MessagesKey string) (resp types.DeleteHistoryMessagesResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	// 创建管道
+	pipe := global.Rdb.Pipeline()
+	// 删除消息列表
+	pipe.Del(ctx, MessagesKey+":messages")
+	// 删除系统消息
+	pipe.Del(ctx, MessagesKey+":system")
+	//批量操作：所有命令一次性发送到 Redis 服务器
+	//RTT 优化：无论删除多少键，网络往返次数固定为 1 次
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "删除历史消息失败：%v", err)
+		return resp, response.ErrResp(err, DELETE_HISTORY_MESSAGES)
+	}
 	return
 }

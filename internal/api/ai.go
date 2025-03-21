@@ -46,7 +46,13 @@ func AIChatStream(c *gin.Context) {
 	MessagesKey := fmt.Sprintf(global.REDIS_MESSAGES_KEY, userid, req.Type)
 
 	httpResp, messages, err := logic.NewAILogic().GetChatStream(ctx, MessagesKey, req)
-	defer httpResp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err = Body.Close()
+		if err != nil {
+			zlog.CtxErrorf(ctx, "关闭Body失败: %v", err)
+			return
+		}
+	}(httpResp.Body)
 	if httpResp.StatusCode != http.StatusOK {
 		zlog.CtxErrorf(ctx, "HTTP请求失败，状态码：%d", httpResp.StatusCode)
 		return
@@ -77,7 +83,11 @@ func AIChatStream(c *gin.Context) {
 				content := chuck.Choices[0].Delta.Content
 				if content != "" {
 					// 按 SSE 协议格式推送
-					fmt.Fprintf(c.Writer, "data: %s\n\n", content)
+					_, err := fmt.Fprintf(c.Writer, "data: %s\n\n", content)
+					if err != nil {
+						response.SendSSEError(c, "流式传输中断")
+						return
+					}
 					// 立即刷新缓冲区
 					flusher.Flush()
 					// 逐步收集所有流式片段，最终拼成完整的 AI 响应内容
@@ -99,15 +109,17 @@ func AIChatStream(c *gin.Context) {
 	}
 }
 
-func DeleteChatHistory(c *gin.Context) {
-	//ctx := zlog.GetCtxFromGin(c)
-	//req, err := types.BindReq[types.AIChatReq](c)
-	//if err != nil {
-	//	zlog.CtxErrorf(ctx, "AIChat request error: %v", err)
-	//	return
-	//}
-	//zlog.CtxInfof(ctx, "AIChat request: %v", req)
-	//resp, err := logic.NewAILogic().AIChat(ctx, req)
-	//response.Response(c, resp, err)
+func DeleteHistoryMessages(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.DeleteHistoryMessagesReq](c)
+	userid := jwt.GetUserId(c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Delete HistoryMessages err:%v", err)
+		return
+	}
+	zlog.CtxInfof(ctx, "HistoryMessages request: %v", req)
+	MessagesKey := fmt.Sprintf(global.REDIS_MESSAGES_KEY, userid, req.Type)
+	resp, err := logic.NewAILogic().DeleteHistoryMessages(ctx, MessagesKey)
+	response.Response(c, resp, err)
 	return
 }

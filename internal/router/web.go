@@ -22,7 +22,11 @@ func RunServer() {
 		zlog.Errorf("Listen error: %v", err)
 		panic(err.Error())
 	}
-	r.Run(fmt.Sprintf("%s:%d", configs.Conf.App.Host, configs.Conf.App.Port)) // 启动 Gin 服务器
+	err = r.Run(fmt.Sprintf("%s:%d", configs.Conf.App.Host, configs.Conf.App.Port))
+	if err != nil {
+		zlog.Errorf("RunServer error: %v", err)
+		return
+	} // 启动 Gin 服务器
 }
 
 // listen 配置 Gin 服务器
@@ -87,9 +91,9 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//AI相关路由
 	routeManager.RegisterAIRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken())     // 检查 Atoken
-		rg.GET("/chat", api.AIChatStream)    // AI流式聊天
-		rg.DELETE("", api.DeleteChatHistory) // 删除AI聊天记录
+		rg.Use(middleware.CheckAtoken())                      // 检查 Atoken
+		rg.GET("/chat", api.AIChatStream)                     // AI流式聊天
+		rg.DELETE("/delete/:type", api.DeleteHistoryMessages) // 删除AI聊天记录
 	})
 
 	//帖子相关路由
