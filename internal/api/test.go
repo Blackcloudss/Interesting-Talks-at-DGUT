@@ -15,15 +15,25 @@ import (
 // Test  api层 仅作为校验参数和返回相应，复杂逻辑交给logic层处理
 func Test(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-
 	req, err := types.BindReq[types.TestO1Req](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Test request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "Test request: %v", req)
 	resp, err := logic.NewTestLogic().TestLogic(ctx, req)
 	response.Response(c, resp, err)
+	return
+}
+
+// @Title        test.go
+func Display(c *gin.Context) {
+	const TEST = "" +
+		"这里是莞工趣坛项目，看到则说明能访问到服务器。" +
+		"若后续部分功能无法访问：" +
+		"1.请检查下自身的功能url是否正确" +
+		"2.检查参数是否符合文档" +
+		"如有问题，请联系qsk"
+	response.Response(c, TEST, nil)
 	return
 }

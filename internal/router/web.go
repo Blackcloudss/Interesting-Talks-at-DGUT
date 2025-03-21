@@ -40,6 +40,11 @@ func listen() (*gin.Engine, error) {
 }
 
 func registerRoutes(routeManager *manager.RouteManager) {
+	//测试相关路由
+	routeManager.RegisterTestRoutes(func(rg *gin.RouterGroup) {
+		rg.GET("", api.Display)
+	})
+
 	//通用功能相关路由
 	routeManager.RegisterCommonRoutes(func(rg *gin.RouterGroup) {
 		rg.POST("/rtoken", api.RefreshToken) //用rtoken刷新atoken和rtoken
