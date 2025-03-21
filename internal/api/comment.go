@@ -41,23 +41,8 @@ func DeleteComment(c *gin.Context) {
 	return
 }
 
-// 获取评论列表
-func GetCommentList(c *gin.Context) {
-	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.GetCommentListReq](c)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "GetCommentList request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
-		return
-	}
-	zlog.CtxInfof(ctx, "GetCommentList request: %+v", req)
-	resp, err := logic.NewCommentLogic().GetCommentList(ctx, req)
-	response.Response(c, resp, err)
-	return
-}
-
-// LikeCommentHandler 点赞评论
-func LikeCommentHandler(c *gin.Context) {
+// LikeComment 点赞评论
+func LikeComment(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.LikeCommentReq](c)
 	if err != nil {
@@ -72,8 +57,8 @@ func LikeCommentHandler(c *gin.Context) {
 	return
 }
 
-// UnlikeCommentHandler 取消点赞评论
-func UnlikeCommentHandler(c *gin.Context) {
+// UnlikeComment 取消点赞评论
+func UnlikeComment(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.UnlikeCommentReq](c)
 	if err != nil {
@@ -88,4 +73,7 @@ func UnlikeCommentHandler(c *gin.Context) {
 	return
 }
 
-//给评论回复
+// 获取评论列表，按发布时间排序（分页）
+// 显示一级评论时要显示部分二级评论，点展开更多显示更多二级评论
+
+// 获取评论列表（按点赞数排序）（分页）

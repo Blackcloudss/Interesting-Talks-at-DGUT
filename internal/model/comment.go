@@ -8,6 +8,12 @@ type FirstComment struct { //直接评论帖子的一级评论
 	Content      string `gorm:"type:text;not null" json:"content"` // 评论内容
 	LikesCount   int    `gorm:"default:0" json:"likes_count"`      // 点赞数
 	RepliesCount int    `gorm:"default:0" json:"replies_count"`    // 回复数
+	// 关联二级评论
+	SecondComments []SecondComment `gorm:"foreignKey:RootParentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+}
+
+func (t *FirstComment) TableName() string {
+	return "first_comment"
 }
 
 /*
@@ -21,8 +27,11 @@ type SecondComment struct {
 	Content      string `gorm:"type:text;not null" json:"content"` // 评论内容
 	ParentID     int64  `gorm:"default:0" json:"parent_id"`        // 父评论ID（为0是回复一级评论的评论，不为0是回复二级评论的评论）
 	RootParentID int64  `gorm:"default:0" json:"root_parent_id"`   // 根评论ID（所属的级评论）
-	LikesCount   int    `gorm:"default:0" json:"likes_count"`      // 点赞数
 	RepliesCount int    `gorm:"default:0" json:"replies_count"`    // 回复数
+}
+
+func (t *SecondComment) TableName() string {
+	return "second_comment"
 }
 
 type CommentLike struct {

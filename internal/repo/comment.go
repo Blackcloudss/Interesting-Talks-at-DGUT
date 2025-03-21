@@ -21,17 +21,15 @@ func NewCommentRepo(db *gorm.DB) *CommentRepo {
 	}
 }
 
-// CreateComment 创建评论并更新帖子的评论数
-func (r *CommentRepo) CreateComment(comment *model.Comment) error {
+// CreateFirstComment 创建一级评论并更新帖子的评论数
+func (r *CommentRepo) CreateFirstComment(comment *model.FirstComment) error {
 	return r.DB.Transaction(func(tx *gorm.DB) error {
 		// 对评论内容进行敏感词过滤替换
 		comment.Content = global.Filter.Replace(comment.Content, '*')
-
 		// 创建评论记录
 		if err := tx.Create(comment).Error; err != nil {
 			return err
 		}
-
 		// 更新帖子的评论数
 		if err := tx.Model(&model.Blog{}).Where("id = ?", comment.BlogID).Update("comment_count", gorm.Expr("comment_count + 1")).Error; err != nil {
 			return err
@@ -41,72 +39,54 @@ func (r *CommentRepo) CreateComment(comment *model.Comment) error {
 	})
 }
 
-// DeleteComment 删除评论并减少帖子的评论数
-func (r *CommentRepo) DeleteComment(commentID, blogID int64) error {
+// CreateFirstComment 创建二级评论并更新帖子的评论数
+func (r *CommentRepo) CreateSecondComment(comment *model.SecondComment) error {
 	return r.DB.Transaction(func(tx *gorm.DB) error {
-		// 删除评论记录
-		if err := tx.Delete(&model.Comment{}, commentID).Error; err != nil {
+		// 对评论内容进行敏感词过滤替换
+		comment.Content = global.Filter.Replace(comment.Content, '*')
+		// 创建评论记录
+		if err := tx.Create(comment).Error; err != nil {
 			return err
 		}
-
-		// 更新帖子的评论数
-		if err := tx.Model(&model.Blog{}).Where("id = ?", blogID).Update("comment_count", gorm.Expr("comment_count - 1")).Error; err != nil {
+		// 更新父评论的回复数
+		if err := tx.Model(&model.FirstComment{}).Where("id = ?", comment.ParentID).Update("replies_count", gorm.Expr("replies_count + 1")).Error; err != nil {
 			return err
 		}
-
 		return nil
 	})
 }
 
-// GetCommentList 获取评论列表
-func (r *CommentRepo) GetCommentList(blogID int64) ([]model.Comment, error) {
-	var comments []model.Comment
-	if err := r.DB.Where("blog_id = ?", blogID).Order("created_at DESC").Find(&comments).Error; err != nil {
-		zlog.Errorf("Failed to get comment list: %v", err)
-		return nil, err
-	}
-	return comments, nil
-}
-
-/*
-// GetRepliesList 获取评论的回复列表
-func (r *CommentRepo) GetRepliesList(commentID int64) ([]model.Comment, error) {
-	var replies []model.Comment
-	err := r.DB.Where("parent_id = ?", commentID).Order("created_at DESC").Find(&replies).Error
-	return replies, err
-}*/
-
-// GetCommentByID 根据评论ID获取评论
-func (r *CommentRepo) GetCommentByID(commentID int64) (*model.Comment, error) {
-	var comment model.Comment
-	if err := r.DB.First(&comment, commentID).Error; err != nil {
-		zlog.Errorf("Failed to get comment by ID: %v", err)
-		return nil, err
-	}
-	return &comment, nil
-}
-
-/*
-// GetCommentListWithReplies 获取评论列表及其回复
-func (r *CommentRepo) GetCommentListWithReplies(blogID int64) ([]model.Comment, error) {
-	var comments []model.Comment
-	err := r.DB.Where("blog_id = ? AND parent_id = 0", blogID).Order("created_at DESC").Find(&comments).Error
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range comments {
-		replies, err := r.GetRepliesList(comments[i].ID)
-		if err != nil {
-			return nil, err
+// DeleteComment 删除评论
+func (r *CommentRepo) DeleteComment(commentID, blogID int64, isFirstComment bool) error {
+	return r.DB.Transaction(func(tx *gorm.DB) error {
+		if isFirstComment {
+			// 删除一级评论记录
+			if err := tx.Delete(&model.FirstComment{}, commentID).Error; err != nil {
+				return err
+			}
+			// 更新帖子的评论数
+			if err := tx.Model(&model.Blog{}).Where("id = ?", blogID).Update("comment_count", gorm.Expr("comment_count - 1")).Error; err != nil {
+				return err
+			}
+		} else {
+			// 删除二级评论记录
+			if err := tx.Delete(&model.SecondComment{}, commentID).Error; err != nil {
+				return err
+			}
+			// 获取二级评论的根评论ID（即父一级评论ID）
+			var secondComment model.SecondComment
+			if err := tx.Where("id = ?", commentID).First(&secondComment).Error; err != nil {
+				return err
+			}
+			// 更新父一级评论的回复数
+			if err := tx.Model(&model.FirstComment{}).Where("id = ?", secondComment.RootParentID).Update("replies_count", gorm.Expr("replies_count - 1")).Error; err != nil {
+				return err
+			}
 		}
-		comments[i].Replies = replies
-	}
+		return nil
+	})
+}
 
-	return comments, nil
-}*/
-
-// LikeComment 点赞评论
 func (r *CommentRepo) LikeComment(userID, commentID int64) error {
 	lockKey := fmt.Sprintf("comment:like:%d", commentID)
 	lockValue := fmt.Sprintf("%d-%d", userID, time.Now().UnixNano())
@@ -149,19 +129,24 @@ func (r *CommentRepo) LikeComment(userID, commentID int64) error {
 		return errors.New("already liked this comment")
 	}
 
-	// 更新评论的点赞状态和点赞数
-	if err := tx.Model(&model.Comment{}).Where("id = ?", commentID).Updates(map[string]interface{}{
-		"is_liked":   true,
-		"like_count": gorm.Expr("like_count + 1"),
+	// 插入点赞记录
+	if err := tx.Create(&model.CommentLike{
+		CommentID: commentID,
+		UserID:    userID,
+		IsLiked:   true,
 	}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 更新评论的点赞数
+	if err := tx.Model(&model.FirstComment{}).Where("id = ?", commentID).Update("likes_count", gorm.Expr("likes_count + 1")).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	return tx.Commit().Error
 }
-
-// UnlikeComment 取消点赞评论
 func (r *CommentRepo) UnlikeComment(userID, commentID int64) error {
 	tx := r.DB.Begin()
 	if tx.Error != nil {
@@ -179,11 +164,14 @@ func (r *CommentRepo) UnlikeComment(userID, commentID int64) error {
 		return errors.New("not liked this comment")
 	}
 
-	// 更新评论的点赞状态和点赞数
-	if err := tx.Model(&model.Comment{}).Where("id = ?", commentID).Updates(map[string]interface{}{
-		"is_liked":   false,
-		"like_count": gorm.Expr("like_count - 1"),
-	}).Error; err != nil {
+	// 删除点赞记录
+	if err := tx.Where("user_id = ? AND comment_id = ?", userID, commentID).Delete(&model.CommentLike{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// 更新评论的点赞数
+	if err := tx.Model(&model.FirstComment{}).Where("id = ?", commentID).Update("likes_count", gorm.Expr("likes_count - 1")).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -203,3 +191,64 @@ func (r *CommentRepo) IsCommentLiked(userID, commentID int64) (bool, error) {
 	}
 	return like.IsLiked, nil
 }
+
+// GetCommentByID 根据评论ID获取评论
+func (r *CommentRepo) GetCommentByID(commentID int64) (*model.FirstComment, *model.SecondComment, error) {
+	// 尝试从一级评论表中获取
+	var firstComment model.FirstComment
+	if err := r.DB.First(&firstComment, commentID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 如果在一级评论表中未找到，尝试从二级评论表中获取
+			var secondComment model.SecondComment
+			if err := r.DB.First(&secondComment, commentID).Error; err != nil {
+				zlog.Errorf("Failed to get comment by ID: %v", err)
+				return nil, nil, err
+			}
+			// 找到二级评论，返回二级评论
+			return nil, &secondComment, nil
+		} else {
+			zlog.Errorf("Failed to get comment by ID: %v", err)
+			return nil, nil, err
+		}
+	}
+	// 找到一级评论，返回一级评论
+	return &firstComment, nil, nil
+}
+
+/*
+// GetCommentList 获取评论列表
+func (r *CommentRepo) GetCommentList(blogID int64) ([]model.Comment, error) {
+	var comments []model.Comment
+	if err := r.DB.Where("blog_id = ?", blogID).Order("created_at DESC").Find(&comments).Error; err != nil {
+		zlog.Errorf("Failed to get comment list: %v", err)
+		return nil, err
+	}
+	return comments, nil
+}*/
+
+/*
+// GetRepliesList 获取评论的回复列表
+func (r *CommentRepo) GetRepliesList(commentID int64) ([]model.Comment, error) {
+	var replies []model.Comment
+	err := r.DB.Where("parent_id = ?", commentID).Order("created_at DESC").Find(&replies).Error
+	return replies, err
+}*/
+/*
+// GetCommentListWithReplies 获取评论列表及其回复
+func (r *CommentRepo) GetCommentListWithReplies(blogID int64) ([]model.Comment, error) {
+	var comments []model.Comment
+	err := r.DB.Where("blog_id = ? AND parent_id = 0", blogID).Order("created_at DESC").Find(&comments).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range comments {
+		replies, err := r.GetRepliesList(comments[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		comments[i].Replies = replies
+	}
+
+	return comments, nil
+}*/
