@@ -63,11 +63,8 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	//用户信息相关路由
 	routeManager.RegisterProfileRoutes(func(rg *gin.RouterGroup) {
 		rg.Use(middleware.CheckAtoken())      // 检查 Atoken
-		rg.GET("/phone", api.GetPhone)        // 获取用户手机号（授权时使用）
 		rg.PUT("/userinfo", api.SaveUserInfo) // 保存用户的微信头像和微信昵称（授权时使用）
-
-		rg.PUT("/role", middleware.PermissionMiddleware(), api.UpdateOtherRole) // 修改其他用户角色
-
+		rg.GET("/phone", api.GetPhone)        // 获取用户手机号（授权时使用）
 		CommonProfile := rg.Group("/common")
 		{
 			CommonProfile.GET("/show", api.GetCommonProfile)      // 获取用户基本信息
@@ -79,6 +76,9 @@ func registerRoutes(routeManager *manager.RouteManager) {
 			PrivateProfile.GET("/show", api.GetPrivateProfile)      // 获取用户隐私信息
 			PrivateProfile.PUT("/update", api.UpdatePrivateProfile) // 更新隐私信息
 		}
+		// 验证权限
+		rg.Use(middleware.PermissionMiddleware())
+		rg.PUT("/role", api.UpdateOtherRole) // 修改其他用户角色
 	})
 
 	//聊天相关路由
@@ -86,7 +86,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.Use(middleware.CheckAtoken())           // 检查 Atoken
 		rg.GET("/friends", api.GetFriendList)      // 获取好友列表
 		rg.GET("/messages", api.GetHistoryMessage) // 获取聊天记录
-		rg.GET("/wxchat", api.WebSocketHandler)    // 建立WebSocket连接，和指定好友聊天
+		rg.GET("/wschat", api.WebSocketHandler)    // 建立WebSocket连接，和指定好友聊天
 	})
 
 	//AI相关路由
