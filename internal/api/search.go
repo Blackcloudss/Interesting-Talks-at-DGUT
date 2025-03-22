@@ -63,7 +63,7 @@ func DeleteSearchHistoryHandler(c *gin.Context) {
 // 获取热搜榜
 func GetHotSearch(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.GetHotSearchResp](c)
+	req, err := types.BindReq[types.GetHotSearchReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetHotSearch request error: %v", err)
 		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
