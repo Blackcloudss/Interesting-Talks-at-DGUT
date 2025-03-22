@@ -111,6 +111,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.GET("/blogs", api.SearchBlogsHandler)                   //关键词搜索帖子
 		rg.GET("/get_history", api.GetSearchHistoryHandler)        //获取搜索历史
 		rg.POST("/delete_history", api.DeleteSearchHistoryHandler) //删除搜索历史
+		rg.POST("/hot_search", api.GetHotSearch)                   //热搜榜
 	})
 
 	//评论相关路由
