@@ -296,9 +296,8 @@ func (r *UserRepo) UpdatePrivateProfile(UserId int64, req types.UpdatePrivatePro
 //	@param userID
 //	@return string
 //	@return error
-func (r *UserRepo) GetUserRole(userID int64) (string, error) {
-	var role string
-	err := global.DB.Model(&model.UserDisplay{}).
+func (r *UserRepo) GetUserRole(userID int64) (role string, err error) {
+	err = global.DB.Model(&model.UserDisplay{}).
 		Select(ROLE).
 		Where(model.UserDisplay{
 			CommonModel: model.CommonModel{
