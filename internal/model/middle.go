@@ -1,11 +1,5 @@
 package model
 
-type User struct {
-	CommonModel
-	Followers []User `gorm:"many2many:user_follows;joinForeignKey:ID;joinReferences:FollowedID" json:"followers"`
-	Following []User `gorm:"many2many:user_follows;joinForeignKey:ID;joinReferences:FollowerID" json:"following"`
-}
-
 // 关注表 -- 获取好友列表需要
 type Follow struct {
 	CommonModel
