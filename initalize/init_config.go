@@ -55,10 +55,4 @@ func InitConfig() {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		zlog.Fatalf("配置文件不存在于路径: %s", configPath)
 	}
-
-	zlog.Debugf("最终加载的配置内容：%+v", configs.Conf)
-
-	if configs.Conf.DB.Driver == "" {
-		zlog.Panicf("数据库驱动配置为空，请检查配置文件")
-	}
 }

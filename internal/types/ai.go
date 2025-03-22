@@ -46,3 +46,12 @@ type Choice struct {
 		Role    string `json:"role"`    // 角色
 	} `json:"delta"`
 }
+
+// 删除历史聊天记录 入参
+type DeleteHistoryMessagesReq struct {
+	Type string `json:"type"` //类型
+}
+
+// 删除历史聊天记录 出参
+type DeleteHistoryMessagesResp struct {
+}
