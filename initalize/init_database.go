@@ -58,7 +58,28 @@ func migrateTables() {
 		&model.UserPrivate{},
 		//自动迁移 用户授权表，确保表结构存在
 		&model.UserAuth{},
+
+		&model.Message{},
+
 		//自动迁移 图片表，确保表结构存在
 		&model.Image{},
+		//
+		&model.Blog{},
+
+		&model.Like{},
+
+		&model.Follow{},
+
+		&model.Collection{},
+
+		&model.FirstComment{},
+
+		&model.SecondComment{},
+
+		&model.CommentLike{},
+
+		&model.Notice{},
+
+		&model.SearchHistory{},
 	)
 }
