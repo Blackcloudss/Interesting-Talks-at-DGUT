@@ -33,3 +33,10 @@ type DeleteSearchHistoryReq struct {
 }
 
 type DeleteSearchHistoryResp struct{}
+
+// 获取热搜榜
+type GetHotSearchReq struct{}
+
+type GetHotSearchResp struct {
+	HotSearchList []string `json:"hot_search_list"` // 热搜榜列表
+}
