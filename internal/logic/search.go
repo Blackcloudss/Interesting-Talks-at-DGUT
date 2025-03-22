@@ -78,3 +78,14 @@ func (l *SearchLogic) DeleteSearchHistory(ctx context.Context, req types.DeleteS
 
 	return resp, nil
 }
+
+// SearchLogic
+func (l *SearchLogic) GetHotSearch(ctx context.Context, req types.GetHotSearchReq) (resp *types.GetHotSearchResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	resp, err = repo.NewSearchRepo(global.DB).GetHotSearchRepo()
+	if err != nil {
+		zlog.CtxErrorf(ctx, "GetHotSearch failed: %v", err)
+		return &types.GetHotSearchResp{}, err
+	}
+	return resp, nil
+}

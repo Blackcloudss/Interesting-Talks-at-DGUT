@@ -59,3 +59,17 @@ func DeleteSearchHistoryHandler(c *gin.Context) {
 	resp, err := logic.NewSearchLogic().DeleteSearchHistory(ctx, req, UserID)
 	response.Response(c, resp, err)
 }
+
+// 获取热搜榜
+func GetHotSearch(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	req, err := types.BindReq[types.GetHotSearchResp](c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "GetHotSearch request error: %v", err)
+		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
+		return
+	}
+
+	resp, err := logic.NewSearchLogic().GetHotSearch(ctx, req)
+	response.Response(c, resp, err)
+}

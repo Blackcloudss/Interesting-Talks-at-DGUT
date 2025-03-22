@@ -102,3 +102,16 @@ func (r *SearchRepo) DeleteSearchHistory(userID int64, historyID int64) error {
 	// 删除指定的搜索历史记录
 	return r.DB.Where("user_id = ? AND id = ?", userID, historyID).Delete(&model.SearchHistory{}).Error
 }
+
+// SearchRepo
+func (r *SearchRepo) GetHotSearchRepo() (*types.GetHotSearchResp, error) {
+	var hotSearchList []string
+	if err := r.DB.Model(&model.Blog{}).
+		Select("title").
+		Order("created_at DESC, be_liked DESC").
+		Limit(10).
+		Scan(&hotSearchList).Error; err != nil {
+		return nil, err
+	}
+	return &types.GetHotSearchResp{HotSearchList: hotSearchList}, nil
+}
