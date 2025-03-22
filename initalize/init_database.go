@@ -58,28 +58,27 @@ func migrateTables() {
 		&model.UserPrivate{},
 		//自动迁移 用户授权表，确保表结构存在
 		&model.UserAuth{},
-
+		//自动迁移 消息表，确保表结构存在
 		&model.Message{},
-
 		//自动迁移 图片表，确保表结构存在
 		&model.Image{},
-		//
+		//自动迁移 博客表，确保表结构存在
 		&model.Blog{},
-
+		//自动迁移 点赞表，确保表结构存在
 		&model.Like{},
-
+		//自动迁移 关注表，确保表结构存在
 		&model.Follow{},
-
+		//自动迁移 收藏表，确保表结构存在
 		&model.Collection{},
-
+		//自动迁移 评论表，确保表结构存在
 		&model.FirstComment{},
-
+		//自动迁移 二级评论表，确保表结构存在
 		&model.SecondComment{},
-
+		//自动迁移 评论点赞表，确保表结构存在
 		&model.CommentLike{},
-
+		//自动迁移 通知表，确保表结构存在
 		&model.Notice{},
-
+		//自动迁移 搜索历史表，确保表结构存在
 		&model.SearchHistory{},
 	)
 }
