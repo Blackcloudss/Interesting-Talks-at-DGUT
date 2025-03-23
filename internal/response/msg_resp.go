@@ -25,7 +25,7 @@ var (
 	PARAM_IS_BLANK     = MsgCode{10002, "参数为空"}
 	PARAM_TYPE_ERROR   = MsgCode{10003, "参数类型错误"}
 	PARAM_NOT_COMPLETE = MsgCode{10004, "参数缺失"}
-	MEMBER_NOT_EXIST   = MsgCode{10005, "用户不存在"}
+	USER_NOT_EXIST     = MsgCode{10005, "用户不存在"}
 	MESSAGE_NOT_EXIST  = MsgCode{10006, "消息不存在"}
 	OPENID_NOT_EXIST   = MsgCode{100007, "获取用户OpenId失败"}
 

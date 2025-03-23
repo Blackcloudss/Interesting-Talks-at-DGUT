@@ -76,26 +76,35 @@ func AIChatStream(c *gin.Context) {
 		// 识别 SSE 协议中的有效数据行（以 "data: " 开头的行）
 		if bytes.HasPrefix(line, []byte("data: ")) {
 			var chuck types.AIChatStreamResp
-			//移除 SSE 数据头的 data: 前缀(6字节长度)
-			//将剩余部分解析为预定义的结构体 types.AIChatStreamResp
-			if json.Unmarshal(line[6:], &chuck) == nil {
-				//从解析后的响应中提取 AI 生成的增量内容(delta content)
-				content := chuck.Choices[0].Delta.Content
-				if content != "" {
-					// 按 SSE 协议格式推送
-					_, err := fmt.Fprintf(c.Writer, "data: %s\n\n", content)
-					if err != nil {
-						response.SendSSEError(c, "流式传输中断")
-						return
-					}
-					// 立即刷新缓冲区
-					flusher.Flush()
-					// 逐步收集所有流式片段，最终拼成完整的 AI 响应内容
-					fullResponse.WriteString(content)
+			//移除 SSE 数据头的 data: 前缀(6字节长度),将剩余部分解析为预定义的结构体 types.AIChatStreamResp
+			if json.Unmarshal(line[6:], &chuck) != nil {
+				zlog.CtxWarnf(ctx, "Invalid SSE data chunk: %s", line)
+				continue // 跳过无效数据块
+			}
+			//从解析后的响应中提取 AI 生成的增量内容(delta content)
+			content := chuck.Choices[0].Delta.Content
+			if content != "" {
+				// 按 SSE 协议格式推送，SSE规范要求每个消息以"data: "开头，后跟数据，然后是两个换行符
+				escapedContent := strings.ReplaceAll(content, "\n", "\\n") // 处理content本身包含的换行符
+				_, err := fmt.Fprintf(c.Writer, "data: %s\n\n", escapedContent)
+				if err != nil {
+					response.SendSSEError(c, "流式传输中断")
+					return
 				}
+				// 立即刷新缓冲区
+				flusher.Flush()
+				// 逐步收集所有流式片段，最终拼成完整的 AI 响应内容
+				fullResponse.WriteString(content)
 			}
 		}
 	}
+	//	添加流结束标识 明确告知客户端 流已传输完毕，避免因无限等待超时。
+	_, err = fmt.Fprintf(c.Writer, "event: end\ndata: stream completed\n\n")
+	if err != nil {
+		response.SendSSEError(c, "流式传输中断")
+		return
+	}
+	flusher.Flush()
 
 	// 保存对话内容
 	messages = append(messages, types.Message{

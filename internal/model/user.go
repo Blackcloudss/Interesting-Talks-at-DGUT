@@ -25,9 +25,9 @@ func (t *UserDisplay) TableName() string {
 // 用户基本信息表
 type UserCommon struct {
 	CommonModel
-	Sex      string `gorm:"column:sex;type:char(2);comment:'性别'"`
-	Birthday string `gorm:"column:birthday;type:char(11);comment:'出生日期'"` //****年**月**日
-	Sign     string `gorm:"column:sign;type:varchar(50);comment:'个性签名'"`
+	Sex      string `gorm:"column:sex;type:char(2);index:idx_common_profile,priority:3;comment:'性别'"`
+	Birthday string `gorm:"column:birthday;type:char(11);index:idx_common_profile,priority:2;comment:'出生日期'"` //****年**月**日
+	Sign     string `gorm:"column:sign;type:varchar(50);index:idx_common_profile,priority:1;comment:'个性签名'"`
 
 	UserID int64 `gorm:"column:user_id;type:bigint;comment:'用户ID'"`
 	//外键关联

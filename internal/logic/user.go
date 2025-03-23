@@ -23,7 +23,6 @@ var (
 	DECRYPT_DATA_FAILED    = response.MsgCode{50003, "解密数据失败"}
 	ANALYSIS_FAILED        = response.MsgCode{50004, "解析数据失败"}
 	SAVE_FAILED            = response.MsgCode{50005, "保存用户信息失败"}
-	GET_COMMON_PROFILE     = response.MsgCode{50006, "获取用户基本信息失败"}
 	UPDATE_COMMON_PROFILE  = response.MsgCode{50008, "更改用户公基本信息失败"}
 	GET_PRIVATE_PROFILE    = response.MsgCode{50009, "获取用户隐私信息失败"}
 	UPDATE_PRIVATE_PROFILE = response.MsgCode{50010, "更改用户隐私信息失败"}
@@ -97,7 +96,7 @@ func (l *UserLogic) GetCommonProfile(ctx context.Context, UserId int64) (resp ty
 	resp, err = repo.NewUserRepo(global.DB).GetCommonProfile(UserId)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "获取用户基本信息失败: %v", err)
-		return resp, response.ErrResp(err, GET_COMMON_PROFILE)
+		return resp, err
 	}
 	return
 }

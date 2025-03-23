@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/snowflake"
@@ -27,6 +28,10 @@ const (
 	GRADE        = "grade"
 	MAJOR        = "major"
 	PHONE        = "phone"
+)
+
+var (
+	GET_COMMON_PROFILE = response.MsgCode{50006, "获取用户基本信息失败"}
 )
 
 // @Title        middle.go
@@ -188,10 +193,10 @@ func (r *UserRepo) GetCommonProfile(UserId int64) (resp types.GetCommonProfileRe
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			zlog.Errorf("用户不存在：%v", err)
-			return resp, err
+			return resp, response.ErrResp(err, response.USER_NOT_EXIST)
 		}
 		zlog.Errorf("查询用户基本信息失败：%v", err)
-		return resp, err
+		return resp, response.ErrResp(err, GET_COMMON_PROFILE)
 	}
 	return resp, nil
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 // @Title        middle.go
@@ -45,8 +46,10 @@ func GetOtherProfile(c *gin.Context) {
 // 更新用户基本信息
 func UpdateCommonProfile(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
+	var req types.UpdateCommonProfileReq
 	userid := jwt.GetUserId(c)
-	req, err := types.BindReq[types.UpdateCommonProfileReq](c)
+	// 使用Form-Multipart绑定器替代默认JSON绑定，不然无法解析文件
+	err := c.ShouldBindWith(&req, binding.FormMultipart)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UpdateCommonProfile error: %v", err)
 		return

@@ -41,7 +41,7 @@ func NewChatRepo(db *gorm.DB) *ChatRepo {
 func (r *ChatRepo) GetMessagesHistory(SenderID int64, ReceiverID int64, page int, size int) (resp []types.MessageHistory, err error) {
 	err = r.DB.Model(&model.Message{}).
 		Select(SENDER, RECEIVER, CONTENT, CREATED_AT).
-		Where(fmt.Sprintf("(%s = ? AND %s = ?) OR (%s = ? AND %s = ?)", SenderID, ReceiverID, ReceiverID, SenderID)).
+		Where(fmt.Sprintf("(%s = ? AND %s = ?) OR (%s = ? AND %s = ?)", SENDER, RECEIVER, SENDER, RECEIVER), SenderID, ReceiverID, ReceiverID, SenderID).
 		Order("created_at DESC").
 		Limit(size).
 		Offset((page - 1) * size).
