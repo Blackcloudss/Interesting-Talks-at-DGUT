@@ -50,7 +50,7 @@ func (l *Phonelogic) GetPhone(ctx context.Context, req types.WxPhoneReq, UserId 
 		return nil, response.ErrResp(err, GET_PHONE_FAULT)
 	}
 	resp = new(types.WxPhoneResp)
-	if result.PhoneInfo != nil {
+	if result != nil && result.PhoneInfo != nil {
 		resp.PurePhoneNumber = result.PhoneInfo.PurePhoneNumber
 	} else {
 		zlog.CtxErrorf(ctx, "微信接口未返回 phone_info")
