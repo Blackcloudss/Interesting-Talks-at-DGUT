@@ -69,7 +69,6 @@ func GetHotSearch(c *gin.Context) {
 		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
-
 	resp, err := logic.NewSearchLogic().GetHotSearch(ctx, req)
 	response.Response(c, resp, err)
 }

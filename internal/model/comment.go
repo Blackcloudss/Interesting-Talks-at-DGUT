@@ -40,3 +40,5 @@ type CommentLike struct {
 	UserID    int64 `gorm:"not null" json:"user_id"`    // 点赞用户ID
 	IsLiked   bool  `gorm:"default:false"`
 }
+
+func (t *CommentLike) TableName() string { return "comment_like" }

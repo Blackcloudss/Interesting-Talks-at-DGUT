@@ -11,3 +11,5 @@ type Image struct {
 	Size      int64  `gorm:"column:size;type:bigint;comment:'文件大小'"`
 	BlogID    int64  `gorm:"column:blog_id;type:bigint;comment:'博客ID'"`
 }
+
+func (Image) TableName() string { return "image" }

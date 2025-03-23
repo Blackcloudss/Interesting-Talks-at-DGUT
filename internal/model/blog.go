@@ -17,6 +17,8 @@ type Blog struct { // 帖子
 	SecondComments []SecondComment `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
+func (b *Blog) TableName() string { return "blog" }
+
 type Like struct { // 点赞
 	CommonModel
 	UserID  int64 ` json:"user_id"`
@@ -24,9 +26,13 @@ type Like struct { // 点赞
 	IsLiked bool  `gorm:"default:false" json:"is_liked"` // 是否被点赞，默认为false
 }
 
+func (l *Like) TableName() string { return "like" }
+
 type Collection struct {
 	CommonModel
 	UserID      int64 ` json:"user_id"`                          // 进行收藏操作的用户ID
 	BlogID      int64 ` json:"blog_id"`                          // 对应的BlogID
 	IsCollected bool  `gorm:"default:false" json:"is_collected"` // 是否被收藏，默认为false
 }
+
+func (c *Collection) TableName() string { return "collection" }
