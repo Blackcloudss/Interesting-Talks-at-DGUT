@@ -7,9 +7,9 @@ package types
 //
 // AI聊天请求体
 type AIChatStreamReq struct {
-	Type            string  `json:"type"`                   // 类型
-	Content         string  `form:"content" json:"content"` // 对话内容
-	PresencePenalty float64 `json:"presence_penalty"`       // 可能值  介于 -2.0 和 2.0 之间的数字。如果该值为正，
+	Type            string  `form:"type" json:"type"`             // 类型
+	Content         string  `form:"content" json:"content"`       // 对话内容
+	PresencePenalty float64 `form:"type" json:"presence_penalty"` // 可能值  介于 -2.0 和 2.0 之间的数字。如果该值为正，
 	// 那么新 token 会根据其是否已在已有文本中出现受到相应的惩罚，从而增加模型谈论新主题的可能性。 降低模型重复相同内容的可能性
 }
 

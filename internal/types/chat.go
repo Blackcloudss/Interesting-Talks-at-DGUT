@@ -37,9 +37,9 @@ type WSMessageResp struct {
 
 // 获取历史聊天消息 入参
 type GetMessageReq struct {
-	ReceiverID int64 `json:"receiver_id" binding:"required"` //接收者ID
-	Page       int   `json:"page"`                           //页码
-	Size       int   `json:"size"`                           //每页大小
+	ReceiverID int64 `form:"receiver_id" binding:"required"` //接收者ID
+	Page       int   `form:"page"`                           //页码
+	Size       int   `form:"size"`                           //每页大小
 }
 
 // 历史聊天消息

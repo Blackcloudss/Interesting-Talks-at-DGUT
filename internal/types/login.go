@@ -7,7 +7,7 @@ package types
 
 // 微信登录请求结构体
 type WechatLoginReq struct {
-	JsCode string `json:"js_code"` //微信临时登陆凭证
+	JsCode string `form:"js_code"` //微信临时登陆凭证
 }
 
 // 调用code2session接口后返回数据

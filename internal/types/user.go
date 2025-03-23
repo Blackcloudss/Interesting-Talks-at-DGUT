@@ -41,7 +41,7 @@ type GetCommonProfileResp struct {
 
 // 获取他人基本信息 入参
 type GetOtherProfileReq struct {
-	OtherID int64 `json:"otherid"` // 他人ID
+	OtherID int64 `form:"otherid"` // 他人ID
 }
 
 // 获取他人基本信息 出参
@@ -56,11 +56,11 @@ type GetOtherProfileResp struct {
 
 // 更改用户基本信息 入参
 type UpdateCommonProfileReq struct {
-	Nickname string                `json:"nickname"` // 昵称
+	Nickname string                `form:"nickname"` // 昵称
 	Avatar   *multipart.FileHeader `form:"avatar"`   // 头像图片文件
-	Sex      string                `json:"sex"`      // 性别
-	Birthday string                `json:"birthday"` // 生日
-	Sign     string                `json:"sign"`     // 签名
+	Sex      string                `form:"sex"`      // 性别
+	Birthday string                `form:"birthday"` // 生日
+	Sign     string                `form:"sign"`     // 签名
 }
 
 // 更改用户基本信息 出参

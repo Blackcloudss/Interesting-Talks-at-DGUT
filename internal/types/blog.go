@@ -24,6 +24,7 @@ type CreateBlogResp struct {
 
 // UpdateBlogReq 更新帖子请求体
 type UpdateBlogReq struct {
+	ID             int64                   `form:"id"`
 	Title          string                  `form:"title"`
 	Content        string                  `form:"content"`
 	BlogTag        string                  `form:"blogtag"`

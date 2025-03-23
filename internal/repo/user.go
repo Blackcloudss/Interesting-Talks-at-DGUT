@@ -27,7 +27,6 @@ const (
 	GRADE        = "grade"
 	MAJOR        = "major"
 	PHONE        = "phone"
-	USERDISPLAY  = "UserDisplay"
 )
 
 // @Title        middle.go
@@ -168,12 +167,22 @@ func (r *UserRepo) SaveUserInfo(UserId int64, User types.UserInfo) (err error) {
 //	@return UserCommon
 //	@return err
 func (r *UserRepo) GetCommonProfile(UserId int64) (resp types.GetCommonProfileResp, err error) {
-	err = r.DB.Preload(USERDISPLAY).
-		Select(fmt.Sprintf("%s.%s,%s.%s,%s.%s,%s.%s,%s.%s,%s.%s,%s.%s",
-			USER_DISPLAY, NICKNAME, USER_DISPLAY, AVATAR, USER_DISPLAY, TAG, USER_DISPLAY, TOTAL_POINT,
-			USER_COMMON, BIRTHDAY, USER_COMMON, SEX, USER_COMMON, SIGN,
+	err = r.DB.Model(&model.UserDisplay{}).
+		Select(fmt.Sprintf("%s.%s, %s.%s, %s.%s, %s.%s, %s.%s, %s.%s, %s.%s",
+			USER_DISPLAY, NICKNAME,
+			USER_DISPLAY, AVATAR,
+			USER_DISPLAY, TAG,
+			USER_DISPLAY, TOTAL_POINT,
+			USER_COMMON, BIRTHDAY,
+			USER_COMMON, SEX,
+			USER_COMMON, SIGN,
 		)).
-		Where(fmt.Sprintf("%s = ?", USER_ID), UserId).
+		Joins(fmt.Sprintf("LEFT JOIN %s ON %s.user_id = %s.id",
+			USER_COMMON,
+			USER_COMMON,
+			USER_DISPLAY,
+		)).
+		Where(fmt.Sprintf("%s.id = ?", USER_DISPLAY), UserId).
 		First(&resp).
 		Error
 	if err != nil {

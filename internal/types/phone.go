@@ -7,7 +7,7 @@ package types
 
 // 获取手机号 入参
 type WxPhoneReq struct {
-	Code string `json:"code"` //动态令牌   --与js_code不同,二者不能混用
+	Code string `form:"code"` //动态令牌   --与js_code不同,二者不能混用
 }
 
 // 获取手机号 出参

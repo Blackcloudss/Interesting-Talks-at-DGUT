@@ -112,7 +112,8 @@ func (l *Phonelogic) GetPhoneNumber(ctx context.Context, atoken, code string) (r
 	if resp.Errcode != 0 {
 		zlog.CtxErrorf(ctx, "微信接口异常，状态码：%d", resp.Errcode)
 		zlog.CtxErrorf(ctx, "微信接口异常，错误信息：%s", resp.Errmsg)
-		return nil, response.ErrResp(err, GET_PHONE_FAULT)
+		var WXAPI_ERROR = response.MsgCode{resp.Errcode, resp.Errmsg}
+		return nil, response.ErrResp(err, WXAPI_ERROR)
 	}
 
 	return

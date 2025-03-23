@@ -91,7 +91,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	//AI相关路由
 	routeManager.RegisterAIRoutes(func(rg *gin.RouterGroup) {
 		rg.Use(middleware.CheckAtoken())                      // 检查 Atoken
-		rg.GET("/chat", api.AIChatStream)                     // AI流式聊天
+		rg.POST("/chat", api.AIChatStream)                    // AI流式聊天
 		rg.DELETE("/delete/:type", api.DeleteHistoryMessages) // 删除AI历史聊天记录
 	})
 
