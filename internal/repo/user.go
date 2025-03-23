@@ -20,6 +20,7 @@ const (
 	SEX          = "sex"
 	BIRTHDAY     = "birthday"
 	SIGN         = "sign"
+	TOTAL_POINT  = "total_point"
 	NAME         = "name"
 	STUDENT_ID   = "student_id"
 	ACADEMY      = "academy"
@@ -168,8 +169,8 @@ func (r *UserRepo) SaveUserInfo(UserId int64, User types.UserInfo) (err error) {
 //	@return err
 func (r *UserRepo) GetCommonProfile(UserId int64) (resp types.GetCommonProfileResp, err error) {
 	err = r.DB.Preload(USERDISPLAY).
-		Select(fmt.Sprintf("%s.%s,%s.%s,%s.%s,%s.%s,%s.%s,%s.%s",
-			USER_DISPLAY, NICKNAME, USER_DISPLAY, AVATAR, USER_DISPLAY, TAG,
+		Select(fmt.Sprintf("%s.%s,%s.%s,%s.%s,%s.%s,%s.%s,%s.%s,%s.%s",
+			USER_DISPLAY, NICKNAME, USER_DISPLAY, AVATAR, USER_DISPLAY, TAG, USER_DISPLAY, TOTAL_POINT,
 			USER_COMMON, BIRTHDAY, USER_COMMON, SEX, USER_COMMON, SIGN,
 		)).
 		Where(fmt.Sprintf("%s = ?", USER_ID), UserId).

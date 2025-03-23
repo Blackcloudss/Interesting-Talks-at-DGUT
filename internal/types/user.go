@@ -30,12 +30,13 @@ type GetCommonProfileReq struct {
 
 // 获取用户基本信息 出参
 type GetCommonProfileResp struct {
-	Nickname string `json:"nickname"` // 昵称
-	Avatar   string `json:"avatar"`   // 头像
-	Tag      string `json:"tag"`      // 标签
-	Sex      string `json:"sex"`      // 性别
-	Birthday string `json:"birthday"` // 生日
-	Sign     string `json:"sign"`     // 签名
+	Nickname   string `json:"nickname"`   // 昵称
+	Avatar     string `json:"avatar"`     // 头像
+	Tag        string `json:"tag"`        // 标签
+	Sex        string `json:"sex"`        // 性别
+	Birthday   string `json:"birthday"`   // 生日
+	Sign       string `json:"sign"`       // 签名
+	TotalPoint int    `json:"totalPoint"` // 总积分
 }
 
 // 获取他人基本信息 入参

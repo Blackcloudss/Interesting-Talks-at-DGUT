@@ -11,7 +11,7 @@ type GetFriendListReq struct {
 
 // 获取好友列表 出参
 type GetFriendListResp struct {
-	Friends []FriendInfo
+	Friends []FriendInfo `json:"friends"`
 }
 
 // 好友信息
