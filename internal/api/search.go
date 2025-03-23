@@ -16,7 +16,6 @@ func SearchBlogsHandler(c *gin.Context) {
 	req, err := types.BindReq[types.SearchBlogsReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "SearchBlogs request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 
@@ -32,7 +31,6 @@ func GetSearchHistoryHandler(c *gin.Context) {
 	req, err := types.BindReq[types.GetSearchHistoryReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetSearchHistory request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 
@@ -50,12 +48,9 @@ func DeleteSearchHistoryHandler(c *gin.Context) {
 	req, err := types.BindReq[types.DeleteSearchHistoryReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "DeleteSearchHistory request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
-
 	UserID := jwt.GetUserId(c)
-
 	resp, err := logic.NewSearchLogic().DeleteSearchHistory(ctx, req, UserID)
 	response.Response(c, resp, err)
 }
@@ -66,10 +61,8 @@ func GetHotSearch(c *gin.Context) {
 	req, err := types.BindReq[types.GetHotSearchReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetHotSearch request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
-
 	resp, err := logic.NewSearchLogic().GetHotSearch(ctx, req)
 	response.Response(c, resp, err)
 }

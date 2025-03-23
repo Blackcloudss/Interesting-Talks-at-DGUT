@@ -17,7 +17,6 @@ func WechatLogin(c *gin.Context) {
 	req, err := types.BindReq[types.WechatLoginReq](c) // 修改请求结构体
 	if err != nil {
 		zlog.CtxErrorf(ctx, "WechatLogin request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "WechatLogin request: %v", req)
@@ -32,7 +31,6 @@ func GetQRCode(c *gin.Context) {
 	req, err := types.BindReq[types.QRCodeReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetQRCode request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetQRCode request: %v", req)

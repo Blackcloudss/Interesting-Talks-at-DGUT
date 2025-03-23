@@ -21,7 +21,6 @@ func GetCommonProfile(c *gin.Context) {
 	req, err := types.BindReq[types.GetCommonProfileReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetCommonProfile error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetCommonProfile request: %v", req)
@@ -35,7 +34,6 @@ func GetOtherProfile(c *gin.Context) {
 	req, err := types.BindReq[types.GetOtherProfileReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetOtherProfile error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetOtherProfile request: %v", req)
@@ -51,7 +49,6 @@ func UpdateCommonProfile(c *gin.Context) {
 	req, err := types.BindReq[types.UpdateCommonProfileReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UpdateCommonProfile error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "UpdateCommonProfile request: %v", req)
@@ -66,7 +63,6 @@ func GetPrivateProfile(c *gin.Context) {
 	req, err := types.BindReq[types.GetPrivateProfileReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetDetailProfile error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetDetailProfile request: %v", req)
@@ -81,7 +77,6 @@ func UpdatePrivateProfile(c *gin.Context) {
 	req, err := types.BindReq[types.UpdatePrivateProfileReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UpdateDetailProfile error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "UpdateDetailProfile request: %v", req)
@@ -97,7 +92,6 @@ func SaveUserInfo(c *gin.Context) {
 	req, err := types.BindReq[types.UserInfoReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetUserInfo error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetUserInfo request: %v", req)
@@ -111,7 +105,6 @@ func UpdateOtherRole(c *gin.Context) {
 	req, err := types.BindReq[types.UpdateOtherRoleReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UpdateOtherRole error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "UpdateOtherRole request: %v", req)

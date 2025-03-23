@@ -63,7 +63,6 @@ func GetHistoryMessage(c *gin.Context) {
 	req, err := types.BindReq[types.GetMessageReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetMessageHistory request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetMessageHistory request: %v", req)
