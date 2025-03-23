@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
@@ -51,6 +52,11 @@ func (l *TokenLogic) RefreshToken(ctx context.Context, req types.TokenReq) (resp
 	})
 	if err != nil {
 		return resp, response.ErrResp(err, response.TOKEN_NOT_VALID)
+	}
+	//查找用户当前身份
+	resp.Role, err = repo.NewUserRepo(global.DB).GetUserRole(data.Userid)
+	if err != nil {
+		return resp, response.ErrResp(err, GET_USER_ROLE)
 	}
 	return resp, nil
 }

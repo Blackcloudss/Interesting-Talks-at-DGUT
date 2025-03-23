@@ -76,9 +76,8 @@ func registerRoutes(routeManager *manager.RouteManager) {
 			PrivateProfile.GET("/show", api.GetPrivateProfile)      // 获取用户隐私信息
 			PrivateProfile.PUT("/update", api.UpdatePrivateProfile) // 更新隐私信息
 		}
-		// 验证权限
-		rg.Use(middleware.PermissionMiddleware())
-		rg.PUT("/role", api.UpdateOtherRole) // 修改其他用户角色
+		rg.Use(middleware.PermissionMiddleware()) // 验证权限
+		rg.PUT("/role", api.UpdateOtherRole)      // 修改其他用户角色
 	})
 
 	//聊天相关路由
@@ -116,7 +115,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//搜索模块相关路由
 	routeManager.RegisterSearchRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken())
+		rg.Use(middleware.CheckAtoken())                           // 检查 Atoken
 		rg.GET("/blogs", api.SearchBlogsHandler)                   //关键词搜索帖子
 		rg.GET("/get_history", api.GetSearchHistoryHandler)        //获取搜索历史
 		rg.POST("/delete_history", api.DeleteSearchHistoryHandler) //删除搜索历史
@@ -136,7 +135,8 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//公告相关路由
 	routeManager.RegisterNoticeRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken())
+		rg.Use(middleware.CheckAtoken())              // 检查 Atoken
+		rg.Use(middleware.PermissionMiddleware())     // 验证权限
 		rg.POST("/create", api.CreateNoticeHandler)   //创建公告
 		rg.PUT("/update", api.UpdateNoticeHandler)    //修改公告
 		rg.DELETE("/delete", api.DeleteNoticeHandler) //删除公告
@@ -145,7 +145,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//关注相关路由
 	routeManager.RegisterFollowRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken())
+		rg.Use(middleware.CheckAtoken())                           // 检查 Atoken
 		rg.POST("/follow", api.FollowHandler)                      // 关注用户
 		rg.POST("/unfollow", api.UnfollowHandler)                  // 取消关注用户
 		rg.GET("/followings", api.GetFollowingsHandler)            // 获取当前用户关注的用户列表

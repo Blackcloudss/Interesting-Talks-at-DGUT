@@ -20,6 +20,7 @@ const (
 	SEX          = "sex"
 	BIRTHDAY     = "birthday"
 	SIGN         = "sign"
+	TOTAL_POINT  = "total_point"
 	NAME         = "name"
 	STUDENT_ID   = "student_id"
 	ACADEMY      = "academy"
@@ -45,7 +46,6 @@ func NewUserRepo(db *gorm.DB) *UserRepo {
 // 判断用户是否存在
 func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 	var UserID int64
-
 	err := r.DB.Model(&model.UserDisplay{}).
 		Select(ID).
 		Where(&model.UserDisplay{
@@ -54,6 +54,7 @@ func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 		First(&UserID).
 		Error
 	if err != nil {
+		// 如果用户不存在
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// 开启事务
 			tx := r.DB.Begin()
@@ -168,8 +169,8 @@ func (r *UserRepo) SaveUserInfo(UserId int64, User types.UserInfo) (err error) {
 //	@return err
 func (r *UserRepo) GetCommonProfile(UserId int64) (resp types.GetCommonProfileResp, err error) {
 	err = r.DB.Preload(USERDISPLAY).
-		Select(fmt.Sprintf("%s.%s,%s.%s,%s.%s,%s.%s,%s.%s,%s.%s",
-			USER_DISPLAY, NICKNAME, USER_DISPLAY, AVATAR, USER_DISPLAY, TAG,
+		Select(fmt.Sprintf("%s.%s,%s.%s,%s.%s,%s.%s,%s.%s,%s.%s,%s.%s",
+			USER_DISPLAY, NICKNAME, USER_DISPLAY, AVATAR, USER_DISPLAY, TAG, USER_DISPLAY, TOTAL_POINT,
 			USER_COMMON, BIRTHDAY, USER_COMMON, SEX, USER_COMMON, SIGN,
 		)).
 		Where(fmt.Sprintf("%s = ?", USER_ID), UserId).
@@ -296,9 +297,8 @@ func (r *UserRepo) UpdatePrivateProfile(UserId int64, req types.UpdatePrivatePro
 //	@param userID
 //	@return string
 //	@return error
-func (r *UserRepo) GetUserRole(userID int64) (string, error) {
-	var role string
-	err := global.DB.Model(&model.UserDisplay{}).
+func (r *UserRepo) GetUserRole(userID int64) (role string, err error) {
+	err = global.DB.Model(&model.UserDisplay{}).
 		Select(ROLE).
 		Where(model.UserDisplay{
 			CommonModel: model.CommonModel{

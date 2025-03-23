@@ -15,7 +15,6 @@ func CreateComment(c *gin.Context) {
 	req, err := types.BindReq[types.CreateCommentReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "CreateComment request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "CreateComment request: %+v", req)
@@ -31,7 +30,6 @@ func DeleteComment(c *gin.Context) {
 	req, err := types.BindReq[types.DeleteCommentReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "DeleteComment request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "DeleteComment request: %+v", req)
@@ -47,7 +45,6 @@ func LikeComment(c *gin.Context) {
 	req, err := types.BindReq[types.LikeCommentReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "LikeComment request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "LikeComment request: %+v", req)
@@ -63,7 +60,6 @@ func UnlikeComment(c *gin.Context) {
 	req, err := types.BindReq[types.UnlikeCommentReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UnlikeComment request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "UnlikeComment request: %+v", req)
@@ -83,7 +79,6 @@ func GetCommentList(c *gin.Context) {
 	req, err := types.BindReq[types.GetCommentListReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetCommentList request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetCommentList request: %+v", req)
@@ -98,7 +93,6 @@ func GetMoreSecondComment(c *gin.Context) {
 	req, err := types.BindReq[types.GetSecondCommentListReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetMoreSecondComment request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetMoreSecondComment request: %+v", req)

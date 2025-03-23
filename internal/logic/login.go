@@ -15,7 +15,6 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/snowflake"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -55,6 +54,7 @@ func (l *WechatLogic) WechatLogin(ctx context.Context, req types.WechatLoginReq)
 
 // 向微信服务器请求code2Session
 func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err error) {
+	resp = &types.WechatLoginResp{}
 	url := fmt.Sprintf(configs.Conf.Wechat.BaseUrl, configs.Conf.Wechat.AppID, configs.Conf.Wechat.AppSecret, code)
 	client := &http.Client{Timeout: 5 * time.Second}
 	result, err := client.Get(url)
@@ -107,7 +107,13 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 
 	//制作 Atoken 和 Rtoken 自定义登陆态
 	resp.Atoken, err = jwt.GenToken(jwt.FullToken(global.AUTH_ENUMS_ATOKEN, UserId))
+	if err != nil {
+		return resp, response.ErrResp(err, response.GET_ATOKEN_ERROR)
+	}
 	resp.Rtoken, err = jwt.GenToken(jwt.FullToken(global.AUTH_ENUMS_RTOKEN, UserId))
+	if err != nil {
+		return resp, response.ErrResp(err, response.GET_RTOKEN_ERROR)
+	}
 
 	return resp, nil
 }
@@ -172,7 +178,7 @@ func (l *WechatLogic) GetQRCode(ctx context.Context) (resp *types.QRCodeResp, er
 	}
 
 	// 处理成功响应（图片二进制）
-	resp.Buffer, err = ioutil.ReadAll(result.Body)
+	resp.Buffer, err = io.ReadAll(result.Body)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "图片数据读取失败: %v", err)
 		return nil, response.ErrResp(err, response.COMMON_FAIL)

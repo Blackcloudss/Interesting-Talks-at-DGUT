@@ -85,7 +85,7 @@ var (
 
 // SendMessage 消息发送入口
 // 解决：消息可靠性、好友验证、存储与推送解耦
-func (l *Chatlogic) SendMessage(ctx context.Context, SenderID int64, WSMsg types.WSMessage, CM *connect.ConnectionManager) (err error) {
+func (l *Chatlogic) SendMessage(ctx context.Context, SenderID int64, WSMsg types.WSMessageReq, CM *connect.ConnectionManager) (err error) {
 	defer utils.RecordTime(time.Now())()
 	//	好友关系验证
 	exist, err := repo.NewFriendRepo(global.DB).JudgeFriend(SenderID, WSMsg.To)

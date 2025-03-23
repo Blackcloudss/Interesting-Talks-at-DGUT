@@ -20,7 +20,6 @@ func GetPhone(c *gin.Context) {
 	req, err := types.BindReq[types.WxPhoneReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetPhone error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetPhone request: %v", req)

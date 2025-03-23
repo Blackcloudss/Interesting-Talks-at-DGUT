@@ -15,7 +15,6 @@ func CreateNoticeHandler(c *gin.Context) {
 	req, err := types.BindReq[types.CreateNoticeReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "CreateNotice request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "CreateNotice request: %+v", req)
@@ -31,7 +30,6 @@ func UpdateNoticeHandler(c *gin.Context) {
 	req, err := types.BindReq[types.UpdateNoticeReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UpdateNotice request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "UpdateNotice request: %+v", req)
@@ -46,7 +44,6 @@ func DeleteNoticeHandler(c *gin.Context) {
 	req, err := types.BindReq[types.DeleteNoticeReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "DeleteNotice request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "DeleteNotice request: %+v", req)
@@ -61,7 +58,6 @@ func GetNoticeHandler(c *gin.Context) {
 	req, err := types.BindReq[types.GetNoticeReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetNotice request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetNotice request: %+v", req)

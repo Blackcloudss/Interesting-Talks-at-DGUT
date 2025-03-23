@@ -17,7 +17,6 @@ func RefreshToken(c *gin.Context) {
 	req, err := types.BindReq[types.TokenReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "RefreshRtoken request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "RefreshRtoken request: %v", req)

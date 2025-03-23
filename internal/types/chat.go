@@ -10,9 +10,9 @@ import "time"
 3. 定义WebSocket协议格式
 */
 
-// WSMessage 客户端发送消息结构
+// WSMessageReq 客户端发送消息结构
 // 包含：接收方ID、内容、唯一消息ID、消息类型
-type WSMessage struct {
+type WSMessageReq struct {
 	To      int64  `json:"to" binding:"required"` // 目标好友ID
 	Content string `json:"content"`               // 消息内容
 	MsgID   string `json:"msg_id"`                // 消息唯一ID
@@ -27,12 +27,12 @@ type WSError struct {
 // WSMessageResp 服务端推送结构
 // 包含：发送方信息、时间戳、状态标识
 type WSMessageResp struct {
-	From    int64  `json:"from"`    // 发送者ID
-	To      int64  `json:"to"`      // 接收者ID
-	Content string `json:"content"` // 消息内容
-	Time    int64  `json:"time"`    // 时间戳
-	MsgID   string `json:"msg_id"`  // 消息唯一ID
-	Type    string `json:"type"`    // 消息类型（message/ack）
+	From    int64  `json:"from"`                      // 发送者ID
+	To      int64  `json:"to"`                        // 接收者ID
+	Content string `json:"content"`                   // 消息内容
+	Time    int64  `json:"time"`                      // 时间戳
+	MsgID   string `json:"msg_id" binding:"required"` // 消息唯一ID
+	Type    string `json:"type"`                      // 消息类型（message/ack）
 }
 
 // 获取历史聊天消息 入参

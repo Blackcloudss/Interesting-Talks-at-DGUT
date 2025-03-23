@@ -63,7 +63,6 @@ func GetHistoryMessage(c *gin.Context) {
 	req, err := types.BindReq[types.GetMessageReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetMessageHistory request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetMessageHistory request: %v", req)
@@ -149,7 +148,7 @@ func WebSocketHandler(c *gin.Context) {
 			return
 		}
 
-		var msg types.WSMessage
+		var msg types.WSMessageReq
 		// 读取并解压消息
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {

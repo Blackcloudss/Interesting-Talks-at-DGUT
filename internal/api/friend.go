@@ -24,7 +24,6 @@ func GetFriendList(c *gin.Context) {
 	req, err := types.BindReq[types.GetFriendListReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetFriendList request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetFriendList request: %v", req)

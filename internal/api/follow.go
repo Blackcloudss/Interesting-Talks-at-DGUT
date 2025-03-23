@@ -15,7 +15,6 @@ func FollowHandler(c *gin.Context) {
 	req, err := types.BindReq[types.FollowReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Follow request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "Follow request: %+v", req)
@@ -30,7 +29,6 @@ func UnfollowHandler(c *gin.Context) {
 	req, err := types.BindReq[types.UnfollowReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Unfollow request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "Unfollow request: %+v", req)
@@ -45,7 +43,6 @@ func GetFollowingsHandler(c *gin.Context) {
 	req, err := types.BindReq[types.GetFollowingsReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetFollowings request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetFollowings request: %+v", req)
@@ -60,7 +57,6 @@ func GetFollowersHandler(c *gin.Context) {
 	req, err := types.BindReq[types.GetFollowersReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetFollowers request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetFollowers request: %+v", req)
@@ -75,7 +71,6 @@ func GetOtherFollowingsHandler(c *gin.Context) {
 	req, err := types.BindReq[types.GetOtherFollowingsReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetOtherFollowings request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetOtherFollowings request: %+v", req)
@@ -89,7 +84,6 @@ func GetOtherFollowersHandler(c *gin.Context) {
 	req, err := types.BindReq[types.GetOtherFollowersReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetOtherFollowers request error: %v", err)
-		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return
 	}
 	zlog.CtxInfof(ctx, "GetOtherFollowers request: %+v", req)

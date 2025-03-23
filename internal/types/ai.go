@@ -4,7 +4,7 @@ package types
 // @Description
 // @Create       XdpCs 2025-03-06 上午1:27
 // @Update       XdpCs 2025-03-06 上午1:27
-
+//
 // AI聊天请求体
 type AIChatStreamReq struct {
 	Type            string  `json:"type"`                   // 类型
