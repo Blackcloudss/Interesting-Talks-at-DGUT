@@ -44,7 +44,7 @@ type UserPrivate struct {
 	Name      string `gorm:"column:name;type:varchar(30);comment:'真实姓名'"`
 	StudentId string `gorm:"column:student_id;type:char(13);comment:'学号'"`
 	Academy   string `gorm:"column:academy;type:varchar(30);comment:'学院'"`
-	Grade     int64  `gorm:"column:grade;type:bigint;comment:'年级'"`
+	Grade     string `gorm:"column:grade;type:char(10);comment:'年级'"`
 	Major     string `gorm:"column:major;type:varchar(30);comment:'专业'"`
 	Phone     string `gorm:"column:phone;type:char(11);comment:'手机号'"`
 

@@ -76,7 +76,7 @@ type GetPrivateProfileResp struct {
 	Name      string `json:"name"`      // 真实姓名
 	StudentId string `json:"studentId"` // 学号
 	Academy   string `json:"academy"`   // 学院
-	Grade     int64  `json:"grade"`     // 年级
+	Grade     string `json:"grade"`     // 年级
 	Major     string `json:"major"`     // 专业
 	Phone     string `json:"phone"`     // 手机号
 }
@@ -86,7 +86,7 @@ type UpdatePrivateProfileReq struct {
 	Name      string `json:"name"`      // 真实姓名
 	StudentId string `json:"studentId"` // 学号
 	Academy   string `json:"academy"`   // 学院
-	Grade     int64  `json:"grade"`     // 年级
+	Grade     string `json:"grade"`     // 年级
 	Major     string `json:"major"`     // 专业
 	Phone     string `json:"phone"`     // 手机号
 }
