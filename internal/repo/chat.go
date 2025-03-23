@@ -56,7 +56,7 @@ func (r *ChatRepo) GetMessagesHistory(SenderID int64, ReceiverID int64, page int
 
 // SaveMessage 消息存储
 // 解决：消息持久化、状态跟踪（delivered/offline）
-func (r *ChatRepo) SaveMessage(sender int64, msg types.WSMessage, status string) error {
+func (r *ChatRepo) SaveMessage(sender int64, msg types.WSMessageReq, status string) error {
 	// 存储消息时记录发送状态，支持后续状态追踪
 	return r.DB.Create(&model.Message{
 		MsgID:    msg.MsgID,

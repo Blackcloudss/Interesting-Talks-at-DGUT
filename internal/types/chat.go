@@ -10,9 +10,9 @@ import "time"
 3. 定义WebSocket协议格式
 */
 
-// WSMessage 客户端发送消息结构
+// WSMessageReq 客户端发送消息结构
 // 包含：接收方ID、内容、唯一消息ID、消息类型
-type WSMessage struct {
+type WSMessageReq struct {
 	To      int64  `json:"to" binding:"required"` // 目标好友ID
 	Content string `json:"content"`               // 消息内容
 	MsgID   string `json:"msg_id"`                // 消息唯一ID

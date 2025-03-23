@@ -53,7 +53,7 @@ func (rm *RouteManager) RegisterTestRoutes(handler PathHandler) {
 
 // RegisterCommonRoutes 注册通用路由
 func (rm *RouteManager) RegisterCommonRoutes(handler PathHandler) {
-	handler(rm.LoginRoutes)
+	handler(rm.CommonRoutes)
 }
 
 // RegisterLoginRoutes 注册登录相关路由

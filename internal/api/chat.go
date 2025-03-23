@@ -149,7 +149,7 @@ func WebSocketHandler(c *gin.Context) {
 			return
 		}
 
-		var msg types.WSMessage
+		var msg types.WSMessageReq
 		// 读取并解压消息
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {
