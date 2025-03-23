@@ -50,4 +50,6 @@ var (
 	SNOWFLAKE_ID_GENERATE_ERROR = MsgCode{60004, "snowflake id生成失败"}
 	DATABASE_ERROR              = MsgCode{60005, "数据库错误"}
 	REDIS_ERROR                 = MsgCode{60006, "redis错误"}
+	GET_ATOKEN_ERROR            = MsgCode{60007, "生成Atoken失败"}
+	GET_RTOKEN_ERROR            = MsgCode{60007, "生成Rtoken失败"}
 )

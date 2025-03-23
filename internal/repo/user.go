@@ -45,7 +45,6 @@ func NewUserRepo(db *gorm.DB) *UserRepo {
 // 判断用户是否存在
 func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 	var UserID int64
-
 	err := r.DB.Model(&model.UserDisplay{}).
 		Select(ID).
 		Where(&model.UserDisplay{
@@ -54,6 +53,7 @@ func (r *UserRepo) JudgeUser(Openid string) (int64, error) {
 		First(&UserID).
 		Error
 	if err != nil {
+		// 如果用户不存在
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// 开启事务
 			tx := r.DB.Begin()

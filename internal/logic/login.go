@@ -107,7 +107,13 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 
 	//制作 Atoken 和 Rtoken 自定义登陆态
 	resp.Atoken, err = jwt.GenToken(jwt.FullToken(global.AUTH_ENUMS_ATOKEN, UserId))
+	if err != nil {
+		return resp, response.ErrResp(err, response.GET_ATOKEN_ERROR)
+	}
 	resp.Rtoken, err = jwt.GenToken(jwt.FullToken(global.AUTH_ENUMS_RTOKEN, UserId))
+	if err != nil {
+		return resp, response.ErrResp(err, response.GET_RTOKEN_ERROR)
+	}
 
 	return resp, nil
 }

@@ -21,7 +21,7 @@ type Code2SessionResp struct {
 
 // 微信登录响应结构体
 type WechatLoginResp struct {
-	Atoken string `json:"token"`  // 账号登录认证
+	Atoken string `json:"atoken"` // 账号登录认证
 	Rtoken string `json:"rtoken"` // 刷新处理
 	Role   string `json:"role"`   // 用户身份
 }
