@@ -8,12 +8,12 @@ import (
 
 // CreateBlogReq 创建帖子请求体
 type CreateBlogReq struct {
-	Title          string                  `json:"title"` //标题
-	Content        string                  `json:"content"`
-	BlogTag        string                  `json:"blogtag"`         // 帖子分区（主标签）
-	SubTag         string                  `json:"sub_tag"`         // 子标签
-	ViewPermission string                  `json:"view_permission"` // 访问权限，默认为“所有人”
-	ImageFiles     []*multipart.FileHeader `form:"image_files"`     // 图片文件
+	Title          string                  `form:"title"`
+	Content        string                  `form:"content"`
+	BlogTag        string                  `form:"blogtag"`
+	SubTag         string                  `form:"sub_tag"`
+	ViewPermission string                  `form:"view_permission"`
+	ImageFiles     []*multipart.FileHeader `form:"image_files"`
 }
 
 // CreateBlogResp 创建帖子响应体
@@ -24,13 +24,12 @@ type CreateBlogResp struct {
 
 // UpdateBlogReq 更新帖子请求体
 type UpdateBlogReq struct {
-	ID             int64                   `json:"id"`
-	Title          string                  `json:"title"`
-	Content        string                  `json:"content"`
-	BlogTag        string                  `json:"blogtag"`
-	SubTag         string                  `json:"sub_tag"`
-	ViewPermission string                  `json:"view_permission"`
-	ImageFiles     []*multipart.FileHeader `form:"image_files"` // 图片文件
+	Title          string                  `form:"title"`
+	Content        string                  `form:"content"`
+	BlogTag        string                  `form:"blogtag"`
+	SubTag         string                  `form:"sub_tag"`
+	ViewPermission string                  `form:"view_permission"`
+	ImageFiles     []*multipart.FileHeader `form:"image_files"`
 }
 
 // UpdateBlogResp 更新帖子响应体
