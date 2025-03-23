@@ -35,7 +35,7 @@ func listen() (*gin.Engine, error) {
 	// 注册全局中间件（例如获取 Trace ID）
 	manager.RequestGlobalMiddleware(r)
 	//设置静态路由，用于访问上传的文件
-	r.Static("image", "./images")
+	r.Static("images", "./images")
 	// 创建 RouteManager 实例
 	routeManager := manager.NewRouteManager(r)
 	// 注册各业务路由组的具体路由
