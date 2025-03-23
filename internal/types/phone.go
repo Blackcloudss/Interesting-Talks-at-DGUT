@@ -17,9 +17,9 @@ type WxPhoneResp struct {
 
 // 具体手机号信息
 type WxPhone struct {
-	Errcode   int       `json:"errcode"`    // 错误码
-	Errmsg    string    `json:"errmsg"`     // 错误信息
-	PhoneInfo PhoneInfo `json:"phone_info"` // 手机号信息
+	Errcode   int        `json:"errcode"`    // 错误码
+	Errmsg    string     `json:"errmsg"`     // 错误信息
+	PhoneInfo *PhoneInfo `json:"phone_info"` // 手机号信息
 }
 
 type PhoneInfo struct {
