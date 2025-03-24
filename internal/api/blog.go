@@ -8,12 +8,14 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/image"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 // CreateBlogHandler 创建帖子
 func CreateBlogHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.CreateBlogReq](c)
+	var req types.CreateBlogReq
+	err := c.ShouldBindWith(&req, binding.FormMultipart)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "CreateBlog request error: %v", err)
 		return
@@ -43,7 +45,8 @@ func CreateBlogHandler(c *gin.Context) {
 // UpdateBlogHandler 更新帖子
 func UpdateBlogHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.UpdateBlogReq](c)
+	var req types.UpdateBlogReq
+	err := c.ShouldBindWith(&req, binding.FormMultipart)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "UpdateBlog request error: %v", err)
 		return
