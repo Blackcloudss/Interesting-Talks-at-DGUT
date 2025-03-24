@@ -2,7 +2,7 @@ package model
 
 type Blog struct { // 帖子
 	CommonModel           // 删除时间
-	BeLiked        int    `gorm:"default:0" json:"be_liked"`                             // 点赞数，默认为0
+	BeLiked        int    `gorm:"default:0" json:"be_liked"  `                           // 点赞数，默认为0
 	BeCollected    int    `gorm:"default:0" json:"be_collected"`                         // 收藏数，默认为0
 	CommentCount   int    `gorm:"default:0" json:"comment_count"`                        // 评论数，默认为0（字段名更清晰）
 	BlogTag        string `gorm:"size:30;index" json:"blog_tag"`                         // 帖子分区（主标签）
