@@ -5,14 +5,12 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/connect"
 
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
@@ -26,10 +24,16 @@ var (
 	JUDGE_FRIEND        = response.MsgCode{51003, "验证好友关系失败"}
 	GET_HISTORY_MESSAGE = response.MsgCode{51001, "获取聊天记录失败"}
 	SAVE_MESSAGE_FAILED = response.MsgCode{51004, "存储消息失败"}
+
+	MsgQueue    = make(chan types.WSMessageResp, 1000) // 缓冲消息队列，应对突发流量
+	buffer      []types.WSMessageResp                  // 消息缓冲区，用于存储待处理的消息
+	ackChannels = sync.Map{}                           // "消息确认"通道映射，实现消息状态跟踪
 )
 
 const (
-	RETRYCOUNT = "retry_count"
+	//消息队列相关配置
+	MaxBatchSize  = 50  // 批量消息最大条数，平衡吞吐量与延迟
+	FlushInterval = 100 // 批量处理间隔(ms)，控制消息实时性
 )
 
 /*
@@ -53,6 +57,7 @@ func NewChatlogic() *Chatlogic {
 	return &Chatlogic{}
 }
 
+// GetMessagesHistory 获取聊天记录
 func (l *Chatlogic) GetMessagesHistory(ctx context.Context, SenderID int64, req types.GetMessageReq) (resp types.GetMessageResp, err error) {
 	defer utils.RecordTime(time.Now())()
 	// 如果用户没有页码和页数，则默认为第一页和每页10条数据
@@ -71,18 +76,6 @@ func (l *Chatlogic) GetMessagesHistory(ctx context.Context, SenderID int64, req 
 	return resp, nil
 }
 
-// 消息队列相关配置
-const (
-	MaxBatchSize  = 50  // 批量消息最大条数，平衡吞吐量与延迟
-	FlushInterval = 100 // 批量处理间隔(ms)，控制消息实时性
-)
-
-var (
-	MsgQueue    = make(chan types.WSMessageResp, 1000) // 缓冲消息队列，应对突发流量
-	buffer      []types.WSMessageResp
-	ackChannels = sync.Map{} // 消息确认通道映射，实现消息状态跟踪
-)
-
 // SendMessage 消息发送入口
 // 解决：消息可靠性、好友验证、存储与推送解耦
 func (l *Chatlogic) SendMessage(ctx context.Context, SenderID int64, WSMsg types.WSMessageReq, CM *connect.ConnectionManager) (err error) {
@@ -93,25 +86,20 @@ func (l *Chatlogic) SendMessage(ctx context.Context, SenderID int64, WSMsg types
 		zlog.CtxErrorf(ctx, "验证好友关系失败: %v", err)
 		return response.ErrResp(err, JUDGE_FRIEND)
 	}
+	// 如果不是好友关系，则返回错误
 	if exist == false {
 		zlog.CtxErrorf(ctx, "用户%d与用户%d不是好友关系", SenderID, WSMsg.To)
 		return response.ErrResp(nil, FRIEND_NOT_EXIST)
 	}
 
-	// 存储消息时初始化状态
+	// 存储消息时初始化状态 DELIVERED 在线
 	status := global.DELIVERED
+	// 如果好友不在线，则消息状态为 OFFLINE 离线
 	if _, exists := CM.Clients[WSMsg.To]; !exists {
 		status = global.OFFLINE
 	}
 
-	// 消息存储
-	err = repo.NewChatRepo(global.DB).SaveMessage(SenderID, WSMsg, status)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "存储消息失败: %v", err)
-		return response.ErrResp(err, SAVE_MESSAGE_FAILED)
-	}
-
-	// 构建响应消息
+	// 构建响应消息 -- 普通消息
 	respMsg := types.WSMessageResp{
 		From:    SenderID,
 		To:      WSMsg.To,
@@ -121,13 +109,17 @@ func (l *Chatlogic) SendMessage(ctx context.Context, SenderID int64, WSMsg types
 		Type:    global.MESSAGE,
 	}
 
+	// 消息存储
+	err = repo.NewChatRepo(global.DB).SaveMessage(respMsg, status)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "存储消息失败: %v", err)
+		return response.ErrResp(err, SAVE_MESSAGE_FAILED)
+	}
+
 	// 根据消息状态进行推送
+	// 如果对方在线，则直接推送到 缓冲消息队列
 	if status == global.DELIVERED {
 		MsgQueue <- respMsg
-	} else {
-		if err = repo.NewChatRepo(global.DB).SaveOfflineMessage(respMsg); err != nil {
-			zlog.CtxErrorf(ctx, "保存离线消息失败: %v", err)
-		}
 	}
 
 	// 批处理模式消息队列
@@ -137,19 +129,47 @@ func (l *Chatlogic) SendMessage(ctx context.Context, SenderID int64, WSMsg types
 	})
 
 	// 在flushMessages中增加确认等待
+	// 通过ACK机制确保消息必达（若30秒未收到ACK会触发重发）
 	go func(msgID string) {
 		select {
 		case <-time.After(30 * time.Second):
-			if !checkAck(msgID) {
+			if !checkAck(msgID) { // 未收到ACK，重新入队
+				// 获取消息重试信息
+				message, err := repo.NewChatRepo(global.DB).GetMessageRetryInfo(msgID)
+				if err != nil {
+					zlog.Errorf("获取消息重试信息失败: %v", err)
+					return
+				}
+
+				// 检查重试次数是否超过限制
+				if message.RetryCount >= message.MaxRetries {
+					zlog.Warnf("消息%s达到最大重试次数(%d)，将被删除", msgID, message.RetryCount)
+					if err := repo.NewChatRepo(global.DB).DeleteMessage(msgID); err != nil {
+						zlog.Errorf("删除消息失败: %v", err)
+					}
+					return
+				}
+
+				// 增加重试计数
+				if err := repo.NewChatRepo(global.DB).IncrementRetryCount(msgID); err != nil {
+					zlog.Errorf("重试计数更新失败: %v", err)
+					return
+				}
+
+				// 重新入队
 				MsgQueue <- types.WSMessageResp{
-					From:    SenderID,
-					To:      WSMsg.To,
-					Content: WSMsg.Content,
-					Time:    time.Now().Unix(),
-					MsgID:   msgID,
+					From:       message.Sender,
+					To:         message.Receiver,
+					Content:    message.Content,
+					Time:       time.Now().Unix(),
+					MsgID:      msgID,
+					Type:       global.MESSAGE,
+					RetryCount: message.RetryCount + 1,
+					MaxRetries: message.MaxRetries,
 				}
 			}
-		case <-ackChan(msgID):
+		case <-ackChan(msgID): // <-ch  // 会永久阻塞，直到通道被关闭或发送数据（此处通道类型是 struct{}，无数据发送）
+			// 收到ACK， 更新消息状态为ACKNOWLEDGED
 			updateMsgStatus(msgID, global.ACKNOWLEDGED)
 		}
 	}(WSMsg.MsgID)
@@ -165,6 +185,7 @@ func ProcessMsgQueue(CM *connect.ConnectionManager) {
 	defer flushTimer.Stop()
 	for {
 		select {
+		// 从消息队列中获取消息
 		case msg := <-MsgQueue:
 			// 将消息添加到缓冲区
 			buffer = append(buffer, msg)
@@ -178,6 +199,7 @@ func ProcessMsgQueue(CM *connect.ConnectionManager) {
 			}
 			// 如果缓冲区时间到，则执行批处理操作
 		case <-flushTimer.C:
+			// 如果缓冲区不为空，则执行批处理操作
 			if len(buffer) > 0 {
 				err := flushMessages(buffer, CM)
 				if err != nil {
@@ -202,7 +224,6 @@ func flushMessages(msgs []types.WSMessageResp, CM *connect.ConnectionManager) (e
 		zlog.Errorf("创建gzip压缩器失败: %v", err)
 		return err
 	}
-
 	// 将批处理消息编码为 JSON
 	err = json.NewEncoder(gz).Encode(msgs)
 	if err != nil {
@@ -215,18 +236,21 @@ func flushMessages(msgs []types.WSMessageResp, CM *connect.ConnectionManager) (e
 		zlog.Errorf("关闭 gzip 压缩器失败: %v", err)
 		return
 	}
-
+	// 广播消息
 	CM.Mutex.Lock()
 	defer CM.Mutex.Unlock()
-
+	// 遍历所有在线用户
 	for _, msg := range msgs {
+		// 如果接收方在线，则发送消息
 		if conn, exists := CM.Clients[msg.To]; exists {
+			// 发送消息
 			if err = conn.WriteMessage(websocket.BinaryMessage, buf.Bytes()); err == nil {
 				// 记录消息发送时间
 				ackChannels.Store(msg.MsgID, time.Now())
 			}
 		} else {
-			err = repo.NewChatRepo(global.DB).SaveOfflineMessage(msg)
+			// 如果接收方不在线，则存储离线消息
+			err = repo.NewChatRepo(global.DB).SaveMessage(msg, global.OFFLINE)
 			if err != nil {
 				zlog.Errorf("保存离线消息失败: %v", err)
 			}
@@ -235,38 +259,36 @@ func flushMessages(msgs []types.WSMessageResp, CM *connect.ConnectionManager) (e
 	return nil
 }
 
+// ackChan 获取"消息确认"通道
 func ackChan(msgID string) <-chan struct{} {
+	//检查键是否存在，存在则返回值，否则存储新值。这里的值是一个通道。
+	//始终返回通道对象（不论是否关闭）
 	ch, _ := ackChannels.LoadOrStore(msgID, make(chan struct{}))
 	return ch.(chan struct{})
 }
 
+// checkAck 检查消息是否已确认
 func checkAck(msgID string) bool {
 	_, ok := ackChannels.Load(msgID)
 	return ok
 }
 
+// updateMsgStatus 更新消息状态
 func updateMsgStatus(msgID, status string) {
 	if err := repo.NewChatRepo(global.DB).UpdateMessageStatus(msgID, status); err != nil {
 		zlog.Errorf("更新消息状态失败: %v", err)
+		return
 	}
-
-	// 自动清理超过3次重试的消息
-	if status == global.DELIVERED {
-		var retryCount int
-		repo.NewChatRepo(global.DB).DB.Model(&model.Message{}).
-			Where(fmt.Sprintf("%v = ?", global.MSGID), msgID).
-			Pluck(fmt.Sprintf("%v = ?", RETRYCOUNT), &retryCount)
-
-		if retryCount >= 3 {
-			repo.NewChatRepo(global.DB).DB.
-				Where(fmt.Sprintf("%v = ?", global.MSGID), msgID).
-				Delete(&model.Message{})
-		}
-	}
-
+	// 清理确认通道
 	ackChannels.Delete(msgID)
 }
 
-func (l *Chatlogic) GetOfflineMessages(userID int64) ([]types.WSMessageResp, error) {
-	return repo.NewChatRepo(global.DB).GetPendingMessages(userID)
+// GetOfflineMessages 获取离线消息
+func (l *Chatlogic) GetOfflineMessages(userID int64) (resp []types.WSMessageResp, err error) {
+	resp, err = repo.NewChatRepo(global.DB).GetPendingMessages(userID)
+	if err != nil {
+		zlog.Errorf("获取离线消息失败: %v", err)
+		return
+	}
+	return
 }

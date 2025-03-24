@@ -33,10 +33,10 @@ const (
 	MSGID        = "msg_id"
 	STATUS       = "status"       // 状态
 	MESSAGE      = "message"      // 消息
-	ACK          = "ack"          // 确认
-	ACKNOWLEDGED = "acknowledged" // 确认
+	ACK          = "ack"          // 客户端发送的确认请求类型（消息头标识）
+	ACKNOWLEDGED = "acknowledged" // 服务端标记的最终确认状态 持久化状态
 	OFFLINE      = "offline"      // 离线
-	DELIVERED    = "delivered"    // 已送达
+	DELIVERED    = "delivered"    // 在线
 )
 
 var (

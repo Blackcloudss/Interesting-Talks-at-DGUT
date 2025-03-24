@@ -2,6 +2,7 @@ package repo
 
 import (
 	"fmt"
+
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
@@ -15,6 +16,9 @@ const (
 	RECEIVER   = "receiver"
 	CONTENT    = "content"
 	CREATED_AT = "created_at"
+
+	// 重试次数
+	RETRYCOUNT = "retry_count"
 )
 
 /*
@@ -38,6 +42,7 @@ func NewChatRepo(db *gorm.DB) *ChatRepo {
 	return &ChatRepo{DB: db}
 }
 
+// GetMessagesHistory 获取聊天记录
 func (r *ChatRepo) GetMessagesHistory(SenderID int64, ReceiverID int64, page int, size int) (resp []types.MessageHistory, err error) {
 	err = r.DB.Model(&model.Message{}).
 		Select(SENDER, RECEIVER, CONTENT, CREATED_AT).
@@ -56,27 +61,28 @@ func (r *ChatRepo) GetMessagesHistory(SenderID int64, ReceiverID int64, page int
 
 // SaveMessage 消息存储
 // 解决：消息持久化、状态跟踪（delivered/offline）
-func (r *ChatRepo) SaveMessage(sender int64, msg types.WSMessageReq, status string) error {
+func (r *ChatRepo) SaveMessage(msg types.WSMessageResp, status string) error {
 	// 存储消息时记录发送状态，支持后续状态追踪
 	return r.DB.Create(&model.Message{
 		MsgID:    msg.MsgID,
-		Sender:   sender,
+		Sender:   msg.From,
 		Receiver: msg.To,
 		Content:  msg.Content,
 		Status:   status,
 	}).Error
 }
 
-func (r *ChatRepo) SaveOfflineMessage(msg types.WSMessageResp) error {
-	return r.DB.Create(&model.Message{
-		MsgID:    msg.MsgID,
-		Sender:   msg.From,
-		Receiver: msg.To,
-		Content:  msg.Content,
-		Status:   global.OFFLINE,
-	}).Error
+// IncrementRetryCount 增加消息重试次数
+func (r *ChatRepo) IncrementRetryCount(msgID string) error {
+	return r.DB.Transaction(func(tx *gorm.DB) error {
+		return tx.Model(&model.Message{}).
+			Where(fmt.Sprintf("%v = ?", global.MSGID), msgID).
+			Update(RETRYCOUNT, gorm.Expr("retry_count + 1")). //数据库行锁保证原子自增
+			Error
+	})
 }
 
+// UpdateMessageStatus 更新消息状态
 func (r *ChatRepo) UpdateMessageStatus(msgID, status string) error {
 	return r.DB.Model(&model.Message{}).
 		Where(fmt.Sprintf("%v = ?", global.MSGID), msgID).
@@ -105,4 +111,16 @@ func (r *ChatRepo) GetPendingMessages(userID int64) ([]types.WSMessageResp, erro
 		})
 	}
 	return resp, err
+}
+
+// GetMessageRetryInfo 获取消息重试信息
+func (r *ChatRepo) GetMessageRetryInfo(msgID string) (*model.Message, error) {
+	var message model.Message
+	err := r.DB.Where(fmt.Sprintf("%v = ?", global.MSGID), msgID).First(&message).Error
+	return &message, err
+}
+
+// DeleteMessage 删除消息
+func (r *ChatRepo) DeleteMessage(msgID string) error {
+	return r.DB.Where(fmt.Sprintf("%v = ?", global.MSGID), msgID).Delete(&model.Message{}).Error
 }

@@ -21,6 +21,7 @@ type Message struct {
 	Sender     int64  `gorm:"column:sender;type:bigint;comment:'发送者ID'"`
 	Receiver   int64  `gorm:"column:receiver;type:bigint;comment:'接受者ID'"`
 	Content    string `gorm:"column:content;type:text;comment:'聊天内容'"`
-	Status     string `gorm:"column:status;type:varchar(20);default:'delivered';comment:'消息状态'"`
-	RetryCount int    `gorm:"column:retry_count;type:int;default:0;comment:'重试次数'"`
+	Status     string `gorm:"column:status;type:varchar(20);default:'delivered';comment:'消息状态'"` // delivered/offline/acknowledge
+	MaxRetries int    `gorm:"column:max_retries;type:int;default:3;comment:'最大重试次数'"`
+	RetryCount int    `gorm:"column:retry_count;type:int;default:0;comment:'当前重试次数'"`
 }

@@ -31,20 +31,22 @@ func AIChatStream(c *gin.Context) {
 		zlog.CtxErrorf(ctx, "AIChat request error: %v", err)
 		return
 	}
-	// 检查参数是否在范围内
+	// 参数有效性验证，确保PresencePenalty在合法范围内
 	if req.PresencePenalty < -2.0 || req.PresencePenalty > 2.0 {
 		zlog.CtxErrorf(ctx, "PresencePenalty out of range")
 		return
 	}
 	zlog.CtxInfof(ctx, "AIChat request: %v", req)
 
-	// 设置SSE响应头
+	// 设置SSE协议要求的响应头
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
 
+	// 设置redis key
 	MessagesKey := fmt.Sprintf(global.REDIS_MESSAGES_KEY, userid, req.Type)
 
+	// 获取AI聊天流并确保最终关闭响应体
 	httpResp, messages, err := logic.NewAILogic().GetChatStream(ctx, MessagesKey, req)
 	defer func(Body io.ReadCloser) {
 		err = Body.Close()
@@ -58,13 +60,17 @@ func AIChatStream(c *gin.Context) {
 		return
 	}
 
-	// 流式处理
+	// 流式数据处理
 	var fullResponse strings.Builder
 	flusher, _ := c.Writer.(http.Flusher)
+	//创建一个带缓冲的读取器，
+	//将HTTP响应体(httpResp.Body)包装为缓冲I/O接口，通过减少系统调用次数提高数据读取效率。
 	reader := bufio.NewReader(httpResp.Body)
 	for {
+		//从reader读取字节，直到遇到'\n'换行符，返回包含分隔符的字节切片
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
+			//遇到文件结束（io.EOF）时返回已读取的数据
 			if err == io.EOF {
 				break
 			}
@@ -73,7 +79,7 @@ func AIChatStream(c *gin.Context) {
 		}
 
 		// 解析 SSE 数据
-		// 识别 SSE 协议中的有效数据行（以 "data: " 开头的行）
+		// 检查一个字节切片是否以特定的前缀开头，识别 SSE 协议中的有效数据行（以 "data: " 开头的行）
 		if bytes.HasPrefix(line, []byte("data: ")) {
 			var chuck types.AIChatStreamResp
 			//移除 SSE 数据头的 data: 前缀(6字节长度),将剩余部分解析为预定义的结构体 types.AIChatStreamResp
@@ -106,7 +112,7 @@ func AIChatStream(c *gin.Context) {
 	}
 	flusher.Flush()
 
-	// 保存对话内容
+	// 持久化存储AI对话记录
 	messages = append(messages, types.Message{
 		Role:    role.ASSISTANT,
 		Content: fullResponse.String(),

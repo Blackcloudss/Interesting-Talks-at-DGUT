@@ -111,10 +111,10 @@ func WebSocketHandler(c *gin.Context) {
 		delete(CM.Clients, UserId)
 	}
 	CM.Mutex.Unlock()
-	// 注册连接
+	// 注册新连接
 	CM.AddClient(UserId, conn)
 
-	// 获取离线消息（新增）
+	// 获取离线消息
 	if msgs, err := logic.NewChatlogic().GetOfflineMessages(UserId); err == nil {
 		for _, msg := range msgs {
 			msg.Type = global.MESSAGE // 确保类型正确
@@ -122,10 +122,10 @@ func WebSocketHandler(c *gin.Context) {
 		}
 	}
 
-	// 添加心跳检测
-	// 设置 Pong 响应处理器
+	// 心跳检测
+	// 设置 Pong 响应处理器 -- 接受客户端 Pong 响应处理
 	conn.SetPongHandler(func(string) error {
-		// 收到 Pong 包时，重置读超时时间窗口
+		// 收到 Pong 包时，重置读超时时间窗口，自动延长60秒读超时
 		err = conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		if err != nil {
 			zlog.CtxErrorf(ctx, "WebSocket设置读超时失败: %v", err)
@@ -134,6 +134,8 @@ func WebSocketHandler(c *gin.Context) {
 	})
 
 	// 添加初始读超时设置
+	//1.防止僵尸连接占用资源（60秒内无任何数据读取自动断开）；
+	//2.配合心跳机制实现活性检测（收到Pong响应后重置倒计时，维持长连接）
 	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 
 	// 启动独立协程发送心跳包
@@ -148,7 +150,6 @@ func WebSocketHandler(c *gin.Context) {
 			return
 		}
 
-		var msg types.WSMessageReq
 		// 读取并解压消息
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {
@@ -165,23 +166,51 @@ func WebSocketHandler(c *gin.Context) {
 				continue
 			}
 			defer gr.Close()
-
+			// 读取并解压消息
 			decompressed, err := io.ReadAll(gr)
 			if err != nil {
 				zlog.CtxErrorf(ctx, "解压消息失败: %v", err)
 				continue
 			}
+			// 更新消息内容
 			p = decompressed
 		}
-
+		// 解析用户要发送的消息
+		var msg types.WSMessageReq
 		if err = json.Unmarshal(p, &msg); err != nil {
 			zlog.CtxErrorf(ctx, "消息解析失败: %v", err)
 			continue
 		}
-
-		// 分离普通消息与确认消息处理
+		// 消息确认处理， 分离普通消息与确认消息处理
+		// 普通消息携带业务数据，解压处理； ACK仅包含控制信息， 触发确认
+		//subgraph 消息处理循环
+		//M[读取消息] --> N{消息类型}
+		//N -->|普通消息| O[解压处理]
+		//N -->|ACK消息| P[触发确认]
+		//O --> Q[好友验证]
+		//Q --> R[存储消息]
+		//R --> S{接收方在线?}
+		//S -->|在线| T[存储为delivered 在线消息，加入消息队列]
+		//S -->|离线| U[存储为offline 离线消息]
+		//T --> V[批量压缩发送]
+		//V --> W[记录发送时间]
+		//W --> X[等待用户发来的 ACK]
+		//X -->|30秒未收到| Y[重发消息]
+		//X -->|收到ACK| Z[更新状态]
+		//end
+		//
+		//subgraph 确认机制
+		//P --> AA{存在消息通道?}
+		//AA -->|是| AB[关闭通道]
+		//AB --> AC[更新为ACKNOWLEDGED]
+		//AA -->|否| AD[记录异常]
+		//AC --> AE[清理确认记录]
+		//end
 		if msg.Type == global.ACK {
+			// 收到ACK消息时，会通过ackChannels.Load找到对应msgID的通道
 			if ch, ok := ackChannels.Load(msg.MsgID); ok {
+				// 通知消息已确认， 关闭通道，释放资源
+				// 关闭通道会立即返回零值，此时会触发ackChan返回的通道的case <-ackChan(msgID)分支，完成消息确认
 				close(ch.(chan struct{}))
 			}
 			continue

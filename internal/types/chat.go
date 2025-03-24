@@ -27,12 +27,14 @@ type WSError struct {
 // WSMessageResp 服务端推送结构
 // 包含：发送方信息、时间戳、状态标识
 type WSMessageResp struct {
-	From    int64  `json:"from"`                      // 发送者ID
-	To      int64  `json:"to"`                        // 接收者ID
-	Content string `json:"content"`                   // 消息内容
-	Time    int64  `json:"time"`                      // 时间戳
-	MsgID   string `json:"msg_id" binding:"required"` // 消息唯一ID
-	Type    string `json:"type"`                      // 消息类型（message/ack）
+	From       int64  `json:"from"`                      // 发送者ID
+	To         int64  `json:"to"`                        // 接收者ID
+	Content    string `json:"content"`                   // 消息内容
+	Time       int64  `json:"time"`                      // 时间戳
+	MsgID      string `json:"msg_id" binding:"required"` // 消息唯一ID
+	Type       string `json:"type"`                      // 消息类型（message/ack）
+	MaxRetries int    `json:"max_retries"`               // 最大重试次数
+	RetryCount int    `json:"retry_count"`               // 当前已重试次数（动态值）
 }
 
 // 获取历史聊天消息 入参

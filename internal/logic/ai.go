@@ -86,46 +86,47 @@ func (l *AILogic) NewApiReq(messages []types.Message, req types.AIChatStreamReq)
 // 获取历史对话
 func (l *AILogic) GetHistoryMessages(ctx context.Context, MessagesKey string, Type string) (messages []types.Message, err error) {
 	defer utils.RecordTime(time.Now())()
-	// 获取系统消息
-	system, err := global.Rdb.Get(ctx, MessagesKey+":system").Result()
+	// 获取系统提示词
+	SystemPrompt, err := global.Rdb.Get(ctx, MessagesKey+":system").Result()
 	if err == redis.Nil {
 		// 初始化系统消息
 		switch Type {
 		// 根据Type参数选择系统消息
 		case prompt.OUTLINE:
 			global.Rdb.Set(ctx, MessagesKey+":system", prompt.OUTLINE_PROMPT, 0)
-			system = prompt.OUTLINE_PROMPT
+			SystemPrompt = prompt.OUTLINE_PROMPT
 		case prompt.SLOGAN:
 			global.Rdb.Set(ctx, MessagesKey+":system", prompt.SLOGAN_PROMPT, 0)
-			system = prompt.SLOGAN_PROMPT
+			SystemPrompt = prompt.SLOGAN_PROMPT
 		case prompt.TRANSLATION:
 			global.Rdb.Set(ctx, MessagesKey+":system", prompt.TRANSLATION_PROMPT, 0)
-			system = prompt.TRANSLATION_PROMPT
+			SystemPrompt = prompt.TRANSLATION_PROMPT
 		case prompt.ITAD:
 			global.Rdb.Set(ctx, MessagesKey+":system", prompt.ITAD_PROMPT, 0)
-			system = prompt.ITAD_PROMPT
+			SystemPrompt = prompt.ITAD_PROMPT
 		case prompt.CIRNO:
 			global.Rdb.Set(ctx, MessagesKey+":system", prompt.CIRNO_PROMPT, 0)
-			system = prompt.CIRNO_PROMPT
+			SystemPrompt = prompt.CIRNO_PROMPT
 		default:
 			global.Rdb.Set(ctx, MessagesKey+":system", prompt.ITAD_PROMPT, 0)
-			system = prompt.ITAD_PROMPT
+			SystemPrompt = prompt.ITAD_PROMPT
 		}
 	} else if err != nil {
 
 		return nil, err
 	}
 
-	// 获取对话记录
+	// 获取整个列表的对话记录
 	msgs, err := global.Rdb.LRange(ctx, MessagesKey+":messages", 0, -1).Result()
 	if err != nil {
 		return nil, err
 	}
 
 	// 构造消息列表
-	messages = []types.Message{{Role: role.SYSTEM, Content: system}}
+	messages = []types.Message{{Role: role.SYSTEM, Content: SystemPrompt}}
 	for _, msg := range msgs {
 		var m types.Message
+		//将每个JSON字符串反序列化为反序列化为`types.Message`结构体，若成功则追加到消息列表。过滤无效的JSON格式数据。
 		if json.Unmarshal([]byte(msg), &m) == nil {
 			messages = append(messages, m)
 		}
@@ -139,6 +140,8 @@ func (l *AILogic) SaveHistoryMessages(ctx context.Context, MessagesKey string, m
 	// 排除系统消息
 	var toSave []string
 	for _, msg := range messages[1:] {
+		//将消息结构体序列化为JSON字符串存储，实现结构化数据转文本格式存储。
+		//JSON格式具备字段扩展性，便于后续反序列化还原消息对象，同时满足Redis列表元素必须为字符串类型的要求。
 		data, _ := json.Marshal(msg)
 		toSave = append(toSave, string(data))
 	}
@@ -147,11 +150,14 @@ func (l *AILogic) SaveHistoryMessages(ctx context.Context, MessagesKey string, m
 	pipe := global.Rdb.Pipeline()
 	// 追加新消息到列表
 	pipe.RPush(ctx, MessagesKey+":messages", toSave)
+	//修剪消息列表长度
+	//参数-MaxHistoryRounds*2表示保留从倒数第2N个元素到末尾（N为最大历史轮次），-1表示保留到列表末尾，确保最多保留最近N轮对话历史
 	pipe.LTrim(ctx, MessagesKey+":messages", -MaxHistoryRounds*2, -1)
 	// 设置消息列表过期时间
 	pipe.Expire(ctx, MessagesKey+":messages", global.MESSAGES_EFFECTIVE_TIME)
 	// 设置系统键过期时间
 	pipe.Expire(ctx, MessagesKey+":system", global.MESSAGES_EFFECTIVE_TIME)
+	// 批量操作：所有命令一次性发送到 Redis 服务器
 	_, err = pipe.Exec(ctx)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "保存历史消息失败：%v", err)

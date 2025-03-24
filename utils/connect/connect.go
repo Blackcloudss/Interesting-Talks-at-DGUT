@@ -43,30 +43,30 @@ func (cm *ConnectionManager) AddClient(userID int64, conn *websocket.Conn) {
 }
 
 // RemoveClient 删除连接
-func (cm *ConnectionManager) RemoveClient(userID int64) {
+func (cm *ConnectionManager) RemoveClient(id int64) {
 	cm.Mutex.Lock()
 	defer cm.Mutex.Unlock()
-	delete(cm.Clients, userID)
+	delete(cm.Clients, id)
 }
 
-// CheckConnections 心跳检测协程
+// CheckConnections 心跳检测协程 -- 服务端主动检测
 // 解决：网络闪断检测、僵尸连接清理
 // 每隔15秒发送心跳包，如果连接超时，则删除连接并关闭连接
 func (cm *ConnectionManager) CheckConnections() {
 	go func() {
-		// 创建定时器
+		// 创建定时器，定期向通道C发送时间值
 		ticker := time.NewTicker(15 * time.Second)
 		defer ticker.Stop()
-
 		for {
-			// 等待定时器超时
+			//  等待定时器超时，从ticker的通道C中接收一个值。
+			//	由于通道操作在没有数据时会阻塞，所以这里会等待直到下一次定时触发，也就是等待一个时间间隔
 			<-ticker.C
 			cm.Mutex.Lock()
 			// 遍历连接集合，发送心跳包
 			for id, conn := range cm.Clients {
-				// 设置写超时
+				// 设置写超时 ：防止心跳包发送阻塞（网络故障时快速失败
 				conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
-				// 发送心跳包
+				// 发送心跳包: 首先尝试发送Ping消息，然后检查是否有错误（超时失败）。如果有错误，就执行移除客户端和关闭连接；否则流程结束。
 				if err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(time.Second)); err != nil {
 					cm.RemoveClient(id)
 					conn.Close()
