@@ -129,7 +129,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.DELETE("/delete/:comment_id", api.DeleteComment)               // 删除评论
 		rg.GET("/list", api.GetCommentList)                               // 获取一级评论列表（显示部分二级评论）
 		rg.GET("/secondlist", api.GetMoreSecondComment)                   //获取更多二级评论
-		rg.POST("/like ", api.LikeComment)                                //点赞评论
+		rg.POST("/like", api.LikeComment)                                 //点赞评论
 		rg.POST("/unlike", api.UnlikeComment)                             //取消点赞评论
 	})
 

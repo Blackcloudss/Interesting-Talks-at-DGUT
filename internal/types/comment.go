@@ -29,7 +29,7 @@ type DeleteCommentResp struct {
 
 // LikeCommentReq 点赞评论请求结构体
 type LikeCommentReq struct {
-	CommentID int64 `json:"comment_id"` // 要点赞的评论 ID
+	CommentID int64 `json:"comment_id" form:"comment_id"` // 要点赞的评论 ID
 }
 
 // LikeCommentResp 点赞评论响应结构体
