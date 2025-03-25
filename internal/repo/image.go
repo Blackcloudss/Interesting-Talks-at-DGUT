@@ -5,6 +5,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/image"
 	"gorm.io/gorm"
+	"os"
 	"path/filepath"
 )
 
@@ -50,9 +51,22 @@ func (r *ImageRepo) DeleteImagesByBlogID(blogID int64) error {
 	for _, imagePath := range imagePaths {
 		// 拼接完整的文件路径
 		fullPath := filepath.Join("images", imagePath)
-		if err := image.DeleteLocalFile(fullPath); err != nil {
-			zlog.Errorf("删除本地文件失败：%v", err)
+		// 检查路径是否为文件
+		fileInfo, err := os.Stat(fullPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				// 文件不存在，跳过
+				continue
+			}
+			zlog.Errorf("检查文件是否存在失败：%v", err)
 			return err
+		}
+		if !fileInfo.IsDir() {
+			// 确保是文件才删除
+			if err := image.DeleteLocalFile(fullPath); err != nil {
+				zlog.Errorf("删除本地文件失败：%v", err)
+				return err
+			}
 		}
 	}
 

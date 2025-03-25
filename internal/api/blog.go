@@ -137,7 +137,6 @@ func GetMyBlogsHandler(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "GetMyBlogs request: %+v", req)
-
 	UserID := jwt.GetUserId(c)
 	resp, err := logic.NewBlogLogic().GetMyBlogs(ctx, req, UserID)
 	response.Response(c, resp, err)
