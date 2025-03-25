@@ -59,9 +59,9 @@ func (r *BlogRepo) GetBlogByID(blogID int64) (types.BlogResp, error) {
 
 	// 联合查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
-		Select("blogs.*, user_display.nickname, user_display.avatar, user_display.tag").
-		Joins("LEFT JOIN user_display ON blogs.user_id = user_display.user_id").
-		Where("blogs.id = ?", blogID).
+		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
+		Joins("LEFT JOIN user_display ON blog.user_id = user_display.user_id").
+		Where("blog.id = ?", blogID).
 		Scan(&blogResp).Error; err != nil {
 		return types.BlogResp{}, err
 	}
@@ -81,9 +81,9 @@ func (r *BlogRepo) GetBlogs(page, pageSize int) ([]types.BlogResp, int64, error)
 
 	// 分页查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
-		Select("blogs.*, user_display.nickname, user_display.avatar, user_display.tag").
-		Joins("LEFT JOIN user_display ON blogs.user_id = user_display.user_id").
-		Order("blogs.created_at DESC").
+		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
+		Joins("LEFT JOIN user_display ON blog.user_id = user_display.user_id").
+		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Scan(&blogs).Error; err != nil {
@@ -107,10 +107,10 @@ func (r *BlogRepo) GetBlogsByTag(subTag string, page int, pageSize int) ([]types
 
 	// 分页查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
-		Select("blogs.*, user_display.nickname, user_display.avatar, user_display.tag").
-		Joins("LEFT JOIN user_display ON blogs.user_id = user_display.user_id").
+		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
+		Joins("LEFT JOIN user_display ON blog.user_id = user_display.user_id").
 		Where("sub_tag = ?", subTag).
-		Order("blogs.created_at DESC").
+		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Scan(&blogs).Error; err != nil {
@@ -134,10 +134,10 @@ func (r *BlogRepo) GetBlogsByUserID(userID int64, page, pageSize int) ([]types.B
 
 	// 分页查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
-		Select("blogs.*, user_display.nickname, user_display.avatar, user_display.tag").
-		Joins("LEFT JOIN user_display ON blogs.user_id = user_display.user_id").
-		Where("blogs.user_id = ?", userID).
-		Order("blogs.created_at DESC").
+		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
+		Joins("LEFT JOIN user_display ON blog.user_id = user_display.user_id").
+		Where("blog.user_id = ?", userID).
+		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Scan(&blogs).Error; err != nil {
@@ -154,7 +154,7 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 
 	// 查询用户收藏的帖子总数
 	if err := r.DB.Model(&model.Blog{}).
-		Joins("INNER JOIN collections ON collections.blog_id = blogs.id").
+		Joins("INNER JOIN collections ON collections.blog_id = blog.id").
 		Where("collections.user_id = ?", userID).
 		Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -162,11 +162,11 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 
 	// 分页查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
-		Select("blogs.*, user_display.nickname, user_display.avatar, user_display.tag").
-		Joins("INNER JOIN collections ON collections.blog_id = blogs.id").
-		Joins("LEFT JOIN user_display ON blogs.user_id = user_display.user_id").
+		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
+		Joins("INNER JOIN collections ON collections.blog_id = blog.id").
+		Joins("LEFT JOIN user_display ON blog.user_id = user_display.user_id").
 		Where("collections.user_id = ?", userID).
-		Order("blogs.created_at DESC").
+		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Scan(&blogs).Error; err != nil {
