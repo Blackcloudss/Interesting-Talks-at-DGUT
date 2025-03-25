@@ -21,12 +21,6 @@ func (r *ImageRepo) CreateImage(image *model.Image) error {
 	return r.DB.Create(image).Error
 }
 
-/*
-// DeleteImage 根据图片ID删除图片
-func (r *ImageRepo) DeleteImage(imageID int) error {
-	return r.DB.Delete(&model.Image{}, imageID).Error
-}*/
-
 // GetImagesByBlogID 根据blogid获取图片
 func (r *ImageRepo) GetImagesByBlogID(blogID int64) ([]*model.Image, error) {
 	var images []*model.Image
@@ -34,9 +28,10 @@ func (r *ImageRepo) GetImagesByBlogID(blogID int64) ([]*model.Image, error) {
 	return images, result.Error
 }
 
+// GetImagePathsByBlogID 根据blogid获取图片路径
 func (r *ImageRepo) GetImagePathsByBlogID(blogID int64) ([]string, error) {
 	var imagePaths []string
-	if err := r.DB.Model(&model.Image{}).Where("blog_id = ?", blogID).Pluck("path", &imagePaths).Error; err != nil {
+	if err := r.DB.Model(&model.Image{}).Where("blog_id = ?", blogID).Pluck("image_path", &imagePaths).Error; err != nil {
 		return nil, err
 	}
 	return imagePaths, nil
