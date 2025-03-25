@@ -157,8 +157,8 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 
 	// 查询用户收藏的帖子总数
 	if err := r.DB.Model(&model.Blog{}).
-		Joins("INNER JOIN collections ON collections.blog_id = blog.id").
-		Where("collections.user_id = ?", userID).
+		Joins("INNER JOIN collection ON collection.blog_id = blog.id").
+		Where("collection.user_id = ?", userID).
 		Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
@@ -166,9 +166,9 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 	// 分页查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
 		Select("blog.id AS blog_id, blog.created_at AS create_at, blog.updated_at AS update_at, blog.title, blog.content, blog.be_liked, blog.be_collected, blog.comment_count, blog.blog_tag, blog.sub_tag, blog.view_permission, blog.user_id, user_display.nickname, user_display.avatar, user_display.tag").
-		Joins("INNER JOIN collections ON collections.blog_id = blog.id").
+		Joins("INNER JOIN collection ON collection.blog_id = blog.id").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where("collections.user_id = ?", userID).
+		Where("collection.user_id = ?", userID).
 		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
