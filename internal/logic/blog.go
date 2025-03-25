@@ -103,23 +103,25 @@ func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq, ima
 		return nil, response.ErrResp(err, codeBlogUpdateFailed)
 	}
 
-	// 删除旧图片记录
-	err = repo.NewImageRepo(global.DB).DeleteImagesByBlogID(blog.ID)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "Delete images by blog ID failed: %v", err)
-		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
-	}
-
-	// 创建新图片记录
-	for _, imageUrl := range imageUrls {
-		image := model.Image{
-			ImagePath: imageUrl,
-			BlogID:    blog.ID,
-		}
-		err = repo.NewImageRepo(global.DB).CreateImage(&image)
+	// 如果有新的图片上传，则删除旧图片记录
+	if len(imageUrls) > 0 {
+		err = repo.NewImageRepo(global.DB).DeleteImagesByBlogID(blog.ID)
 		if err != nil {
-			zlog.CtxErrorf(ctx, "create image error: %v", err)
-			return nil, response.ErrResp(err, codeImageCreateFailed)
+			zlog.CtxErrorf(ctx, "Delete images by blog ID failed: %v", err)
+			return nil, response.ErrResp(err, response.INTERNAL_ERROR)
+		}
+
+		// 创建新图片记录
+		for _, imageUrl := range imageUrls {
+			image := model.Image{
+				ImagePath: imageUrl,
+				BlogID:    blog.ID,
+			}
+			err = repo.NewImageRepo(global.DB).CreateImage(&image)
+			if err != nil {
+				zlog.CtxErrorf(ctx, "create image error: %v", err)
+				return nil, response.ErrResp(err, codeImageCreateFailed)
+			}
 		}
 	}
 

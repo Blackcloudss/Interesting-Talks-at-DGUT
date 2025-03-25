@@ -3,9 +3,13 @@ package repo
 import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/image"
 	"gorm.io/gorm"
+	"os"
 	"path/filepath"
+)
+
+const (
+	IMAGE_PATH = "images" // 图片存储的根目录
 )
 
 type ImageRepo struct {
@@ -37,7 +41,30 @@ func (r *ImageRepo) GetImagePathsByBlogID(blogID int64) ([]string, error) {
 	return imagePaths, nil
 }
 
-// DeleteImagesByBlogID 根据blogid删除图片
+// DeleteLocalFile 删除本地文件
+func DeleteLocalFile(filePath string) error {
+	// 检查文件是否存在
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		zlog.Warnf("文件不存在，无法删除：%s", filePath)
+		return nil // 如果文件不存在，直接返回
+	}
+	// 删除文件
+	if err := os.Remove(filePath); err != nil {
+		zlog.Errorf("删除文件失败：%v", err)
+		return err
+	}
+
+	return nil
+}
+
+// DeleteImageByRelativePath 根据相对路径删除图片
+func (r *ImageRepo) DeleteImageByRelativePath(relativePath string) error {
+	// 构建完整的文件路径
+	fullPath := filepath.Join(IMAGE_PATH, relativePath)
+
+	// 调用 DeleteLocalFile 删除文件
+	return DeleteLocalFile(fullPath)
+}
 func (r *ImageRepo) DeleteImagesByBlogID(blogID int64) error {
 	// 获取所有需要删除的图片路径
 	imagePaths, err := r.GetImagePathsByBlogID(blogID)
@@ -48,9 +75,8 @@ func (r *ImageRepo) DeleteImagesByBlogID(blogID int64) error {
 
 	// 删除本地文件
 	for _, imagePath := range imagePaths {
-		// 拼接完整的文件路径
-		fullPath := filepath.Join("images", imagePath)
-		if err := image.DeleteLocalFile(fullPath); err != nil {
+		// 调用 DeleteImageByRelativePath 删除图片
+		if err := r.DeleteImageByRelativePath(imagePath); err != nil {
 			zlog.Errorf("删除本地文件失败：%v", err)
 			return err
 		}
