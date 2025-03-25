@@ -9,6 +9,8 @@
 2. Gorm
 3. Mysql
 4. Redis
+5. Zap
+6. Viper
 
 ## 项目目录结构
 ```
