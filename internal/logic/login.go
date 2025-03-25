@@ -100,7 +100,9 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 	}
 
 	//把用户新的Sessionkey放进Redis
-	if err = global.Rdb.Set(ctx, fmt.Sprintf(global.REDIS_SESSIONKEY, C2S.Openid), C2S.SessionKey, global.SESSIONKEY_EFFECTIVE_TIME).Err(); err != nil {
+	key := fmt.Sprintf(global.REDIS_SESSIONKEY, C2S.Openid)
+	zlog.CtxInfof(ctx, "尝试覆盖Redis Key: %s, 新SessionKey: %s", key, C2S.SessionKey)
+	if err = global.Rdb.Set(ctx, key, C2S.SessionKey, global.SESSIONKEY_EFFECTIVE_TIME).Err(); err != nil {
 		zlog.CtxErrorf(ctx, "redis set session_key err: %v", err)
 		return resp, response.ErrResp(err, REDIS_SET_FAULT)
 	}
