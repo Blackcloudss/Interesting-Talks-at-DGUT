@@ -39,7 +39,7 @@ type UpdateBlogResp struct {
 
 // DeleteBlogReq 删除帖子请求体
 type DeleteBlogReq struct {
-	ID int64 `json:"id"`
+	ID int64 `json:"blog_id"`
 }
 
 // DeleteBlogResp 删除帖子响应体
