@@ -33,7 +33,7 @@ type GetFollowingsReq struct {
 
 // GetOtherFollowingsReq 获取其他用户关注列表请求结构体
 type GetOtherFollowingsReq struct {
-	OtherUserID int64 `json:"other_user_id"` // 其他用户ID
+	OtherUserID int64 `json:"other_user_id" form:"other_user_id"` // 其他用户ID
 }
 
 // 获取我的关注列表响应结构体
@@ -47,7 +47,7 @@ type GetFollowersReq struct {
 
 // GetOtherFollowersReq 获取其他用户粉丝列表请求结构体
 type GetOtherFollowersReq struct {
-	OtherUserID int64 `json:"other_user_id"` // 其他用户ID
+	OtherUserID int64 `json:"other_user_id" form:"other_user_id"` // 其他用户ID
 }
 
 // 获取用户粉丝列表响应结构体

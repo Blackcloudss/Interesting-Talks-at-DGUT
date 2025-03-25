@@ -5,8 +5,8 @@ import "github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 // SearchBlogsReq 搜索帖子请求体
 type SearchBlogsReq struct {
 	PageReq
-	Keyword    string `json:"keyword"`     // 搜索关键词
-	SearchType string `json:"search_type"` // 搜索类型: "title", "tag", "nickname", "all" (默认)
+	Keyword    string `json:"keyword" form:"keyword"`         // 搜索关键词
+	SearchType string `json:"search_type" form:"search_type"` // 搜索类型: "title", "tag", "nickname", "all" (默认)
 }
 
 // SearchBlogsResp 搜索帖子响应体
