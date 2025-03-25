@@ -27,20 +27,20 @@ func (r *SearchRepo) SearchBlogs(keyword string, searchType string, page, pageSi
 	switch searchType {
 	case "title":
 		query = r.DB.Model(&model.Blog{}).
-			Joins("LEFT JOIN user_display ON blogs.user_id = user_display.id").
-			Where("blogs.title LIKE ?", "%"+keyword+"%")
+			Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
+			Where("blog.title LIKE ?", "%"+keyword+"%")
 	case "tag":
 		query = r.DB.Model(&model.Blog{}).
-			Joins("LEFT JOIN user_display ON blogs.user_id = user_display.id").
-			Where("blogs.blog_tag LIKE ? OR blogs.sub_tag LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+			Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
+			Where("blog.blog_tag LIKE ? OR blog.sub_tag LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
 	case "nickname":
 		query = r.DB.Model(&model.Blog{}).
-			Joins("LEFT JOIN user_display ON blogs.user_id = user_display.id").
+			Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
 			Where("user_display.nickname LIKE ?", "%"+keyword+"%")
 	default: // 综合搜索
 		query = r.DB.Model(&model.Blog{}).
-			Joins("LEFT JOIN user_display ON blogs.user_id = user_display.id").
-			Where("blogs.title LIKE ? OR blogs.blog_tag LIKE ? OR blogs.sub_tag LIKE ? OR user_display.nickname LIKE ?",
+			Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
+			Where("blog.title LIKE ? OR blog.blog_tag LIKE ? OR blog.sub_tag LIKE ? OR user_display.nickname LIKE ?",
 				"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
 	}
 
@@ -51,8 +51,8 @@ func (r *SearchRepo) SearchBlogs(keyword string, searchType string, page, pageSi
 
 	// 分页查询帖子和用户信息
 	if err := query.
-		Select("blogs.*, user_display.nickname, user_display.avatar, user_display.tag").
-		Order("blogs.created_at DESC").
+		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
+		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Scan(&blogs).Error; err != nil {
