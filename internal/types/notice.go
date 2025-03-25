@@ -33,7 +33,7 @@ type DeleteNoticeResp struct {
 
 // GetNoticeReq 获取通知请求结构体
 type GetNoticeReq struct {
-	ID int64 `json:"id"` // 公告ID
+	ID int64 `form:"id"` // 公告ID
 }
 
 // GetNoticeResp 获取通知响应结构体

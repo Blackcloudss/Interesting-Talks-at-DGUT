@@ -67,7 +67,7 @@ type BlogResp struct {
 
 // GetBlogByIDReq 获取帖子详情请求体
 type GetBlogByIDReq struct {
-	ID int64 `json:"id"`
+	ID int64 `json:"id" form:"id" `
 }
 
 // GetBlogByIDResp 获取帖子详情响应体
@@ -91,7 +91,7 @@ type GetBlogsResp struct {
 
 // GetBlogsByTagReq 根据标签显示帖子列表请求体
 type GetBlogsByTagReq struct {
-	SubTag string `json:"sub_tag"`
+	SubTag string `json:"sub_tag" form:"sub_tag"`
 	PageReq
 }
 
@@ -118,7 +118,7 @@ type GetMyBlogsResp struct {
 
 // GetBlogsByUserIDReq 获取其他用户发布的帖子请求体
 type GetBlogsByUserIDReq struct {
-	UserID int64 `json:"user_id"`
+	UserID int64 `json:"user_id" form:"user_id"`
 	PageReq
 }
 

@@ -48,10 +48,10 @@ type UnlikeCommentResp struct {
 
 // GetCommentListReq 获取评论列表请求结构体
 type GetCommentListReq struct {
-	BlogID   int64  `json:"blog_id" binding:"required"`                     // 所属帖子 ID
-	Page     int    `json:"page" binding:"required"`                        // 当前页码
-	PageSize int    `json:"page_size" binding:"required"`                   // 每页大小
-	SortBy   string `json:"sort_by" binding:"oneof=created_at likes_count"` // 排序方式：created_at（按发布时间）或按likes_count（按点赞数）
+	BlogID   int64  `form:"blog_id" binding:"required"`                     // 所属帖子 ID
+	Page     int    `form:"page" binding:"required"`                        // 当前页码
+	PageSize int    `form:"page_size" binding:"required"`                   // 每页大小
+	SortBy   string `form:"sort_by" binding:"oneof=created_at likes_count"` // 排序方式：created_at（按发布时间）或按likes_count（按点赞数）
 }
 
 // GetCommentListResp 获取评论列表响应结构体
@@ -64,9 +64,9 @@ type GetCommentListResp struct {
 
 // GetSecondCommentListReq 获取更多二级评论请求结构体
 type GetSecondCommentListReq struct {
-	RootParentID int64 `json:"root_parent_id" binding:"required"` // 根评论ID
-	Page         int   `json:"page" binding:"required"`           // 当前页码
-	PageSize     int   `json:"page_size" binding:"required"`      // 每页大小
+	RootParentID int64 `form:"root_parent_id" binding:"required"` // 根评论ID
+	Page         int   `form:"page" binding:"required"`           // 当前页码
+	PageSize     int   `form:"page_size" binding:"required"`      // 每页大小
 }
 
 // GetSecondCommentListResp 获取更多二级评论响应结构体
