@@ -22,11 +22,10 @@ type SecondComment struct {
 	UserID       int64  `gorm:"column:user_id;not null" json:"user_id"`
 	Content      string `gorm:"column:content;type:text;not null" json:"content"`
 	ParentID     int64  `gorm:"column:parent_id;default:0" json:"parent_id"`
-	RootParentID int64  `gorm:"column:root_parent_id;default:0" json:"root_parent_id"`
 	RepliesCount int    `gorm:"column:replies_count;default:0" json:"replies_count"`
 
 	// 添加与一级评论的关联关系
-	FirstComment FirstComment `gorm:"foreignKey:RootParentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_first_comment_second_comment"`
+	FirstComment FirstComment `gorm:"foreignKey:ParentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_first_comment_second_comment"`
 }
 
 func (t *SecondComment) TableName() string {
