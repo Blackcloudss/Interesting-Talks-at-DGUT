@@ -97,10 +97,9 @@ func (r *BlogRepo) GetBlogs(page, pageSize int) ([]types.BlogResp, int64, error)
 }
 
 // GetBlogsByTag 根据子标签获取帖子列表
-func (r *BlogRepo) GetBlogsByTag(subTag string, page, pageSize int) ([]types.BlogResp, int64, error) {
+func (r *BlogRepo) GetBlogsByTag(subTag string, page int, pageSize int) ([]types.BlogResp, int64, error) {
 	var blogs []types.BlogResp
 	var total int64
-
 	// 查询符合条件的帖子总数
 	if err := r.DB.Model(&model.Blog{}).
 		Where("sub_tag = ? AND deleted_at IS NULL", subTag).
