@@ -24,7 +24,7 @@ type UpdateNoticeResp struct {
 
 // DeleteNoticeReq 删除公告请求结构体
 type DeleteNoticeReq struct {
-	ID int64 `json:"id"` // 公告ID
+	ID int64 `json:"notice_id"` // 公告ID
 }
 
 // DeleteNoticeResp 删除通知响应结构体

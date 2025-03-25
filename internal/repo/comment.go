@@ -77,7 +77,7 @@ func (r *CommentRepo) DeleteComment(commentID, blogID int64, isFirstComment bool
 				return err
 			}
 			// 更新父一级评论的回复数
-			if err := tx.Model(&model.FirstComment{}).Where("id = ?", secondComment.RootParentID).Update("replies_count", gorm.Expr("replies_count - 1")).Error; err != nil {
+			if err := tx.Model(&model.FirstComment{}).Where("id = ?", secondComment.ParentID).Update("replies_count", gorm.Expr("replies_count - 1")).Error; err != nil {
 				return err
 			}
 		}
@@ -262,7 +262,7 @@ func (r *CommentRepo) GetFirstCommentList(req types.GetCommentListReq) ([]types.
 	// 构造二级评论映射
 	secondCommentMap := make(map[int64][]types.SecondCommentDetail)
 	for _, sc := range secondCommentDetails {
-		secondCommentMap[sc.SecondComment.RootParentID] = append(secondCommentMap[sc.SecondComment.RootParentID], sc)
+		secondCommentMap[sc.SecondComment.ParentID] = append(secondCommentMap[sc.SecondComment.ParentID], sc)
 	}
 
 	// 构造一级评论详情列表

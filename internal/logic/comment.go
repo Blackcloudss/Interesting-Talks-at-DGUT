@@ -37,7 +37,7 @@ func NewCommentLogic() *CommentLogic {
 func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommentReq, UserID int64) (*types.CreateCommentResp, error) {
 	defer utils.RecordTime(time.Now())()
 	// 构建评论对象
-	if req.RootParentID == 0 { // 一级评论
+	if req.ParentID == 0 { // 一级评论
 		comment := model.FirstComment{
 			UserID:  UserID,
 			BlogID:  req.BlogID,
@@ -58,11 +58,10 @@ func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommen
 		return resp, nil
 	} else { // 回复（二级评论）
 		comment := model.SecondComment{
-			UserID:       UserID,
-			BlogID:       req.BlogID,
-			Content:      req.Content,
-			ParentID:     req.ParentID,
-			RootParentID: req.RootParentID,
+			UserID:   UserID,
+			BlogID:   req.BlogID,
+			Content:  req.Content,
+			ParentID: req.ParentID,
 		}
 		// 创建二级评论
 		commentRepo := repo.NewCommentRepo(global.DB)
@@ -81,7 +80,7 @@ func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommen
 }
 
 // DeleteComment 删除评论
-func (l *CommentLogic) DeleteComment(ctx context.Context, req types.DeleteCommentReq, UserID int64) (*types.DeleteCommentResp, error) {
+func (l *CommentLogic) DeleteComment(ctx context.Context, req types.DeleteCommentReq) (*types.DeleteCommentResp, error) {
 	defer utils.RecordTime(time.Now())()
 
 	// 检查评论是否存在

@@ -7,10 +7,9 @@ import (
 
 // CreateCommentReq 创建评论/回复请求结构体
 type CreateCommentReq struct {
-	BlogID       int64  `json:"blog_id"`        // 所属帖子 ID
-	Content      string `json:"content"`        // 评论内容
-	ParentID     int64  `json:"parent_id"`      // 父评论 ID（等于0为根评论的回复，不等于0为回复的回复）
-	RootParentID int64  `json:"root_parent_id"` // 根评论ID（=0为帖子的直接评论——一级评论）
+	BlogID   int64  `json:"blog_id"`   // 所属帖子 ID
+	Content  string `json:"content"`   // 评论内容
+	ParentID int64  `json:"parent_id"` // 父评论 ID（等于0为一级回复，不等于0为多级回复）
 }
 
 // CreateCommentResp 创建评论响应结构体
