@@ -64,9 +64,9 @@ type GetCommentListResp struct {
 
 // GetSecondCommentListReq 获取更多二级评论请求结构体
 type GetSecondCommentListReq struct {
-	RootParentID int64 `form:"root_parent_id" binding:"required"` // 根评论ID
-	Page         int   `form:"page" binding:"required"`           // 当前页码
-	PageSize     int   `form:"page_size" binding:"required"`      // 每页大小
+	RootParentID int64 `form:"root_parent_id"`               // 根评论ID
+	Page         int   `form:"page" binding:"required"`      // 当前页码
+	PageSize     int   `form:"page_size" binding:"required"` // 每页大小
 }
 
 // GetSecondCommentListResp 获取更多二级评论响应结构体
