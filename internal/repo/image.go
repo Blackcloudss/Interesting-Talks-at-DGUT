@@ -5,6 +5,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/image"
 	"gorm.io/gorm"
+	"os"
 	"path/filepath"
 )
 
@@ -37,7 +38,21 @@ func (r *ImageRepo) GetImagePathsByBlogID(blogID int64) ([]string, error) {
 	return imagePaths, nil
 }
 
-// DeleteImagesByBlogID 根据blogid删除图片
+// DeleteLocalFile 删除本地文件
+func DeleteLocalFile(filePath string) error {
+	// 检查文件是否存在
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		zlog.Warnf("文件不存在，无法删除：%s", filePath)
+		return nil // 如果文件不存在，直接返回
+	}
+	// 删除文件
+	if err := os.Remove(filePath); err != nil {
+		zlog.Errorf("删除文件失败：%v", err)
+		return err
+	}
+	return nil
+}
+
 func (r *ImageRepo) DeleteImagesByBlogID(blogID int64) error {
 	// 获取所有需要删除的图片路径
 	imagePaths, err := r.GetImagePathsByBlogID(blogID)
