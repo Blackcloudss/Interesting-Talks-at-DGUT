@@ -87,7 +87,7 @@ func (r *SearchRepo) GetSearchHistory(userID int64, page, pageSize int) ([]model
 	// 分页查询搜索历史
 	if err := r.DB.Model(&model.SearchHistory{}).
 		Where("user_id = ?", userID).
-		Order("search_time DESC").
+		Order("created_at DESC"). // 修改为 created_at 列进行排序
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Find(&history).Error; err != nil {
