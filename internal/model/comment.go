@@ -3,13 +3,13 @@ package model
 // 使用两层型
 type FirstComment struct { //直接评论帖子的一级评论
 	CommonModel
-	BlogID       int64  `gorm:"not null" json:"blog_id"`           // 所属帖子 ID
-	UserID       int64  `gorm:"not null" json:"user_id"`           // 评论者 ID
-	Content      string `gorm:"type:text;not null" json:"content"` // 评论内容
-	LikesCount   int    `gorm:"default:0" json:"likes_count"`      // 点赞数
-	RepliesCount int    `gorm:"default:0" json:"replies_count"`    // 回复数
+	BlogID       int64  `gorm:"column:blog_id;not null" json:"blog_id"`              // 所属帖子 ID
+	UserID       int64  `gorm:"column:user_id;not null" json:"user_id"`              // 评论者 ID
+	Content      string `gorm:"column:content;type:text;not null" json:"content"`    // 评论内容
+	LikesCount   int    `gorm:"column:likes_count;default:0" json:"likes_count"`     // 点赞数
+	RepliesCount int    `gorm:"column:replies_count;default:0" json:"replies_count"` // 回复数
 	// 关联二级评论
-	SecondComments []SecondComment `gorm:"foreignKey:RootParentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	SecondComments []SecondComment `gorm:"foreignKey:root_parent_id;references:id;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (t *FirstComment) TableName() string {
@@ -22,12 +22,12 @@ func (t *FirstComment) TableName() string {
 */
 type SecondComment struct {
 	CommonModel
-	BlogID       int64  `gorm:"not null" json:"blog_id"`           // 所属帖子 ID
-	UserID       int64  `gorm:"not null" json:"user_id"`           // 评论者 ID
-	Content      string `gorm:"type:text;not null" json:"content"` // 评论内容
-	ParentID     int64  `gorm:"default:0" json:"parent_id"`        // 父评论ID（为0是回复一级评论的评论，不为0是回复二级评论的评论）
-	RootParentID int64  `gorm:"default:0" json:"root_parent_id"`   // 根评论ID（所属的级评论）
-	RepliesCount int    `gorm:"default:0" json:"replies_count"`    // 回复数
+	BlogID       int64  `gorm:"column:blog_id;not null" json:"blog_id"`                // 所属帖子 ID
+	UserID       int64  `gorm:"column:user_id;not null" json:"user_id"`                // 评论者 ID
+	Content      string `gorm:"column:content;type:text;not null" json:"content"`      // 评论内容
+	ParentID     int64  `gorm:"column:parent_id;default:0" json:"parent_id"`           // 父评论ID（为0是回复一级评论的评论，不为0是回复二级评论的评论）
+	RootParentID int64  `gorm:"column:root_parent_id;default:0" json:"root_parent_id"` // 根评论ID（所属的级评论）
+	RepliesCount int    `gorm:"column:replies_count;default:0" json:"replies_count"`   // 回复数
 }
 
 func (t *SecondComment) TableName() string {
@@ -36,9 +36,9 @@ func (t *SecondComment) TableName() string {
 
 type CommentLike struct {
 	CommonModel
-	CommentID int64 `gorm:"not null" json:"comment_id"` // 所属评论或回复ID
-	UserID    int64 `gorm:"not null" json:"user_id"`    // 点赞用户ID
-	IsLiked   bool  `gorm:"default:false"`
+	CommentID int64 `gorm:"column:comment_id;not null" json:"comment_id"` // 所属评论或回复ID
+	UserID    int64 `gorm:"column:user_id;not null" json:"user_id"`       // 点赞用户ID
+	IsLiked   bool  `gorm:"column:is_liked;default:false"`
 }
 
 func (t *CommentLike) TableName() string { return "comment_like" }

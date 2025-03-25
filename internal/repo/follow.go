@@ -55,8 +55,8 @@ func (r *FollowRepo) Unfollow(followerID, followedID int64) error {
 func (r *FollowRepo) GetFollowings(userID int64) ([]types.FollowInfo, error) {
 	var users []types.FollowInfo
 	err := r.DB.Model(&model.Follow{}).
-		Select("user_display.id, user_display.nickname, user_display.avatar, follows.created_at as followed_at").
-		Joins("INNER JOIN user_display ON user_display.id = follows.followed_id").
+		Select("user_display.id, user_display.nickname, user_display.avatar, follow.created_at as followed_at").
+		Joins("INNER JOIN user_display ON user_display.id = follow.followed_id").
 		Where("follower_id = ?", userID).
 		Scan(&users).Error
 	return users, err
@@ -66,8 +66,8 @@ func (r *FollowRepo) GetFollowings(userID int64) ([]types.FollowInfo, error) {
 func (r *FollowRepo) GetFollowers(userID int64) ([]types.FollowInfo, error) {
 	var users []types.FollowInfo
 	err := r.DB.Model(&model.Follow{}).
-		Select("user_display.id, user_display.nickname, user_display.avatar, follows.created_at as followed_at").
-		Joins("INNER JOIN user_display ON user_display.id = follows.follower_id").
+		Select("user_display.id, user_display.nickname, user_display.avatar, follow.created_at as followed_at").
+		Joins("INNER JOIN user_display ON user_display.id = follow.follower_id").
 		Where("followed_id = ?", userID).
 		Scan(&users).Error
 	return users, err
