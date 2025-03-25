@@ -3,12 +3,13 @@ package model
 // 使用两层型
 type FirstComment struct {
 	CommonModel
-	BlogID         int64           `gorm:"column:blog_id;not null;constraint:fk_blog_first_comment:blog_id REFERENCES blog(id) ON DELETE CASCADE ON UPDATE CASCADE" json:"blog_id"`
+	BlogID         int64           `gorm:"column:blog_id;not null" json:"blog_id"`
+	Blog           Blog            `gorm:"foreignKey:BlogID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	UserID         int64           `gorm:"column:user_id;not null" json:"user_id"`
 	Content        string          `gorm:"column:content;type:text;not null" json:"content"`
 	LikesCount     int             `gorm:"column:likes_count;default:0" json:"likes_count"`
 	RepliesCount   int             `gorm:"column:replies_count;default:0" json:"replies_count"`
-	SecondComments []SecondComment `gorm:"foreignKey:RootParentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_first_comment_second_comments"`
+	SecondComments []SecondComment `gorm:"foreignKey:RootParentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_first_comment_second_comment"`
 }
 
 func (t *FirstComment) TableName() string {
@@ -17,7 +18,8 @@ func (t *FirstComment) TableName() string {
 
 type SecondComment struct {
 	CommonModel
-	BlogID       int64  `gorm:"column:blog_id;not null;constraint:fk_blog_second_comment:blog_id REFERENCES blog(id) ON DELETE CASCADE ON UPDATE CASCADE" json:"blog_id"`
+	BlogID       int64  `gorm:"column:blog_id;not null" json:"blog_id"`
+	Blog         Blog   `gorm:"foreignKey:BlogID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	UserID       int64  `gorm:"column:user_id;not null" json:"user_id"`
 	Content      string `gorm:"column:content;type:text;not null" json:"content"`
 	ParentID     int64  `gorm:"column:parent_id;default:0" json:"parent_id"`

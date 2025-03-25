@@ -11,8 +11,8 @@ type Blog struct {
 	UserID         int64           `gorm:"column:user_id" json:"user_id"`
 	Title          string          `gorm:"column:title;size:100;not null;index" json:"title"`
 	Content        string          `gorm:"column:content;type:text;not null" json:"content"`
-	FirstComments  []FirstComment  `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_blog_first_comments"`
-	SecondComments []SecondComment `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_blog_second_comments"`
+	FirstComments  []FirstComment  `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_blog_first_comment"`
+	SecondComments []SecondComment `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_blog_second_comment"`
 }
 
 func (t *Blog) TableName() string {
