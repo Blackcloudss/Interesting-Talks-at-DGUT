@@ -39,7 +39,7 @@ func (r *CommentRepo) CreateFirstComment(comment *model.FirstComment) error {
 	})
 }
 
-// CreateSecondComment 创建二级评论并更新帖子的评论数
+// CreateFirstComment 创建二级评论并更新帖子的评论数
 func (r *CommentRepo) CreateSecondComment(comment *model.SecondComment) error {
 	return r.DB.Transaction(func(tx *gorm.DB) error {
 		// 对评论内容进行敏感词过滤替换
@@ -86,6 +86,7 @@ func (r *CommentRepo) DeleteComment(commentID, blogID int64, isFirstComment bool
 		return nil
 	})
 }
+
 func (r *CommentRepo) LikeComment(userID, commentID int64) error {
 	lockKey := fmt.Sprintf("comment:like:%d", commentID)
 	lockValue := fmt.Sprintf("%d-%d", userID, time.Now().UnixNano())
@@ -229,8 +230,8 @@ func (r *CommentRepo) GetFirstCommentList(req types.GetCommentListReq) ([]types.
 
 	// 查询一级评论列表及用户信息
 	if err := r.DB.Model(&model.FirstComment{}).
-		Select("first_comments.*, user_display.nickname, user_display.avatar, user_display.tag").
-		Joins("LEFT JOIN user_display ON first_comments.user_id = user_display.id").
+		Select("first_comments.*, user_displays.nickname, user_displays.avatar, user_displays.tag").
+		Joins("LEFT JOIN user_displays ON first_comments.user_id = user_displays.user_id").
 		Where("first_comments.blog_id = ?", req.BlogID).
 		Order(req.SortBy + " DESC").
 		Offset((req.Page - 1) * req.PageSize).
@@ -249,8 +250,8 @@ func (r *CommentRepo) GetFirstCommentList(req types.GetCommentListReq) ([]types.
 	// 查询所有一级评论对应的二级评论（前3条）
 	var secondCommentDetails []types.SecondCommentDetail
 	if err := r.DB.Model(&model.SecondComment{}).
-		Select("second_comments.*, user_display.nickname, user_display.avatar, user_display.tag").
-		Joins("LEFT JOIN user_display ON second_comments.user_id = user_display.id").
+		Select("second_comments.*, user_displays.nickname, user_displays.avatar, user_displays.tag").
+		Joins("LEFT JOIN user_displays ON second_comments.user_id = user_displays.user_id").
 		Where("second_comments.root_parent_id IN ?", firstCommentIDs).
 		Order("second_comments.created_at ASC").
 		Group("second_comments.root_parent_id").
@@ -292,8 +293,8 @@ func (r *CommentRepo) GetSecondCommentList(req types.GetSecondCommentListReq) ([
 	// 查询二级评论列表及用户信息
 	// 直接将结果映射到 types.SecondCommentDetail
 	if err := r.DB.Model(&model.SecondComment{}).
-		Select("second_comments.*, user_display.nickname, user_display.avatar, user_display.tag").
-		Joins("LEFT JOIN user_display ON second_comments.user_id = user_display.id").
+		Select("second_comments.*, user_displays.nickname, user_displays.avatar, user_displays.tag").
+		Joins("LEFT JOIN user_displays ON second_comments.user_id = user_displays.user_id").
 		Where("second_comments.root_parent_id = ?", req.RootParentID).
 		Order("second_comments.created_at ASC").
 		Offset((req.Page - 1) * req.PageSize).

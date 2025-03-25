@@ -6,12 +6,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// SearchRepo 搜索帖子仓库
+// BlogRepo 帖子仓库
 type SearchRepo struct {
 	DB *gorm.DB
 }
 
-// NewSearchRepo 创建搜索帖子仓库实例
+// NewBlogRepo 创建帖子仓库实例
 func NewSearchRepo(db *gorm.DB) *SearchRepo {
 	return &SearchRepo{
 		DB: db,
@@ -27,20 +27,20 @@ func (r *SearchRepo) SearchBlogs(keyword string, searchType string, page, pageSi
 	switch searchType {
 	case "title":
 		query = r.DB.Model(&model.Blog{}).
-			Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-			Where("blog.title LIKE ?", "%"+keyword+"%")
+			Joins("LEFT JOIN user_displays ON blogs.user_id = user_displays.user_id").
+			Where("blogs.title LIKE ?", "%"+keyword+"%")
 	case "tag":
 		query = r.DB.Model(&model.Blog{}).
-			Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-			Where("blog.blog_tag LIKE ? OR blog.sub_tag LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+			Joins("LEFT JOIN user_displays ON blogs.user_id = user_displays.user_id").
+			Where("blogs.blog_tag LIKE ? OR blogs.sub_tag LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
 	case "nickname":
 		query = r.DB.Model(&model.Blog{}).
-			Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-			Where("user_display.nickname LIKE ?", "%"+keyword+"%")
+			Joins("LEFT JOIN user_displays ON blogs.user_id = user_displays.user_id").
+			Where("user_displays.nickname LIKE ?", "%"+keyword+"%")
 	default: // 综合搜索
 		query = r.DB.Model(&model.Blog{}).
-			Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-			Where("blog.title LIKE ? OR blog.blog_tag LIKE ? OR blog.sub_tag LIKE ? OR user_display.nickname LIKE ?",
+			Joins("LEFT JOIN user_displays ON blogs.user_id = user_displays.user_id").
+			Where("blogs.title LIKE ? OR blogs.blog_tag LIKE ? OR blogs.sub_tag LIKE ? OR user_displays.nickname LIKE ?",
 				"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
 	}
 
@@ -51,8 +51,8 @@ func (r *SearchRepo) SearchBlogs(keyword string, searchType string, page, pageSi
 
 	// 分页查询帖子和用户信息
 	if err := query.
-		Select("blog.id AS blog_id, blog.created_at AS create_at, blog.updated_at AS update_at, blog.title, blog.content, blog.be_liked, blog.be_collected, blog.comment_count, blog.blog_tag, blog.sub_tag, blog.view_permission, blog.user_id, user_display.nickname, user_display.avatar, user_display.tag").
-		Order("blog.created_at DESC").
+		Select("blogs.*, user_displays.nickname, user_displays.avatar, user_displays.tag").
+		Order("blogs.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Scan(&blogs).Error; err != nil {
@@ -87,7 +87,7 @@ func (r *SearchRepo) GetSearchHistory(userID int64, page, pageSize int) ([]model
 	// 分页查询搜索历史
 	if err := r.DB.Model(&model.SearchHistory{}).
 		Where("user_id = ?", userID).
-		Order("created_at DESC"). // 修改为 created_at 列进行排序
+		Order("search_time DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Find(&history).Error; err != nil {
@@ -103,7 +103,7 @@ func (r *SearchRepo) DeleteSearchHistory(userID int64, historyID int64) error {
 	return r.DB.Where("user_id = ? AND id = ?", userID, historyID).Delete(&model.SearchHistory{}).Error
 }
 
-// GetHotSearchRepo 获取热门搜索
+// SearchRepo
 func (r *SearchRepo) GetHotSearchRepo() (*types.GetHotSearchResp, error) {
 	var hotSearchList []string
 	if err := r.DB.Model(&model.Blog{}).

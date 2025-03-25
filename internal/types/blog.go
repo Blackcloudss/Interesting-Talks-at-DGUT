@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"mime/multipart"
 	"time"
 )
@@ -48,21 +49,10 @@ type DeleteBlogResp struct {
 
 // 获取帖子内容通用响应体
 type BlogResp struct {
-	BlogID         int64     `json:"blog_id"`
-	CreateAt       time.Time `json:"create_at"`
-	UpdateAt       time.Time `json:"update_at"`
-	Title          string    `json:"title"`
-	Content        string    `json:"content"`
-	BeLiked        int       ` json:"be_liked"  `     // 点赞数，默认为0
-	BeCollected    int       `json:"be_collected"`    // 收藏数，默认为0
-	CommentCount   int       ` json:"comment_count"`  // 评论数，默认为0（字段名更清晰）
-	BlogTag        string    ` json:"blog_tag"`       // 帖子分区（主标签）
-	SubTag         string    ` json:"sub_tag"`        // 子标签
-	ViewPermission string    `json:"view_permission"` // 访问权限，默认为“所有人”
-	UserID         int64     `json:"user_id"`         // 用户ID
-	Nickname       string    `json:"nickname"`        // 昵称
-	Avatar         string    `json:"avatar"`          // 头像
-	Tag            string    `json:"tag"`             // 标签
+	Blog     model.Blog `json:"blog"`
+	Nickname string     `json:"nickname"` // 昵称
+	Avatar   string     `json:"avatar"`   // 头像
+	Tag      string     `json:"tag"`      // 标签
 }
 
 // GetBlogByIDReq 获取帖子详情请求体
