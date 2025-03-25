@@ -100,7 +100,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.Use(middleware.CheckAtoken())                                      // 检查 Atoken
 		rg.POST("/create", middleware.IncreasePoint(), api.CreateBlogHandler) // 创建帖子
 		rg.PUT("/update", api.UpdateBlogHandler)                              // 更新帖子
-		rg.DELETE("/delete:blog_id", api.DeleteBlogHandler)                   // 删除帖子
+		rg.DELETE("/delete/:blog_id", api.DeleteBlogHandler)                  // 删除帖子
 		rg.GET("/get", api.GetBlogByIDHandler)                                // 获取帖子详情
 		rg.GET("/list", api.GetBlogsHandler)                                  // 首页显示帖子
 		rg.GET("/list_by_tag", api.GetBlogsByTagHandler)                      // 根据标签显示帖子列表
@@ -126,7 +126,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	routeManager.RegisterCommentRoutes(func(rg *gin.RouterGroup) {
 		rg.Use(middleware.CheckAtoken())                                  // 检查 Atoken
 		rg.POST("/create", middleware.IncreasePoint(), api.CreateComment) // 创建评论
-		rg.DELETE("/delete:comment_id", api.DeleteComment)                // 删除评论
+		rg.DELETE("/delete/:comment_id", api.DeleteComment)               // 删除评论
 		rg.GET("/list", api.GetCommentList)                               // 获取一级评论列表（显示部分二级评论）
 		rg.GET("/secondlist", api.GetMoreSecondComment)                   //获取更多二级评论
 		rg.POST("/like ", api.LikeComment)                                //点赞评论
@@ -135,12 +135,12 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//公告相关路由
 	routeManager.RegisterNoticeRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken())                        // 检查 Atoken
-		rg.Use(middleware.PermissionMiddleware())               // 验证权限
-		rg.POST("/create", api.CreateNoticeHandler)             //创建公告
-		rg.PUT("/update", api.UpdateNoticeHandler)              //修改公告
-		rg.DELETE("/delete:notice_id", api.DeleteNoticeHandler) //删除公告
-		rg.GET("/get", api.GetNoticeHandler)                    //获取公告
+		rg.Use(middleware.CheckAtoken())                         // 检查 Atoken
+		rg.Use(middleware.PermissionMiddleware())                // 验证权限
+		rg.POST("/create", api.CreateNoticeHandler)              //创建公告
+		rg.PUT("/update", api.UpdateNoticeHandler)               //修改公告
+		rg.DELETE("/delete/:notice_id", api.DeleteNoticeHandler) //删除公告
+		rg.GET("/get", api.GetNoticeHandler)                     //获取公告
 	})
 
 	//关注相关路由
