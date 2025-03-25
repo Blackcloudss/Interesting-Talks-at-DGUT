@@ -41,7 +41,7 @@ func NewWechatLoginLogic() *WechatLogic {
 	return &WechatLogic{}
 }
 
-// 微信登陆
+// / 微信登陆
 func (l *WechatLogic) WechatLogin(ctx context.Context, req types.WechatLoginReq) (resp *types.WechatLoginResp, err error) {
 	defer utils.RecordTime(time.Now())()
 	resp, err = WxLogin(ctx, req.JsCode)
