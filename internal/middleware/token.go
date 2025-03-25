@@ -26,7 +26,7 @@ func CheckAtoken() gin.HandlerFunc {
 		data, err := jwt.IdentifyToken(ctx, token)
 		if err != nil {
 			zlog.CtxErrorf(ctx, "ReflashAtoken err:%v", err)
-			response.NewResponse(c).Error(response.TOKEN_IS_EXPIRED)
+			response.NewResponse(c).Error(response.TOKEN_NOT_VALID)
 			//对应token无效，直接让他返回
 			c.Abort()
 			return

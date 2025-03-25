@@ -72,8 +72,10 @@ func IdentifyToken(ctx context.Context, Token string) (TokenData, error) {
 	data.Userid = claim.Userid
 	data.Class = claim.Type
 	if claim.Type == global.AUTH_ENUMS_RTOKEN {
+		// 计算剩余时间
 		data.Time = global.RTOKEN_EFFECTIVE_TIME - time.Duration(time.Now().Unix()-claim.RegisteredClaims.NotBefore.Unix())
 	} else {
+		// 计算剩余时间
 		data.Time = global.ATOKEN_EFFECTIVE_TIME
 	}
 	return data, nil
