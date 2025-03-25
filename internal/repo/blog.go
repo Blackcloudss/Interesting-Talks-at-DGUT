@@ -102,7 +102,8 @@ func (r *BlogRepo) GetBlogsByTag(subTag string, page int, pageSize int) ([]types
 
 	var blogs []types.BlogResp
 	var total int64
-	whereCondition := "sub_tag = ? AND deleted_at IS NULL"
+	// 明确指定 deleted_at 列所属的表
+	whereCondition := "sub_tag = ? AND blog.deleted_at IS NULL"
 
 	// 查询符合条件的帖子总数
 	if err := r.DB.Model(&model.Blog{}).
