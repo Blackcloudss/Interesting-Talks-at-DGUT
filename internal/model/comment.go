@@ -9,7 +9,7 @@ type FirstComment struct {
 	RepliesCount int    `gorm:"column:replies_count;default:0" json:"replies_count"`
 
 	// 添加与帖子的关联关系
-	Blog []Blog `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Blog Blog `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (t *FirstComment) TableName() string {
@@ -26,7 +26,7 @@ type SecondComment struct {
 	RepliesCount int    `gorm:"column:replies_count;default:0" json:"replies_count"`
 
 	// 添加与一级评论的关联关系
-	FirstComment []FirstComment `gorm:"foreignKey:RootParentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_first_comment_second_comment"`
+	FirstComment FirstComment `gorm:"foreignKey:RootParentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_first_comment_second_comment"`
 }
 
 func (t *SecondComment) TableName() string {
