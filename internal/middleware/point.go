@@ -30,7 +30,7 @@ func IncreasePoint() gin.HandlerFunc {
 		UserId := jwt.GetUserId(c)
 		// 获取当前 URL
 		Url := url.GetBaseURL(c)
-		// IncreasePoint 给用户增加积分
+		// 获取当前 URL 对应的积分值
 		Point := GetPoints(Url)
 		//积分值为0时跳过数据库操作：
 		if Point == 0 {

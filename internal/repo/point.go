@@ -9,8 +9,6 @@ import (
 )
 
 const (
-	TOTALPOINT = "total_point"
-
 	LEVELONE   = "大一"
 	LEVELTWO   = "大二"
 	LEVELTHREE = "大三"
@@ -45,8 +43,8 @@ func NewPointRepo(db *gorm.DB) *PointRepo {
 
 // 用户积分状态
 type Status struct {
-	TotalPoint int
-	Tag        string
+	TotalPoint int    `json:"total_point"`
+	Tag        string `json:"tag"`
 }
 
 // 定义等级阈值列表（按阈值降序排列）
@@ -63,7 +61,6 @@ func (r *PointRepo) IncreasePoints(userId int64, point int) (err error) {
 	var status Status
 	// 获取用户当前总积分
 	err = r.DB.Model(&model.UserDisplay{}).
-		Select(TOTALPOINT).
 		Where(fmt.Sprintf("%s = ?", ID), userId).
 		First(&status).
 		Error
