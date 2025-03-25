@@ -17,14 +17,6 @@ type BlogRepo struct {
 	DB *gorm.DB
 }
 
-// 定义一个中间结构体用于扫描查询结果
-type BlogJoinUser struct {
-	model.Blog
-	Nickname string `json:"nickname"`
-	Avatar   string `json:"avatar"`
-	Tag      string `json:"tag"`
-}
-
 // NewBlogRepo 创建帖子仓库实例
 func NewBlogRepo(db *gorm.DB) *BlogRepo {
 	return &BlogRepo{
@@ -83,11 +75,11 @@ func (r *BlogRepo) GetBlogs(page, pageSize int) ([]types.BlogResp, int64, error)
 	var total int64
 
 	// 查询帖子总数
-	if err := r.DB.Model(&model.Blog{}).Count(&total).Error; err != nil {
+	if err := r.DB.Model(&model.Blog{}).
+		Where("deleted_at IS NULL").
+		Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-
-	var blogJoinUsers []BlogJoinUser
 
 	// 分页查询帖子和用户信息
 	if err := r.DB.
@@ -97,25 +89,15 @@ func (r *BlogRepo) GetBlogs(page, pageSize int) ([]types.BlogResp, int64, error)
 		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
-		Scan(&blogJoinUsers).Error; err != nil {
+		Scan(&blogs).Error; err != nil {
 		return nil, 0, err
-	}
-
-	// 将中间结构体的数据映射到 BlogResp
-	for _, join := range blogJoinUsers {
-		blogs = append(blogs, types.BlogResp{
-			Blog:     join.Blog,
-			Nickname: join.Nickname,
-			Avatar:   join.Avatar,
-			Tag:      join.Tag,
-		})
 	}
 
 	return blogs, total, nil
 }
 
-// GetBlogsByTag 根据标签获取帖子列表
-func (r *BlogRepo) GetBlogsByTag(subTag string, page int, pageSize int) ([]types.BlogResp, int64, error) {
+// GetBlogsByTag 根据子标签获取帖子列表
+func (r *BlogRepo) GetBlogsByTag(subTag string, page, pageSize int) ([]types.BlogResp, int64, error) {
 	var blogs []types.BlogResp
 	var total int64
 
@@ -126,8 +108,6 @@ func (r *BlogRepo) GetBlogsByTag(subTag string, page int, pageSize int) ([]types
 		return nil, 0, err
 	}
 
-	var blogJoinUsers []BlogJoinUser
-
 	// 分页查询帖子和用户信息
 	if err := r.DB.
 		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
@@ -136,18 +116,8 @@ func (r *BlogRepo) GetBlogsByTag(subTag string, page int, pageSize int) ([]types
 		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
-		Scan(&blogJoinUsers).Error; err != nil {
+		Scan(&blogs).Error; err != nil {
 		return nil, 0, err
-	}
-
-	// 将中间结构体的数据映射到 BlogResp
-	for _, join := range blogJoinUsers {
-		blogs = append(blogs, types.BlogResp{
-			Blog:     join.Blog,
-			Nickname: join.Nickname,
-			Avatar:   join.Avatar,
-			Tag:      join.Tag,
-		})
 	}
 
 	return blogs, total, nil
@@ -165,8 +135,6 @@ func (r *BlogRepo) GetBlogsByUserID(userID int64, page, pageSize int) ([]types.B
 		return nil, 0, err
 	}
 
-	var blogJoinUsers []BlogJoinUser
-
 	// 分页查询帖子和用户信息
 	if err := r.DB.
 		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
@@ -175,18 +143,8 @@ func (r *BlogRepo) GetBlogsByUserID(userID int64, page, pageSize int) ([]types.B
 		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
-		Scan(&blogJoinUsers).Error; err != nil {
+		Scan(&blogs).Error; err != nil {
 		return nil, 0, err
-	}
-
-	// 将中间结构体的数据映射到 BlogResp
-	for _, join := range blogJoinUsers {
-		blogs = append(blogs, types.BlogResp{
-			Blog:     join.Blog,
-			Nickname: join.Nickname,
-			Avatar:   join.Avatar,
-			Tag:      join.Tag,
-		})
 	}
 
 	return blogs, total, nil
@@ -205,8 +163,6 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 		return nil, 0, err
 	}
 
-	var blogJoinUsers []BlogJoinUser
-
 	// 分页查询帖子和用户信息
 	if err := r.DB.
 		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
@@ -216,18 +172,8 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
-		Scan(&blogJoinUsers).Error; err != nil {
+		Scan(&blogs).Error; err != nil {
 		return nil, 0, err
-	}
-
-	// 将中间结构体的数据映射到 BlogResp
-	for _, join := range blogJoinUsers {
-		blogs = append(blogs, types.BlogResp{
-			Blog:     join.Blog,
-			Nickname: join.Nickname,
-			Avatar:   join.Avatar,
-			Tag:      join.Tag,
-		})
 	}
 
 	return blogs, total, nil
