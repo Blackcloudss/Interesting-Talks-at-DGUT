@@ -37,6 +37,10 @@ RUN apk add --no-cache tzdata && \
 
 WORKDIR /app
 
+# 创建目标目录并复制敏感词文件
+RUN mkdir -p utils/filter_swords
+COPY --from=builder /app/utils/filter_swords/dict.txt ./utils/filter_swords/
+
 COPY --from=builder /app/interesting-forum ./
 COPY --chmod=644 config.yaml ./
 
