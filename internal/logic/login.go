@@ -120,6 +120,7 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 	return resp, nil
 }
 
+// 获取小程序二维码
 func (l *WechatLogic) GetQRCode(ctx context.Context) (resp *types.QRCodeResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
@@ -164,23 +165,20 @@ func (l *WechatLogic) GetQRCode(ctx context.Context) (resp *types.QRCodeResp, er
 		}
 	}(result.Body)
 
-	// 记录状态码
-	resp = &types.QRCodeResp{
-		Errcode: result.StatusCode,
-	}
+	// 读取响应体
+	bodyBytes, _ := io.ReadAll(result.Body)
 
-	// 统一处理响应
-	if result.StatusCode != http.StatusOK {
-		// 处理错误响应（JSON格式）
-		if err = json.NewDecoder(result.Body).Decode(resp); err != nil {
-			zlog.CtxErrorf(ctx, "错误响应解析失败: %v", err)
-			return nil, response.ErrResp(err, response.COMMON_FAIL)
-		}
+	// 处理错误响应
+	if err = json.Unmarshal(bodyBytes, &resp); err == nil && resp.Errcode != 0 {
+		// 处理微信业务错误
+		resp.Errcode = resp.Errcode
+		resp.Errmsg = resp.Errmsg
+		zlog.CtxErrorf(ctx, "微信接口业务错误: %d-%s", resp.Errcode, resp.Errmsg)
 		return resp, nil
 	}
 
 	// 处理成功响应（图片二进制）
-	resp.Buffer, err = io.ReadAll(result.Body)
+	resp.Buffer = bodyBytes
 	if err != nil {
 		zlog.CtxErrorf(ctx, "图片数据读取失败: %v", err)
 		return nil, response.ErrResp(err, response.COMMON_FAIL)

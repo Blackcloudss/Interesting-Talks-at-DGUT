@@ -26,6 +26,13 @@ const (
 	GRANT_TYPE  = "client_credential"
 )
 
+var (
+	USE_WXAPI_ERROR   = response.MsgCode{50001, "调用微信getStableAccessToken接口失败"}
+	WXAPI_ERROR       = response.MsgCode{50002, "微信接口异常"}
+	WXATOKEN_IS_BLANK = response.MsgCode{50003, "获取的微信access_token是空值"}
+	REDIS_SET_FAULT   = response.MsgCode{50001, "redis存取微信access_token失败"}
+)
+
 // @Title        token.go
 // @Description
 // @Create       XdpCs 2025-02-24 下午11:06
@@ -127,7 +134,7 @@ func JudgeWxAtoken(ctx context.Context) (WxAtoken string, err error) {
 			WxAtoken, err = GetWxAtoken(ctx)
 			if err != nil {
 				zlog.CtxErrorf(ctx, "获取微信access_token失败: %v", err)
-				return BLANK_TOKEN, response.ErrResp(err, response.GET_WXATOKEN_FAULT)
+				return BLANK_TOKEN, err
 			}
 
 			// 设置缓存并保留10%的冗余时间,防止缓存与真实Token同时失效
@@ -160,13 +167,13 @@ func GetWxAtoken(ctx context.Context) (WxAtoken string, err error) {
 	// 先检查错误再判断状态码
 	if err != nil {
 		zlog.CtxErrorf(ctx, "调用微信getStableAccessToken接口失败：%v", err)
-		return BLANK_TOKEN, response.ErrResp(err, response.COMMON_FAIL)
+		return BLANK_TOKEN, response.ErrResp(err, USE_WXAPI_ERROR)
 	}
 
 	// 后校验状态码
 	if result.StatusCode != http.StatusOK {
 		zlog.CtxErrorf(ctx, "微信接口异常，状态码：%d", result.StatusCode)
-		return BLANK_TOKEN, response.ErrResp(err, response.COMMON_FAIL)
+		return BLANK_TOKEN, response.ErrResp(err, WXAPI_ERROR)
 	}
 	// 对 关闭Body 做封装处理
 	defer func(Body io.ReadCloser) {
@@ -184,15 +191,16 @@ func GetWxAtoken(ctx context.Context) (WxAtoken string, err error) {
 		return BLANK_TOKEN, response.ErrResp(err, response.COMMON_FAIL)
 	}
 	if req.AccessToken == "" {
-		zlog.CtxErrorf(ctx, "获取的Atoken为空值：%v", err)
-		return BLANK_TOKEN, response.ErrResp(err, response.COMMON_FAIL)
+		zlog.CtxErrorf(ctx, "获取的微信atoken为空值：%v", err)
+		return BLANK_TOKEN, response.ErrResp(err, WXATOKEN_IS_BLANK)
 	}
 	WxAtoken = req.AccessToken
-
+	zlog.CtxInfof(ctx, "获取微信access_token成功: %v", WxAtoken)
 	// 将微信的atoken存储到redis中
-	if err = global.Rdb.Set(ctx, fmt.Sprintf(global.REDIS_WXATOKEN_KEY, configs.Conf.Wechat.AppID), WxAtoken, global.WXATOKEN_EFFECTIVE_TIME).Err(); err != nil {
-		zlog.CtxErrorf(ctx, "redis set wxatoken err: %v", err)
-		return BLANK_TOKEN, response.ErrResp(err, response.COMMON_FAIL)
+	key := fmt.Sprintf(global.REDIS_WXATOKEN_KEY, configs.Conf.Wechat.AppID)
+	if err = global.Rdb.Set(ctx, key, WxAtoken, global.WXATOKEN_EFFECTIVE_TIME).Err(); err != nil {
+		zlog.CtxErrorf(ctx, "redis 存储微信Atoken失败: %v", err)
+		return BLANK_TOKEN, response.ErrResp(err, REDIS_SET_FAULT)
 	}
 	return
 }
