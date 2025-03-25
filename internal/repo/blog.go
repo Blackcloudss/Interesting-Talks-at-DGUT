@@ -17,6 +17,14 @@ type BlogRepo struct {
 	DB *gorm.DB
 }
 
+// 定义一个中间结构体用于扫描查询结果
+type BlogJoinUser struct {
+	model.Blog
+	Nickname string `json:"nickname"`
+	Avatar   string `json:"avatar"`
+	Tag      string `json:"tag"`
+}
+
 // NewBlogRepo 创建帖子仓库实例
 func NewBlogRepo(db *gorm.DB) *BlogRepo {
 	return &BlogRepo{
@@ -79,15 +87,28 @@ func (r *BlogRepo) GetBlogs(page, pageSize int) ([]types.BlogResp, int64, error)
 		return nil, 0, err
 	}
 
+	var blogJoinUsers []BlogJoinUser
+
 	// 分页查询帖子和用户信息
-	if err := r.DB.Model(&model.Blog{}).
+	if err := r.DB.
 		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
+		Where("blog.deleted_at IS NULL").
 		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
-		Scan(&blogs).Error; err != nil {
+		Scan(&blogJoinUsers).Error; err != nil {
 		return nil, 0, err
+	}
+
+	// 将中间结构体的数据映射到 BlogResp
+	for _, join := range blogJoinUsers {
+		blogs = append(blogs, types.BlogResp{
+			Blog:     join.Blog,
+			Nickname: join.Nickname,
+			Avatar:   join.Avatar,
+			Tag:      join.Tag,
+		})
 	}
 
 	return blogs, total, nil
@@ -100,21 +121,33 @@ func (r *BlogRepo) GetBlogsByTag(subTag string, page int, pageSize int) ([]types
 
 	// 查询符合条件的帖子总数
 	if err := r.DB.Model(&model.Blog{}).
-		Where("sub_tag = ?", subTag).
+		Where("sub_tag = ? AND deleted_at IS NULL", subTag).
 		Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
+	var blogJoinUsers []BlogJoinUser
+
 	// 分页查询帖子和用户信息
-	if err := r.DB.Model(&model.Blog{}).
+	if err := r.DB.
 		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where("sub_tag = ?", subTag).
+		Where("blog.sub_tag = ? AND blog.deleted_at IS NULL", subTag).
 		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
-		Scan(&blogs).Error; err != nil {
+		Scan(&blogJoinUsers).Error; err != nil {
 		return nil, 0, err
+	}
+
+	// 将中间结构体的数据映射到 BlogResp
+	for _, join := range blogJoinUsers {
+		blogs = append(blogs, types.BlogResp{
+			Blog:     join.Blog,
+			Nickname: join.Nickname,
+			Avatar:   join.Avatar,
+			Tag:      join.Tag,
+		})
 	}
 
 	return blogs, total, nil
@@ -127,21 +160,32 @@ func (r *BlogRepo) GetBlogsByUserID(userID int64, page, pageSize int) ([]types.B
 
 	// 查询用户帖子总数
 	if err := r.DB.Model(&model.Blog{}).
-		Where("user_id = ?", userID).
+		Where("user_id = ? AND deleted_at IS NULL", userID).
 		Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
+	var blogJoinUsers []BlogJoinUser
 
 	// 分页查询帖子和用户信息
-	if err := r.DB.Model(&model.Blog{}).
+	if err := r.DB.
 		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where("blog.user_id = ?", userID).
+		Where("blog.user_id = ? AND blog.deleted_at IS NULL", userID).
 		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
-		Scan(&blogs).Error; err != nil {
+		Scan(&blogJoinUsers).Error; err != nil {
 		return nil, 0, err
+	}
+
+	// 将中间结构体的数据映射到 BlogResp
+	for _, join := range blogJoinUsers {
+		blogs = append(blogs, types.BlogResp{
+			Blog:     join.Blog,
+			Nickname: join.Nickname,
+			Avatar:   join.Avatar,
+			Tag:      join.Tag,
+		})
 	}
 
 	return blogs, total, nil
@@ -160,8 +204,10 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 		return nil, 0, err
 	}
 
+	var blogJoinUsers []BlogJoinUser
+
 	// 分页查询帖子和用户信息
-	if err := r.DB.Model(&model.Blog{}).
+	if err := r.DB.
 		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
 		Joins("INNER JOIN collections ON collections.blog_id = blog.id").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
@@ -169,8 +215,18 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
-		Scan(&blogs).Error; err != nil {
+		Scan(&blogJoinUsers).Error; err != nil {
 		return nil, 0, err
+	}
+
+	// 将中间结构体的数据映射到 BlogResp
+	for _, join := range blogJoinUsers {
+		blogs = append(blogs, types.BlogResp{
+			Blog:     join.Blog,
+			Nickname: join.Nickname,
+			Avatar:   join.Avatar,
+			Tag:      join.Tag,
+		})
 	}
 
 	return blogs, total, nil
