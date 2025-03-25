@@ -33,6 +33,7 @@ func DeleteComment(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "DeleteComment request: %+v", req)
+	//UserID := jwt.GetUserId(c)
 	resp, err := logic.NewCommentLogic().DeleteComment(ctx, req)
 	response.Response(c, resp, err)
 	return

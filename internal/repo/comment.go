@@ -1,15 +1,12 @@
 package repo
 
 import (
-	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/pkg/redisx"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
-	"time"
 )
 
 type CommentRepo struct {
@@ -39,7 +36,7 @@ func (r *CommentRepo) CreateFirstComment(comment *model.FirstComment) error {
 	})
 }
 
-// CreateSecondComment 创建二级评论并更新帖子的评论数
+// CreateSecondComment 创建二级评论并更新父一级评论的回复数
 func (r *CommentRepo) CreateSecondComment(comment *model.SecondComment) error {
 	return r.DB.Transaction(func(tx *gorm.DB) error {
 		// 对评论内容进行敏感词过滤替换
@@ -48,13 +45,15 @@ func (r *CommentRepo) CreateSecondComment(comment *model.SecondComment) error {
 		if err := tx.Create(comment).Error; err != nil {
 			return err
 		}
-		// 更新父评论的回复数
+		// 更新父一级评论的回复数
 		if err := tx.Model(&model.FirstComment{}).Where("id = ?", comment.ParentID).Update("replies_count", gorm.Expr("replies_count + 1")).Error; err != nil {
 			return err
 		}
 		return nil
 	})
 }
+
+// DeleteComment 删除评论并更新相关计数
 func (r *CommentRepo) DeleteComment(commentID, blogID int64, isFirstComment bool) error {
 	return r.DB.Transaction(func(tx *gorm.DB) error {
 		if isFirstComment {
@@ -67,7 +66,7 @@ func (r *CommentRepo) DeleteComment(commentID, blogID int64, isFirstComment bool
 				return err
 			}
 		} else {
-			// 获取二级评论的根评论ID（即父一级评论ID）
+			// 获取二级评论的父一级评论ID
 			var secondComment model.SecondComment
 			if err := tx.Where("id = ?", commentID).First(&secondComment).Error; err != nil {
 				return err
@@ -85,26 +84,8 @@ func (r *CommentRepo) DeleteComment(commentID, blogID int64, isFirstComment bool
 	})
 }
 
+// LikeComment 点赞评论
 func (r *CommentRepo) LikeComment(userID, commentID int64) error {
-	lockKey := fmt.Sprintf("comment:like:%d", commentID)
-	lockValue := fmt.Sprintf("%d-%d", userID, time.Now().UnixNano())
-	expiration := 10 * time.Second
-
-	// 尝试获取锁
-	locked, err := redisx.Lock(global.Rdb, lockKey, lockValue, expiration)
-	if err != nil {
-		return err
-	}
-	if !locked {
-		return errors.New("failed to acquire lock")
-	}
-	defer func() {
-		// 释放锁
-		if err := redisx.Unlock(global.Rdb, lockKey, lockValue); err != nil {
-			zlog.Errorf("Failed to unlock: %v", err)
-		}
-	}()
-
 	tx := r.DB.Begin()
 	if tx.Error != nil {
 		return tx.Error
@@ -146,6 +127,7 @@ func (r *CommentRepo) LikeComment(userID, commentID int64) error {
 	return tx.Commit().Error
 }
 
+// UnlikeComment 取消点赞评论
 func (r *CommentRepo) UnlikeComment(userID, commentID int64) error {
 	tx := r.DB.Begin()
 	if tx.Error != nil {
@@ -191,6 +173,7 @@ func (r *CommentRepo) IsCommentLiked(userID, commentID int64) (bool, error) {
 	return like.IsLiked, nil
 }
 
+// GetCommentByID 根据评论ID获取评论信息
 func (r *CommentRepo) GetCommentByID(commentID int64) (*model.FirstComment, *model.SecondComment, error) {
 	// 尝试从一级评论表中获取
 	var firstComment model.FirstComment
@@ -250,9 +233,9 @@ func (r *CommentRepo) GetFirstCommentList(req types.GetCommentListReq) ([]types.
 	if err := r.DB.Model(&model.SecondComment{}).
 		Select("second_comment.*, user_display.nickname, user_display.avatar, user_display.tag").
 		Joins("LEFT JOIN user_display ON second_comment.user_id = user_display.id").
-		Where("second_comment.root_parent_id IN ?", firstCommentIDs).
+		Where("second_comment.parent_id IN ?", firstCommentIDs).
 		Order("second_comment.created_at ASC").
-		Group("second_comment.root_parent_id").
+		Group("second_comment.parent_id").
 		Limit(3).
 		Scan(&secondCommentDetails).Error; err != nil {
 		zlog.Warnf("查询部分二级评论失败：%v", err)
@@ -282,18 +265,17 @@ func (r *CommentRepo) GetSecondCommentList(req types.GetSecondCommentListReq) ([
 
 	// 查询二级评论总数
 	if err := r.DB.Model(&model.SecondComment{}).
-		Where("root_parent_id = ?", req.RootParentID).
+		Where("parent_id = ?", req.ParentID).
 		Count(&totalCount).Error; err != nil {
 		zlog.Errorf("查询二级评论总数失败：%v", err)
 		return nil, 0, err
 	}
 
 	// 查询二级评论列表及用户信息
-	// 直接将结果映射到 types.SecondCommentDetail
 	if err := r.DB.Model(&model.SecondComment{}).
 		Select("second_comment.*, user_display.nickname, user_display.avatar, user_display.tag").
 		Joins("LEFT JOIN user_display ON second_comment.user_id = user_display.id").
-		Where("second_comment.root_parent_id = ?", req.RootParentID).
+		Where("second_comment.parent_id = ?", req.ParentID).
 		Order("second_comment.created_at ASC").
 		Offset((req.Page - 1) * req.PageSize).
 		Limit(req.PageSize).
