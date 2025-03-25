@@ -1,10 +1,8 @@
 package model
 
-// 使用两层型
 type FirstComment struct {
 	CommonModel
 	BlogID         int64           `gorm:"column:blog_id;not null" json:"blog_id"`
-	Blog           Blog            `gorm:"foreignKey:BlogID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	UserID         int64           `gorm:"column:user_id;not null" json:"user_id"`
 	Content        string          `gorm:"column:content;type:text;not null" json:"content"`
 	LikesCount     int             `gorm:"column:likes_count;default:0" json:"likes_count"`
@@ -19,7 +17,6 @@ func (t *FirstComment) TableName() string {
 type SecondComment struct {
 	CommonModel
 	BlogID       int64  `gorm:"column:blog_id;not null" json:"blog_id"`
-	Blog         Blog   `gorm:"foreignKey:BlogID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	UserID       int64  `gorm:"column:user_id;not null" json:"user_id"`
 	Content      string `gorm:"column:content;type:text;not null" json:"content"`
 	ParentID     int64  `gorm:"column:parent_id;default:0" json:"parent_id"`
