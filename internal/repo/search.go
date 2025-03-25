@@ -51,7 +51,7 @@ func (r *SearchRepo) SearchBlogs(keyword string, searchType string, page, pageSi
 
 	// 分页查询帖子和用户信息
 	if err := query.
-		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
+		Select("blog.id AS blog_id, blog.created_at AS create_at, blog.updated_at AS update_at, blog.title, blog.content, blog.be_liked, blog.be_collected, blog.comment_count, blog.blog_tag, blog.sub_tag, blog.view_permission, blog.user_id, user_display.nickname, user_display.avatar, user_display.tag").
 		Order("blog.created_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).

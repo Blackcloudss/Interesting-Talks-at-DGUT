@@ -59,7 +59,7 @@ func (r *BlogRepo) GetBlogByID(blogID int64) (types.BlogResp, error) {
 
 	// 联合查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
-		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
+		Select("blog.id AS blog_id, blog.created_at AS create_at, blog.updated_at AS update_at, blog.title, blog.content, blog.be_liked, blog.be_collected, blog.comment_count, blog.blog_tag, blog.sub_tag, blog.view_permission, blog.user_id, user_display.nickname, user_display.avatar, user_display.tag").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
 		Where("blog.id = ?", blogID).
 		Scan(&blogResp).Error; err != nil {
@@ -82,8 +82,8 @@ func (r *BlogRepo) GetBlogs(page, pageSize int) ([]types.BlogResp, int64, error)
 	}
 
 	// 分页查询帖子和用户信息
-	if err := r.DB.
-		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
+	if err := r.DB.Model(&model.Blog{}).
+		Select("blog.id AS blog_id, blog.created_at AS create_at, blog.updated_at AS update_at, blog.title, blog.content, blog.be_liked, blog.be_collected, blog.comment_count, blog.blog_tag, blog.sub_tag, blog.view_permission, blog.user_id, user_display.nickname, user_display.avatar, user_display.tag").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
 		Where("blog.deleted_at IS NULL").
 		Order("blog.created_at DESC").
@@ -109,8 +109,8 @@ func (r *BlogRepo) GetBlogsByTag(subTag string, page, pageSize int) ([]types.Blo
 	}
 
 	// 分页查询帖子和用户信息
-	if err := r.DB.
-		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
+	if err := r.DB.Model(&model.Blog{}).
+		Select("blog.id AS blog_id, blog.created_at AS create_at, blog.updated_at AS update_at, blog.title, blog.content, blog.be_liked, blog.be_collected, blog.comment_count, blog.blog_tag, blog.sub_tag, blog.view_permission, blog.user_id, user_display.nickname, user_display.avatar, user_display.tag").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
 		Where("blog.sub_tag = ? AND blog.deleted_at IS NULL", subTag).
 		Order("blog.created_at DESC").
@@ -136,8 +136,8 @@ func (r *BlogRepo) GetBlogsByUserID(userID int64, page, pageSize int) ([]types.B
 	}
 
 	// 分页查询帖子和用户信息
-	if err := r.DB.
-		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
+	if err := r.DB.Model(&model.Blog{}).
+		Select("blog.id AS blog_id, blog.created_at AS create_at, blog.updated_at AS update_at, blog.title, blog.content, blog.be_liked, blog.be_collected, blog.comment_count, blog.blog_tag, blog.sub_tag, blog.view_permission, blog.user_id, user_display.nickname, user_display.avatar, user_display.tag").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
 		Where("blog.user_id = ? AND blog.deleted_at IS NULL", userID).
 		Order("blog.created_at DESC").
@@ -164,8 +164,8 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 	}
 
 	// 分页查询帖子和用户信息
-	if err := r.DB.
-		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
+	if err := r.DB.Model(&model.Blog{}).
+		Select("blog.id AS blog_id, blog.created_at AS create_at, blog.updated_at AS update_at, blog.title, blog.content, blog.be_liked, blog.be_collected, blog.comment_count, blog.blog_tag, blog.sub_tag, blog.view_permission, blog.user_id, user_display.nickname, user_display.avatar, user_display.tag").
 		Joins("INNER JOIN collections ON collections.blog_id = blog.id").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
 		Where("collections.user_id = ?", userID).
