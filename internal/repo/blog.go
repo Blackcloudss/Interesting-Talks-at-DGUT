@@ -164,6 +164,7 @@ func (r *BlogRepo) GetBlogsByUserID(userID int64, page, pageSize int) ([]types.B
 		Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
+
 	var blogJoinUsers []BlogJoinUser
 
 	// 分页查询帖子和用户信息
