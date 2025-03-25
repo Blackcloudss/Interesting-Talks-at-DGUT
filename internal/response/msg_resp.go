@@ -15,10 +15,9 @@ var (
 	COMMON_FAIL = MsgCode{-43960, "失败"}
 
 	/* 请求错误 <0 */
-	TOKEN_IS_EXPIRED = MsgCode{-20000, "token已过期"}
-	TOKEN_IS_BLANK   = MsgCode{-20001, "token为空"}
-	TOKEN_NOT_VALID  = MsgCode{-20002, "token无效"}
-	TOKEN_TYPE_ERROR = MsgCode{-20003, "token类型错误"}
+	TOKEN_IS_BLANK   = MsgCode{-20000, "token为空"}
+	TOKEN_NOT_VALID  = MsgCode{-20001, "token无效"}
+	TOKEN_TYPE_ERROR = MsgCode{-20002, "token类型错误"}
 
 	/* 参数错误：10000 ~ 19999 */
 	PARAM_NOT_VALID    = MsgCode{10001, "参数无效"}
