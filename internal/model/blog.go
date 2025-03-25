@@ -2,17 +2,17 @@ package model
 
 type Blog struct {
 	CommonModel
-	BeLiked        int             `gorm:"column:be_liked;default:0" json:"be_liked"`
-	BeCollected    int             `gorm:"column:be_collected;default:0" json:"be_collected"`
-	CommentCount   int             `gorm:"column:comment_count;default:0" json:"comment_count"`
-	BlogTag        string          `gorm:"column:blog_tag;size:30;index" json:"blog_tag"`
-	SubTag         string          `gorm:"column:sub_tag;size:50;index" json:"sub_tag"`
-	ViewPermission string          `gorm:"column:view_permission;type:varchar(20);default:'所有人'" json:"view_permission"`
-	UserID         int64           `gorm:"column:user_id" json:"user_id"`
-	Title          string          `gorm:"column:title;size:100;not null;index" json:"title"`
-	Content        string          `gorm:"column:content;type:text;not null" json:"content"`
-	FirstComments  []FirstComment  `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_blog_first_comments"`
-	SecondComments []SecondComment `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_blog_second_comments"`
+	BeLiked        int    `gorm:"column:be_liked;default:0" json:"be_liked"`
+	BeCollected    int    `gorm:"column:be_collected;default:0" json:"be_collected"`
+	CommentCount   int    `gorm:"column:comment_count;default:0" json:"comment_count"`
+	BlogTag        string `gorm:"column:blog_tag;size:30;index" json:"blog_tag"`
+	SubTag         string `gorm:"column:sub_tag;size:50;index" json:"sub_tag"`
+	ViewPermission string `gorm:"column:view_permission;type:varchar(20);default:'所有人'" json:"view_permission"`
+	UserID         int64  `gorm:"column:user_id" json:"user_id"`
+	Title          string `gorm:"column:title;size:100;not null;index" json:"title"`
+	Content        string `gorm:"column:content;type:text;not null" json:"content"`
+	// 添加与评论的关联关系
+	FirstComments []FirstComment `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (t *Blog) TableName() string {

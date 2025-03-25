@@ -59,5 +59,4 @@ func BindReq[T any](c *gin.Context) (req T, err error) {
 		response.NewResponse(c).Error(response.PARAM_NOT_VALID)
 		return req, errors.New("method not support")
 	}
-
 }

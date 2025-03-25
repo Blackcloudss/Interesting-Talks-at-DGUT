@@ -55,8 +55,6 @@ func (r *CommentRepo) CreateSecondComment(comment *model.SecondComment) error {
 		return nil
 	})
 }
-
-// DeleteComment 删除评论
 func (r *CommentRepo) DeleteComment(commentID, blogID int64, isFirstComment bool) error {
 	return r.DB.Transaction(func(tx *gorm.DB) error {
 		if isFirstComment {
@@ -69,13 +67,13 @@ func (r *CommentRepo) DeleteComment(commentID, blogID int64, isFirstComment bool
 				return err
 			}
 		} else {
-			// 删除二级评论记录
-			if err := tx.Delete(&model.SecondComment{}, commentID).Error; err != nil {
-				return err
-			}
 			// 获取二级评论的根评论ID（即父一级评论ID）
 			var secondComment model.SecondComment
 			if err := tx.Where("id = ?", commentID).First(&secondComment).Error; err != nil {
+				return err
+			}
+			// 删除二级评论记录
+			if err := tx.Delete(&model.SecondComment{}, commentID).Error; err != nil {
 				return err
 			}
 			// 更新父一级评论的回复数
@@ -193,7 +191,6 @@ func (r *CommentRepo) IsCommentLiked(userID, commentID int64) (bool, error) {
 	return like.IsLiked, nil
 }
 
-// GetCommentByID 根据评论ID获取评论
 func (r *CommentRepo) GetCommentByID(commentID int64) (*model.FirstComment, *model.SecondComment, error) {
 	// 尝试从一级评论表中获取
 	var firstComment model.FirstComment
@@ -208,7 +205,7 @@ func (r *CommentRepo) GetCommentByID(commentID int64) (*model.FirstComment, *mod
 			// 找到二级评论，返回二级评论
 			return nil, &secondComment, nil
 		} else {
-			zlog.Errorf("Failed to get comment by ID: %v", err)
+			zlog.Errorf("Failed to get first comment by ID: %v", err)
 			return nil, nil, err
 		}
 	}
