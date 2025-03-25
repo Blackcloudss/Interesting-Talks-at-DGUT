@@ -11,8 +11,6 @@ type Blog struct {
 	UserID         int64  `gorm:"column:user_id" json:"user_id"`
 	Title          string `gorm:"column:title;size:100;not null;index" json:"title"`
 	Content        string `gorm:"column:content;type:text;not null" json:"content"`
-	// 添加与评论的关联关系
-	FirstComments []FirstComment `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (t *Blog) TableName() string {

@@ -2,12 +2,14 @@ package model
 
 type FirstComment struct {
 	CommonModel
-	BlogID         int64           `gorm:"column:blog_id;not null" json:"blog_id"`
-	UserID         int64           `gorm:"column:user_id;not null" json:"user_id"`
-	Content        string          `gorm:"column:content;type:text;not null" json:"content"`
-	LikesCount     int             `gorm:"column:likes_count;default:0" json:"likes_count"`
-	RepliesCount   int             `gorm:"column:replies_count;default:0" json:"replies_count"`
-	SecondComments []SecondComment `gorm:"foreignKey:RootParentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_first_comment_second_comment"`
+	BlogID       int64  `gorm:"column:blog_id;not null" json:"blog_id"`
+	UserID       int64  `gorm:"column:user_id;not null" json:"user_id"`
+	Content      string `gorm:"column:content;type:text;not null" json:"content"`
+	LikesCount   int    `gorm:"column:likes_count;default:0" json:"likes_count"`
+	RepliesCount int    `gorm:"column:replies_count;default:0" json:"replies_count"`
+
+	// 添加与帖子的关联关系
+	Blog []Blog `gorm:"foreignKey:BlogID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (t *FirstComment) TableName() string {
@@ -22,6 +24,9 @@ type SecondComment struct {
 	ParentID     int64  `gorm:"column:parent_id;default:0" json:"parent_id"`
 	RootParentID int64  `gorm:"column:root_parent_id;default:0" json:"root_parent_id"`
 	RepliesCount int    `gorm:"column:replies_count;default:0" json:"replies_count"`
+
+	// 添加与一级评论的关联关系
+	FirstComment []FirstComment `gorm:"foreignKey:RootParentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKeyName:fk_first_comment_second_comment"`
 }
 
 func (t *SecondComment) TableName() string {

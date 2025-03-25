@@ -65,7 +65,7 @@ func (r *PointRepo) IncreasePoints(userId int64, point int) (err error) {
 		First(&status).
 		Error
 	if err != nil {
-		zlog.Errorf("查询用户总积分失败：%v", err)
+		zlog.Errorf("查询用户状态失败：%v", err)
 		return err
 	}
 
