@@ -37,7 +37,7 @@ RUN apk add --no-cache tzdata && \
 
 WORKDIR /app
 
-# 创建目标目录并复制敏感词文件
+# 创建目标目录并复制敏感词文件，这样在服务器才能加载敏感词文件成功
 RUN mkdir -p utils/filter_swords
 COPY --from=builder /app/utils/filter_swords/dict.txt ./utils/filter_swords/
 
