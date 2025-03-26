@@ -1,8 +1,9 @@
 package types
 
 import (
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"time"
+
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 )
 
 // CreateCommentReq 创建评论/回复请求结构体
@@ -78,11 +79,21 @@ type GetSecondCommentListResp struct {
 
 // CommentDetail 评论详情
 type CommentDetail struct {
-	FirstComment   model.FirstComment    `json:"first_comment"`
-	Nickname       string                `json:"nickname"`        // 评论者昵称
-	Avatar         string                `json:"avatar"`          // 评论者头像
-	Tag            string                `json:"tag"`             // 评论者标签
-	SecondComments []SecondCommentDetail `json:"second_comments"` // 二级评论
+	ID           int64     `json:"id" gorm:"column:id"`
+	BlogID       int64     `json:"blog_id" gorm:"column:blog_id"`
+	UserID       int64     `json:"user_id" gorm:"column:user_id"`
+	Content      string    `json:"content" gorm:"column:content"`
+	CreatedAt    time.Time `json:"created_at" gorm:"column:created_at"`
+	LikesCount   int       `json:"likes_count" gorm:"column:likes_count"`
+	RepliesCount int       `json:"replies_count" gorm:"column:replies_count"`
+
+	// 用户信息
+	Nickname string `json:"nickname" gorm:"column:nickname"`
+	Avatar   string `json:"avatar" gorm:"column:avatar"`
+	Tag      string `json:"tag" gorm:"column:tag"`
+
+	// 二级评论列表（可选）
+	SecondComments []SecondCommentDetail `json:"second_comments,omitempty" gorm:"-"`
 }
 
 // SecondCommentDetail 二级评论详情

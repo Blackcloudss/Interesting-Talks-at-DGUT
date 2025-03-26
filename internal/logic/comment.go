@@ -3,6 +3,8 @@ package logic
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
@@ -11,7 +13,6 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
 	"gorm.io/gorm"
-	"time"
 )
 
 // 定义内部逻辑错误
@@ -150,9 +151,18 @@ func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentL
 	defer utils.RecordTime(time.Now())()
 
 	// 调用 repo 层获取一级评论列表
-	commentList, totalCount, err := repo.NewCommentRepo(global.DB).GetFirstCommentList(req)
+	comments, err := repo.NewCommentRepo(global.DB).GetFirstCommentList(req.BlogID, req.PageSize)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "获取一级评论列表失败: %v", err)
+		return nil, response.ErrResp(err, codeGetCommentFail)
+	}
+
+	// 获取总评论数
+	var totalCount int64
+	if err := global.DB.Model(&model.FirstComment{}).
+		Where("blog_id = ? AND deleted_at IS NULL", req.BlogID).
+		Count(&totalCount).Error; err != nil {
+		zlog.CtxErrorf(ctx, "获取评论总数失败: %v", err)
 		return nil, response.ErrResp(err, codeGetCommentFail)
 	}
 
@@ -161,7 +171,7 @@ func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentL
 		TotalCount: totalCount,
 		Page:       req.Page,
 		PageSize:   req.PageSize,
-		Comments:   commentList,
+		Comments:   comments,
 	}
 
 	return resp, nil
