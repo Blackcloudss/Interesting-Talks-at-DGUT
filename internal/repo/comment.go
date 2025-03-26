@@ -206,6 +206,7 @@ func (r *CommentRepo) GetCommentByID(commentID int64) (first *model.FirstComment
 func (r *CommentRepo) GetFirstCommentList(blogID int64, limit int) ([]types.CommentDetail, error) {
 	var comments []types.CommentDetail
 
+	// 获取一级评论
 	err := r.DB.Table("first_comment").
 		Select("first_comment.*, user_display.nickname, user_display.avatar, user_display.tag").
 		Joins("LEFT JOIN user_display ON first_comment.user_id = user_display.id").
@@ -219,16 +220,28 @@ func (r *CommentRepo) GetFirstCommentList(blogID int64, limit int) ([]types.Comm
 		return nil, err
 	}
 
-	// 可选：获取每个一级评论的部分二级评论
+	// 获取每个一级评论的前3条二级评论
 	for i := range comments {
 		var secondComments []types.SecondCommentDetail
-		if err := r.DB.Table("second_comment").
-			Select("second_comment.*, user_display.nickname, user_display.avatar, user_display.tag").
+		err := r.DB.Table("second_comment").
+			Select(`
+				second_comment.id,
+				second_comment.blog_id,
+				second_comment.user_id,
+				second_comment.content,
+				second_comment.parent_id,
+				second_comment.created_at,
+				user_display.nickname,
+				user_display.avatar,
+				user_display.tag
+			`).
 			Joins("LEFT JOIN user_display ON second_comment.user_id = user_display.id").
 			Where("second_comment.parent_id = ? AND second_comment.deleted_at IS NULL", comments[i].ID).
 			Order("second_comment.created_at ASC").
-			Limit(3). // 每个一级评论显示前3条二级评论
-			Scan(&secondComments).Error; err != nil {
+			Limit(3).
+			Scan(&secondComments).Error
+
+		if err != nil {
 			zlog.Errorf("查询二级评论失败：%v", err)
 			continue
 		}
@@ -253,17 +266,27 @@ func (r *CommentRepo) GetSecondCommentList(req types.GetSecondCommentListReq) ([
 		return nil, 0, err
 	}
 
-	// 查询二级评论列表及用户信息
-	err := r.DB.Table("second_comment").
-		Select("second_comment.*, user_display.nickname, user_display.avatar, user_display.tag").
+	// 明确指定要查询的字段
+	query := r.DB.Table("second_comment").
+		Select(`
+			second_comment.id,
+			second_comment.blog_id,
+			second_comment.user_id,
+			second_comment.content,
+			second_comment.parent_id,
+			second_comment.created_at,
+			user_display.nickname,
+			user_display.avatar,
+			user_display.tag
+		`).
 		Joins("LEFT JOIN user_display ON second_comment.user_id = user_display.id").
 		Where("second_comment.parent_id = ? AND second_comment.deleted_at IS NULL", req.ParentID).
 		Order("second_comment.created_at ASC").
 		Offset((req.Page - 1) * req.PageSize).
-		Limit(req.PageSize).
-		Scan(&comments).Error
+		Limit(req.PageSize)
 
-	if err != nil {
+	// 执行查询
+	if err := query.Scan(&comments).Error; err != nil {
 		zlog.Errorf("查询二级评论列表失败：%v", err)
 		return nil, 0, err
 	}

@@ -182,7 +182,7 @@ func (l *CommentLogic) GetSecondCommentList(ctx context.Context, req types.GetSe
 	defer utils.RecordTime(time.Now())()
 
 	// 调用 repo 层获取二级评论列表
-	secondCommentList, totalCount, err := repo.NewCommentRepo(global.DB).GetSecondCommentList(req)
+	comments, totalCount, err := repo.NewCommentRepo(global.DB).GetSecondCommentList(req)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "获取二级评论列表失败: %v", err)
 		return nil, response.ErrResp(err, codeGetCommentFail)
@@ -193,7 +193,7 @@ func (l *CommentLogic) GetSecondCommentList(ctx context.Context, req types.GetSe
 		TotalCount:     totalCount,
 		Page:           req.Page,
 		PageSize:       req.PageSize,
-		SecondComments: secondCommentList,
+		SecondComments: comments,
 	}
 
 	return resp, nil

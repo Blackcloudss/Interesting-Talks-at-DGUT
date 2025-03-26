@@ -2,8 +2,6 @@ package types
 
 import (
 	"time"
-
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 )
 
 // CreateCommentReq 创建评论/回复请求结构体
@@ -98,8 +96,15 @@ type CommentDetail struct {
 
 // SecondCommentDetail 二级评论详情
 type SecondCommentDetail struct {
-	SecondComment model.SecondComment `json:"second_comment"`
-	Nickname      string              `json:"nickname"` // 评论者昵称
-	Avatar        string              `json:"avatar"`   // 评论者头像
-	Tag           string              `json:"tag"`      // 评论者标签
+	ID        int64     `json:"id" gorm:"column:id"`
+	BlogID    int64     `json:"blog_id" gorm:"column:blog_id"`
+	UserID    int64     `json:"user_id" gorm:"column:user_id"`
+	Content   string    `json:"content" gorm:"column:content"`
+	ParentID  int64     `json:"parent_id" gorm:"column:parent_id"`
+	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
+
+	// 用户信息
+	Nickname string `json:"nickname" gorm:"column:nickname"`
+	Avatar   string `json:"avatar" gorm:"column:avatar"`
+	Tag      string `json:"tag" gorm:"column:tag"`
 }
