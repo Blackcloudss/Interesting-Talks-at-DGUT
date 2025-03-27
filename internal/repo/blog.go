@@ -3,6 +3,7 @@ package repo
 import (
 	"errors"
 	"fmt"
+
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
@@ -10,168 +11,236 @@ import (
 )
 
 const (
-	BLOG_ID      = "blog_id"
-	IS_LIKED     = "is_liked"
-	IS_COLLECTED = "is_collected"
-	BE_COLLECTED = "be_collected"
-	BE_LIKED     = "be_liked"
+	BLOG_ID         = "blog.id"
+	IS_LIKED        = "is_liked"
+	IS_COLLECTED    = "is_collected"
+	BE_COLLECTED    = "be_collected"
+	BE_LIKED        = "be_liked"
+	COMMENT_COUNT   = "comment_count"
+	BLOG_TAG        = "blog_tag"
+	SUB_TAG         = "sub_tag"
+	VIEW_PERMISSION = "view_permission"
+	TITLE           = "title"
+	UPDATED_AT      = "updated_at"
+	DELETED_AT      = "deleted_at"
+	USER_TAG        = "tag"
 )
-const blogSelectFields = `blog.id AS blog_id, blog.created_at AS create_at, blog.updated_at AS update_at, 
-                          blog.title, blog.content, blog.be_liked, blog.be_collected, blog.comment_count, 
-                          blog.blog_tag, blog.sub_tag, blog.view_permission, blog.user_id, 
-                          user_display.nickname, user_display.avatar, user_display.tag`
 
-// BlogRepo 帖子仓库
+const (
+	BLOG_SELECT_FIELDS = `blog.id, 
+                         blog.created_at, 
+                         blog.updated_at, 
+                         blog.title, 
+                         blog.content, 
+                         blog.be_liked, 
+                         blog.be_collected, 
+                         blog.comment_count, 
+                         blog.blog_tag, 
+                         blog.sub_tag, 
+                         blog.view_permission, 
+                         blog.user_id, 
+                         user_display.nickname, 
+                         user_display.avatar, 
+                         user_display.tag`
+)
+
+/*
+数据持久化模块 - 帖子相关
+主要功能：
+1. 帖子CRUD操作
+2. 帖子列表查询（分页、按标签、按用户）
+3. 收藏帖子管理
+4. 点赞状态管理
+*/
+
+// @Title        blog.go
+// @Description  帖子数据访问层
+// @Create       XdpCs 2025-03-20
+// @Update       XdpCs 2025-03-20
 type BlogRepo struct {
 	DB *gorm.DB
 }
 
 // NewBlogRepo 创建帖子仓库实例
 func NewBlogRepo(db *gorm.DB) *BlogRepo {
-	return &BlogRepo{
-		DB: db,
-	}
+	return &BlogRepo{DB: db}
 }
 
 // CreateBlog 创建帖子
 func (r *BlogRepo) CreateBlog(blog *model.Blog) error {
-	return r.DB.Create(blog).Error
+	if err := r.DB.Create(blog).Error; err != nil {
+		zlog.Errorf(fmt.Sprintf("创建帖子失败: %v", err))
+		return err
+	}
+	return nil
 }
 
 // UpdateBlog 更新帖子
 func (r *BlogRepo) UpdateBlog(blog *model.Blog) error {
-	return r.DB.Save(blog).Error
+	if err := r.DB.Model(&model.Blog{}).
+		Where(fmt.Sprintf("%s = ?", BLOG_ID), blog.ID).
+		Updates(blog).Error; err != nil {
+		zlog.Errorf(fmt.Sprintf("更新帖子失败: %v", err))
+		return err
+	}
+	return nil
 }
 
-// DeleteBlog 删除帖子
+// DeleteBlog 删除帖子（软删除）
 func (r *BlogRepo) DeleteBlog(blogID int64) error {
-	return r.DB.Delete(&model.Blog{}, blogID).Error
+	if err := r.DB.Model(&model.Blog{}).
+		Where(fmt.Sprintf("%s = ?", BLOG_ID), blogID).
+		Update(DELETED_AT, gorm.Expr("NOW()")).Error; err != nil {
+		zlog.Errorf(fmt.Sprintf("删除帖子失败: %v", err))
+		return err
+	}
+	return nil
 }
 
-// CheckBlogExists 检查帖子是否存在，如果存在则返回帖子对象
+// CheckBlogExists 检查帖子是否存在
 func (r *BlogRepo) CheckBlogExists(blogID int64) (*model.Blog, error) {
 	var blog model.Blog
-	// 查询帖子是否存在
-	err := r.DB.Model(&model.Blog{}).Where("id = ?", blogID).First(&blog).Error
+	err := r.DB.Model(&model.Blog{}).
+		Where(fmt.Sprintf("%s = ? AND %s IS NULL", BLOG_ID, DELETED_AT), blogID).
+		First(&blog).
+		Error
+
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil // 如果帖子不存在，返回 nil
+			return nil, nil
 		}
-		return nil, err // 如果发生其他错误，返回错误
+		zlog.Errorf(fmt.Sprintf("检查帖子存在状态失败: %v", err))
+		return nil, err
 	}
-	return &blog, nil // 如果帖子存在，返回帖子对象
+	return &blog, nil
 }
 
-// GetBlogByID 根据ID获取帖子，帖子详情页面
+// GetBlogByID 获取单个帖子详情
 func (r *BlogRepo) GetBlogByID(blogID int64) (types.BlogResp, error) {
 	var blogResp types.BlogResp
 
-	// 联合查询帖子和用户信息
-	if err := r.DB.Model(&model.Blog{}).
-		Select(blogSelectFields).
+	err := r.DB.Model(&model.Blog{}).
+		Select(BLOG_SELECT_FIELDS).
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where("blog.id = ?", blogID).
-		Scan(&blogResp).Error; err != nil {
+		Where(fmt.Sprintf("%s = ? AND %s IS NULL", BLOG_ID, DELETED_AT), blogID).
+		Scan(&blogResp).
+		Error
+
+	if err != nil {
+		zlog.Errorf(fmt.Sprintf("获取帖子详情失败: %v", err))
 		return types.BlogResp{}, err
 	}
 
 	return blogResp, nil
 }
 
-// GetBlogs 分页获取帖子列表（首页显示）
+// GetBlogs 分页获取帖子列表
 func (r *BlogRepo) GetBlogs(page, pageSize int) ([]types.BlogResp, int64, error) {
 	var blogs []types.BlogResp
 	var total int64
 
 	query := r.DB.Model(&model.Blog{}).
-		Select(blogSelectFields).
+		Select(BLOG_SELECT_FIELDS).
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where("blog.deleted_at IS NULL").
-		Order("blog.created_at DESC")
+		Where(fmt.Sprintf("%s IS NULL", DELETED_AT)).
+		Order(fmt.Sprintf("%s DESC", CREATED_AT))
 
 	if err := query.Count(&total).Error; err != nil {
+		zlog.Errorf(fmt.Sprintf("统计帖子总数失败: %v", err))
 		return nil, 0, err
 	}
 
-	if err := query.Offset((page - 1) * pageSize).Limit(pageSize).Scan(&blogs).Error; err != nil {
-		return nil, 0, err
-	}
-
-	return blogs, total, nil
-}
-func (r *BlogRepo) GetBlogsByTag(subTag string, page int, pageSize int) ([]types.BlogResp, int64, error) {
-	if r.DB == nil {
-		return nil, 0, errors.New("database connection is nil")
-	}
-
-	var blogs []types.BlogResp
-	var total int64
-	// 明确指定 deleted_at 列所属的表
-	whereCondition := "sub_tag = ? AND blog.deleted_at IS NULL"
-
-	// 查询符合条件的帖子总数
-	if err := r.DB.Model(&model.Blog{}).
-		Where(whereCondition, subTag).
-		Count(&total).Error; err != nil {
-		zlog.Errorf("Failed to count blogs by sub tag: %v", err)
-		return nil, 0, err
-	}
-
-	// 分页查询帖子和用户信息
-	if err := r.DB.Model(&model.Blog{}).
-		Select(blogSelectFields).
-		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where(whereCondition, subTag).
-		Order("blog.created_at DESC").
+	if err := query.
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
-		Scan(&blogs).Error; err != nil {
-		zlog.Errorf("Failed to get blogs by sub tag: %v", err)
+		Scan(&blogs).
+		Error; err != nil {
+		zlog.Errorf(fmt.Sprintf("获取帖子列表失败: %v", err))
 		return nil, 0, err
 	}
 
 	return blogs, total, nil
 }
 
-// GetBlogsByUserID 根据用户ID分页获取帖子列表
+// GetBlogsByTag 根据标签获取帖子列表
+func (r *BlogRepo) GetBlogsByTag(subTag string, page, pageSize int) ([]types.BlogResp, int64, error) {
+	var blogs []types.BlogResp
+	var total int64
+
+	query := r.DB.Model(&model.Blog{}).
+		Select(BLOG_SELECT_FIELDS).
+		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
+		Where(fmt.Sprintf("%s = ? AND %s IS NULL", SUB_TAG, DELETED_AT), subTag).
+		Order(fmt.Sprintf("%s DESC", CREATED_AT))
+
+	if err := query.Count(&total).Error; err != nil {
+		zlog.Errorf(fmt.Sprintf("统计标签帖子总数失败: %v", err))
+		return nil, 0, err
+	}
+
+	if err := query.
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Scan(&blogs).
+		Error; err != nil {
+		zlog.Errorf(fmt.Sprintf("获取标签帖子列表失败: %v", err))
+		return nil, 0, err
+	}
+
+	return blogs, total, nil
+}
+
+// GetBlogsByUserID 获取用户发布的帖子列表
 func (r *BlogRepo) GetBlogsByUserID(userID int64, page, pageSize int) ([]types.BlogResp, int64, error) {
 	var blogs []types.BlogResp
 	var total int64
 
 	query := r.DB.Model(&model.Blog{}).
-		Select(blogSelectFields).
+		Select(BLOG_SELECT_FIELDS).
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where("blog.user_id = ? AND blog.deleted_at IS NULL", userID).
-		Order("blog.created_at DESC")
+		Where(fmt.Sprintf("%s = ? AND %s IS NULL", USER_ID, DELETED_AT), userID).
+		Order(fmt.Sprintf("%s DESC", CREATED_AT))
 
 	if err := query.Count(&total).Error; err != nil {
+		zlog.Errorf(fmt.Sprintf("统计用户帖子总数失败: %v", err))
 		return nil, 0, err
 	}
 
-	if err := query.Offset((page - 1) * pageSize).Limit(pageSize).Scan(&blogs).Error; err != nil {
+	if err := query.
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Scan(&blogs).
+		Error; err != nil {
+		zlog.Errorf(fmt.Sprintf("获取用户帖子列表失败: %v", err))
 		return nil, 0, err
 	}
 
 	return blogs, total, nil
 }
 
-// GetCollectedBlogs 获取用户收藏的帖子（分页）
+// GetCollectedBlogs 获取用户收藏的帖子列表
 func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.BlogResp, int64, error) {
 	var blogs []types.BlogResp
 	var total int64
 
 	query := r.DB.Model(&model.Blog{}).
-		Select(blogSelectFields).
+		Select(BLOG_SELECT_FIELDS).
 		Joins("INNER JOIN collection ON collection.blog_id = blog.id").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where("collection.user_id = ?", userID).
-		Order("blog.created_at DESC")
+		Where(fmt.Sprintf("collection.%s = ? AND %s IS NULL", USER_ID, DELETED_AT), userID).
+		Order(fmt.Sprintf("%s DESC", CREATED_AT))
 
 	if err := query.Count(&total).Error; err != nil {
+		zlog.Errorf(fmt.Sprintf("统计收藏帖子总数失败: %v", err))
 		return nil, 0, err
 	}
 
-	if err := query.Offset((page - 1) * pageSize).Limit(pageSize).Scan(&blogs).Error; err != nil {
+	if err := query.
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Scan(&blogs).
+		Error; err != nil {
+		zlog.Errorf(fmt.Sprintf("获取收藏帖子列表失败: %v", err))
 		return nil, 0, err
 	}
 
