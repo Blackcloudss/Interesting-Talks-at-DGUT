@@ -2,8 +2,8 @@ package model
 
 type Blog struct {
 	CommonModel
-	BeLiked        int    `gorm:"column:be_liked;default:0" json:"be_liked"`
-	BeCollected    int    `gorm:"column:be_collected;default:0" json:"be_collected"`
+	LikeCount      int    `gorm:"column:be_liked;default:0" json:"like_count"`
+	CollectCount   int    `gorm:"column:be_collected;default:0" json:"collect_count"`
 	CommentCount   int    `gorm:"column:comment_count;default:0" json:"comment_count"`
 	BlogTag        string `gorm:"column:blog_tag;size:30;index" json:"blog_tag"`
 	SubTag         string `gorm:"column:sub_tag;size:50;index" json:"sub_tag"`
