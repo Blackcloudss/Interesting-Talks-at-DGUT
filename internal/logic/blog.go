@@ -325,7 +325,7 @@ func (l *BlogLogic) GetCollectedBlogs(ctx context.Context, req types.GetCollecte
 }
 
 // LikeBlog 点赞或取消点赞帖子
-func (l *BlogLogic) LikeBlog(ctx context.Context, BlogID int64, isLiked bool, UserID int64) (resp *types.LikeBlogResp, err error) {
+func (l *BlogLogic) LikeBlog(ctx context.Context, BlogID int64, UserID int64) (resp *types.LikeBlogResp, err error) {
 	defer utils.RecordTime(time.Now())()
 	// 用 redis 加锁
 	lockKey := fmt.Sprintf("blog:like:lock:user:%d:blog:%d", UserID, BlogID)
