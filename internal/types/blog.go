@@ -166,15 +166,7 @@ type LikeBlogReq struct {
 	BlogID int64 `json:"blog_id"`
 }
 
-// LikeBlogResp 点赞帖子响应体
 type LikeBlogResp struct {
-}
-
-// UnlikeBlogReq 取消点赞请求体
-type UnlikeBlogReq struct {
-	BlogID int64 `json:"blog_id"`
-}
-
-// UnlikeBlogResp 取消点赞响应体
-type UnlikeBlogResp struct {
+	Liked     bool   `json:"liked"`      // 当前点赞状态
+	LikeCount uint64 `json:"like_count"` // 当前点赞总数
 }

@@ -109,8 +109,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/collect", api.CollectBlogHandler)                           // 收藏帖子
 		rg.POST("/uncollect", api.UncollectBlogHandler)                       // 取消收藏帖子
 		rg.GET("/collected", api.GetCollectedBlogsHandler)                    // 获取用户收藏的帖子（我的帖子）
-		rg.POST("/like", api.LikeBlogHandler)                                 // 点赞帖子
-		rg.POST("/unlike", api.UnlikeBlogHandler)                             // 取消点赞
+		rg.POST("/like", api.LikeBlogHandler)                                 // 点赞或取消点赞帖子
 	})
 
 	//搜索模块相关路由

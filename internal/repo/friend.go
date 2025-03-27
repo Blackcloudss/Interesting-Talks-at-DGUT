@@ -14,6 +14,7 @@ const (
 	FOLLOWED_ID = "followed_id"
 	IS_FRiEND   = "is_friend"
 	TRUE        = 1
+	FALSE       = 0
 )
 
 // @Title        friend.go

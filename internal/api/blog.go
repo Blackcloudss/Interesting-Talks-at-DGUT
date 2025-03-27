@@ -203,7 +203,7 @@ func GetCollectedBlogsHandler(c *gin.Context) {
 	return
 }
 
-// LikeBlogHandler 点赞帖子
+// LikeBlogHandler 点赞或取消点赞帖子
 func LikeBlogHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.LikeBlogReq](c)
@@ -213,22 +213,7 @@ func LikeBlogHandler(c *gin.Context) {
 	}
 	zlog.CtxInfof(ctx, "LikeBlog request: %+v", req)
 	UserID := jwt.GetUserId(c)
-	resp, err := logic.NewBlogLogic().LikeBlog(ctx, req, UserID)
-	response.Response(c, resp, err)
-	return
-}
-
-// UnlikeBlogHandler 取消点赞
-func UnlikeBlogHandler(c *gin.Context) {
-	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.UnlikeBlogReq](c)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "UnlikeBlog request error: %v", err)
-		return
-	}
-	zlog.CtxInfof(ctx, "UnlikeBlog request: %+v", req)
-	UserID := jwt.GetUserId(c)
-	resp, err := logic.NewBlogLogic().UnlikeBlog(ctx, req, UserID)
+	resp, err := logic.NewBlogLogic().LikeBlog(ctx, req.BlogID, UserID)
 	response.Response(c, resp, err)
 	return
 }

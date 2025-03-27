@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+const (
+	BLOG_ID  = "blog_id"
+	IS_LIKED = "is_liked"
+)
 const blogSelectFields = `blog.id AS blog_id, blog.created_at AS create_at, blog.updated_at AS update_at, 
                           blog.title, blog.content, blog.be_liked, blog.be_collected, blog.comment_count, 
                           blog.blog_tag, blog.sub_tag, blog.view_permission, blog.user_id, 
@@ -249,76 +253,96 @@ func (r *BlogRepo) UncollectBlog(userID, blogID int64) error {
 	return r.DB.Model(&model.Blog{}).Where("id = ?", blogID).Update("be_collected", gorm.Expr("be_collected - 1")).Error
 }
 
-// IsBlogLiked 检查用户是否已经点赞某个帖子
-func (r *BlogRepo) IsBlogLiked(userID, blogID int64) (bool, error) {
-	var count int64
-	err := r.DB.Model(&model.Like{}).
-		Where("user_id = ? AND blog_id = ?", userID, blogID).
-		Count(&count).Error
-	return count > 0, err
-}
+func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
+	var isLiked bool = false
 
-// LikeBlog 点赞帖子
-func (r *BlogRepo) LikeBlog(userID, blogID int64) error {
-	lockKey := fmt.Sprintf("blog:like:%d", blogID)
-	lockValue := fmt.Sprintf("%d-%d", userID, time.Now().UnixNano())
-	expiration := 10 * time.Second
+	tx := r.DB.Begin()
 
-	// 尝试获取锁
-	locked, err := redisx.Lock(global.Rdb, lockKey, lockValue, expiration)
+	// 查询点赞状态
+	err := tx.Model(&model.Like{}).
+		Select(IS_LIKED).
+		Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
+		First(&isLiked).
+		Error
+
 	if err != nil {
-		return err
-	}
-	if !locked {
-		return errors.New("failed to acquire lock")
-	}
-	defer func() {
-		// 释放锁
-		if err := redisx.Unlock(global.Rdb, lockKey, lockValue); err != nil {
-			zlog.Errorf("Failed to unlock: %v", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 初始化点赞记录
+			err = tx.Model(&model.Like{}).
+				Create(&model.Like{
+					UserID:  UserID,
+					BlogID:  BlogID,
+					IsLiked: false,
+				}).Error
+			if err != nil {
+				tx.Rollback()
+				zlog.Errorf("初始化点赞表失败：%v", err)
+				return nil, err
+			}
+		} else {
+			tx.Rollback()
+			zlog.Errorf("查询点赞状态失败：%v", err)
+			return nil, err
 		}
-	}()
+	}
 
-	// 检查是否已经点赞
-	isLiked, err := r.IsBlogLiked(userID, blogID)
+	// 查询当前点赞数
+	var likeCount uint64
+	err = tx.Model(&model.Blog{}).
+		Select("be_liked").
+		Where("id = ?", BlogID).
+		First(&likeCount).
+		Error
 	if err != nil {
-		return err
-	}
-	if isLiked {
-		return errors.New("already liked this blog")
-	}
-
-	// 创建新的点赞记录
-	like := model.Like{
-		UserID: userID,
-		BlogID: blogID,
+		tx.Rollback()
+		zlog.Errorf("查询点赞数失败：%v", err)
+		return nil, err
 	}
 
-	// 插入点赞记录
-	if err := r.DB.Create(&like).Error; err != nil {
-		return err
-	}
-
-	// 更新帖子的点赞数
-	return r.DB.Model(&model.Blog{}).Where("id = ?", blogID).Update("be_liked", gorm.Expr("be_liked + 1")).Error
-}
-
-// UnlikeBlog 取消点赞
-func (r *BlogRepo) UnlikeBlog(userID, blogID int64) error {
-	// 检查是否已经点赞
-	isLiked, err := r.IsBlogLiked(userID, blogID)
-	if err != nil {
-		return err
-	}
+	// 切换点赞状态
 	if !isLiked {
-		return errors.New("not liked this blog")
+		// 执行点赞
+		err = tx.Model(&model.Like{}).
+			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
+			Update(IS_LIKED, true).
+			Error
+		if err != nil {
+			tx.Rollback()
+			zlog.Errorf("点赞操作失败：%v", err)
+			return nil, err
+		}
+		likeCount++
+	} else {
+		// 取消点赞
+		err = tx.Model(&model.Like{}).
+			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
+			Update(IS_LIKED, false).
+			Error
+		if err != nil {
+			tx.Rollback()
+			zlog.Errorf("取消点赞失败：%v", err)
+			return nil, err
+		}
+		likeCount--
 	}
 
-	// 删除点赞记录
-	if err := r.DB.Delete(&model.Like{}, "user_id = ? AND blog_id = ?", userID, blogID).Error; err != nil {
-		return err
+	// 更新博客点赞数
+	err = tx.Model(&model.Blog{}).
+		Where("id = ?", BlogID).
+		Update("be_liked", likeCount).
+		Error
+	if err != nil {
+		tx.Rollback()
+		zlog.Errorf("更新点赞数失败：%v", err)
+		return nil, err
 	}
 
-	// 更新帖子的点赞数
-	return r.DB.Model(&model.Blog{}).Where("id = ?", blogID).Update("be_liked", gorm.Expr("be_liked - 1")).Error
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	return &types.LikeBlogResp{
+		Liked:     !isLiked, // 返回操作后的新状态
+		LikeCount: likeCount,
+	}, nil
 }

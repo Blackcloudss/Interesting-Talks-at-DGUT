@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
@@ -24,7 +25,6 @@ var (
 	codeUncollectFailed    = response.MsgCode{Code: 40027, Msg: "取消收藏失败"}
 	codeGetCollectedFailed = response.MsgCode{Code: 40028, Msg: "获取收藏帖子失败"}
 	codeLikeFailed         = response.MsgCode{Code: 40041, Msg: "点赞失败"}
-	codeUnlikeFailed       = response.MsgCode{Code: 40042, Msg: "取消点赞失败"}
 )
 
 type BlogLogic struct{}
@@ -324,26 +324,27 @@ func (l *BlogLogic) GetCollectedBlogs(ctx context.Context, req types.GetCollecte
 	return resp, nil
 }
 
-// LikeBlog 点赞帖子
-func (l *BlogLogic) LikeBlog(ctx context.Context, req types.LikeBlogReq, UserID int64) (resp *types.LikeBlogResp, err error) {
+// LikeBlog 点赞或取消点赞帖子
+func (l *BlogLogic) LikeBlog(ctx context.Context, BlogID int64, isLiked bool, UserID int64) (resp *types.LikeBlogResp, err error) {
 	defer utils.RecordTime(time.Now())()
-
-	err = repo.NewBlogRepo(global.DB).LikeBlog(UserID, req.BlogID)
+	// 用 redis 加锁
+	lockKey := fmt.Sprintf("blog:like:lock:user:%d:blog:%d", UserID, BlogID)
+	locked, err := global.Rdb.SetNX(ctx, lockKey, 1, 1*time.Second).Result()
 	if err != nil {
-		zlog.CtxErrorf(ctx, "LikeBlog failed: %v", err)
-		return nil, response.ErrResp(err, codeLikeFailed)
+		zlog.CtxErrorf(ctx, "Redis 上锁失败: %v", err)
+		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
-	return resp, nil
-}
+	if !locked {
+		// 未获取到锁，说明该操作正在被其他请求处理
+		zlog.CtxInfof(ctx, "点赞/取消赞操作正被 user: %d, blog: %d 使用，请稍等 1 s", UserID, BlogID)
+		return nil, response.ErrResp(err, response.USER_OPERATION_LOCKED) // 用户操作被锁定
+	}
+	defer global.Rdb.Del(ctx, lockKey)
 
-// UnlikeBlog 取消点赞帖子
-func (l *BlogLogic) UnlikeBlog(ctx context.Context, req types.UnlikeBlogReq, UserID int64) (resp *types.UnlikeBlogResp, err error) {
-	defer utils.RecordTime(time.Now())()
-
-	err = repo.NewBlogRepo(global.DB).UnlikeBlog(UserID, req.BlogID)
+	resp, err = repo.NewBlogRepo(global.DB).LikeBlog(UserID, BlogID)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "UnlikeBlog failed: %v", err)
-		return nil, response.ErrResp(err, codeUnlikeFailed)
+		zlog.CtxErrorf(ctx, "ToggleLikeBlog failed: %v", err)
+		return nil, response.ErrResp(err, codeLikeFailed)
 	}
 	return resp, nil
 }
