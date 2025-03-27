@@ -64,7 +64,7 @@ func (r *BlogRepo) GetBlogByID(blogID int64) (types.BlogResp, error) {
 
 	// 联合查询帖子和用户信息
 	if err := r.DB.Model(&model.Blog{}).
-		Select("blog.id AS blog_id, blog.created_at AS create_at, blog.updated_at AS update_at, blog.title, blog.content, blog.be_liked, blog.be_collected, blog.comment_count, blog.blog_tag, blog.sub_tag, blog.view_permission, blog.user_id, user_display.nickname, user_display.avatar, user_display.tag").
+		Select(blogSelectFields).
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
 		Where("blog.id = ?", blogID).
 		Scan(&blogResp).Error; err != nil {

@@ -26,7 +26,7 @@ type UpdateBlogReq struct {
 	ID             int64                   `form:"id"`
 	Title          string                  `form:"title"`
 	Content        string                  `form:"content"`
-	BlogTag        string                  `form:"blogtag"`
+	BlogTag        string                  `form:"blog_tag"`
 	SubTag         string                  `form:"sub_tag"`
 	ViewPermission string                  `form:"view_permission"`
 	ImageFiles     []*multipart.FileHeader `form:"image_files"`
@@ -56,7 +56,7 @@ type BlogResp struct {
 	BeLiked        int       ` json:"be_liked"  `     // 点赞数，默认为0
 	BeCollected    int       `json:"be_collected"`    // 收藏数，默认为0
 	CommentCount   int       ` json:"comment_count"`  // 评论数，默认为0（字段名更清晰）
-	BlogTag        string    ` json:"blogtag"`        // 帖子分区（主标签）
+	BlogTag        string    ` json:"blog_tag"`       // 帖子分区（主标签）
 	SubTag         string    ` json:"sub_tag"`        // 子标签
 	ViewPermission string    `json:"view_permission"` // 访问权限，默认为“所有人”
 	UserID         int64     `json:"user_id"`         // 用户ID
