@@ -106,8 +106,7 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.GET("/list_by_tag", api.GetBlogsByTagHandler)                      // 根据标签显示帖子列表
 		rg.GET("/my_blogs", api.GetMyBlogsHandler)                            // 获取当前用户发布的帖子
 		rg.GET("/other_blogs", api.GetBlogsByUserIDHandler)                   //获取其他用户的帖子（点击其他用户主页可看到）
-		rg.POST("/collect", api.CollectBlogHandler)                           // 收藏帖子
-		rg.POST("/uncollect", api.UncollectBlogHandler)                       // 取消收藏帖子
+		rg.POST("/collect", api.CollectBlogHandler)                           // 收藏或取消收藏帖子
 		rg.GET("/collected", api.GetCollectedBlogsHandler)                    // 获取用户收藏的帖子（我的帖子）
 		rg.POST("/like", api.LikeBlogHandler)                                 // 点赞或取消点赞帖子
 	})

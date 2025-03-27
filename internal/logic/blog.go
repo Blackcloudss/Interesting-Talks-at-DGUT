@@ -79,7 +79,7 @@ func (l *BlogLogic) UpdateBlog(ctx context.Context, req types.UpdateBlogReq, ima
 	defer utils.RecordTime(time.Now())()
 
 	// 检查帖子是否存在
-	blog, err := repo.NewBlogRepo(global.DB).CheckBlogExists(req.ID)
+	blog, err := repo.NewBlogRepo(global.DB).CheckBlogExists(req.BlogID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			zlog.CtxWarnf(ctx, "Blog not found: %v", err)
@@ -135,7 +135,7 @@ func (l *BlogLogic) DeleteBlog(ctx context.Context, req types.DeleteBlogReq) (re
 	defer utils.RecordTime(time.Now())()
 
 	// 检查帖子是否存在
-	_, err = repo.NewBlogRepo(global.DB).CheckBlogExists(req.ID)
+	_, err = repo.NewBlogRepo(global.DB).CheckBlogExists(req.BlogID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			zlog.CtxWarnf(ctx, "Blog not found: %v", err)
@@ -146,14 +146,14 @@ func (l *BlogLogic) DeleteBlog(ctx context.Context, req types.DeleteBlogReq) (re
 	}
 
 	// 删除与帖子关联的图片记录
-	err = repo.NewImageRepo(global.DB).DeleteImagesByBlogID(req.ID)
+	err = repo.NewImageRepo(global.DB).DeleteImagesByBlogID(req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Delete images by blog ID failed: %v", err)
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 
 	// 删除帖子记录
-	err = repo.NewBlogRepo(global.DB).DeleteBlog(req.ID)
+	err = repo.NewBlogRepo(global.DB).DeleteBlog(req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "DeleteBlog failed: %v", err)
 		return nil, response.ErrResp(err, codeBlogDeleteFailed)
@@ -167,7 +167,7 @@ func (l *BlogLogic) GetBlogByID(ctx context.Context, req types.GetBlogByIDReq) (
 	defer utils.RecordTime(time.Now())()
 
 	// 获取帖子详情
-	blog, err := repo.NewBlogRepo(global.DB).GetBlogByID(req.ID)
+	blog, err := repo.NewBlogRepo(global.DB).GetBlogByID(req.BlogID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			zlog.CtxWarnf(ctx, "Blog not found: %v", err)
@@ -178,7 +178,7 @@ func (l *BlogLogic) GetBlogByID(ctx context.Context, req types.GetBlogByIDReq) (
 	}
 
 	// 获取与帖子关联的所有图片路径
-	imagePaths, err := repo.NewImageRepo(global.DB).GetImagePathsByBlogID(req.ID)
+	imagePaths, err := repo.NewImageRepo(global.DB).GetImagePathsByBlogID(req.BlogID)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "Get image paths by blog ID failed: %v", err)
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
@@ -278,26 +278,27 @@ func (l *BlogLogic) GetBlogsByUserID(ctx context.Context, req types.GetBlogsByUs
 	return resp, nil
 }
 
-// CollectBlog 收藏帖子
-func (l *BlogLogic) CollectBlog(ctx context.Context, req types.CollectBlogReq, UserID int64) (resp *types.CollectBlogResp, err error) {
+// CollectBlog 收藏/取消收藏帖子
+func (l *BlogLogic) CollectBlog(ctx context.Context, BlogID int64, UserID int64) (resp *types.CollectBlogResp, err error) {
 	defer utils.RecordTime(time.Now())()
-
-	err = repo.NewBlogRepo(global.DB).CollectBlog(UserID, req.BlogID)
+	// 用 redis 加锁
+	lockKey := fmt.Sprintf("blog:collect:lock:user:%d:blog:%d", UserID, BlogID)
+	locked, err := global.Rdb.SetNX(ctx, lockKey, 1, 1*time.Second).Result()
 	if err != nil {
-		zlog.CtxErrorf(ctx, "CollectBlog failed: %v", err)
-		return nil, response.ErrResp(err, codeCollectFailed)
+		zlog.CtxErrorf(ctx, "Redis 上锁失败: %v", err)
+		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
-	return resp, nil
-}
+	if !locked {
+		// 未获取到锁，说明该操作正在被其他请求处理
+		zlog.CtxInfof(ctx, "收藏/取消收藏操作正被 user: %d, blog: %d 使用，请稍等 1 s", UserID, BlogID)
+		return nil, response.ErrResp(err, response.USER_OPERATION_LOCKED) // 用户操作被锁定
+	}
+	defer global.Rdb.Del(ctx, lockKey)
 
-// UncollectBlog 取消收藏帖子
-func (l *BlogLogic) UncollectBlog(ctx context.Context, req types.UncollectBlogReq, UserID int64) (resp *types.UncollectBlogResp, err error) {
-	defer utils.RecordTime(time.Now())()
-
-	err = repo.NewBlogRepo(global.DB).UncollectBlog(UserID, req.BlogID)
+	resp, err = repo.NewBlogRepo(global.DB).CollectBlog(UserID, BlogID)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "UncollectBlog failed:%v", err)
-		return nil, response.ErrResp(err, codeUncollectFailed)
+		zlog.CtxErrorf(ctx, "ToggleCollectBlog failed: %v", err)
+		return nil, response.ErrResp(err, codeCollectFailed)
 	}
 	return resp, nil
 }

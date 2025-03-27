@@ -157,7 +157,7 @@ func GetBlogsByUserIDHandler(c *gin.Context) {
 	return
 }
 
-// CollectBlogHandler 收藏帖子
+// CollectBlogHandler 收藏/取消收藏帖子
 func CollectBlogHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.CollectBlogReq](c)
@@ -168,22 +168,7 @@ func CollectBlogHandler(c *gin.Context) {
 	zlog.CtxInfof(ctx, "CollectBlog request: %+v", req)
 
 	UserID := jwt.GetUserId(c)
-	resp, err := logic.NewBlogLogic().CollectBlog(ctx, req, UserID)
-	response.Response(c, resp, err)
-	return
-}
-
-// UncollectBlogHandler 取消收藏帖子
-func UncollectBlogHandler(c *gin.Context) {
-	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.UncollectBlogReq](c)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "UncollectBlog request error: %v", err)
-		return
-	}
-	zlog.CtxInfof(ctx, "UncollectBlog request: %+v", req)
-	UserID := jwt.GetUserId(c)
-	resp, err := logic.NewBlogLogic().UncollectBlog(ctx, req, UserID)
+	resp, err := logic.NewBlogLogic().CollectBlog(ctx, req.BlogID, UserID)
 	response.Response(c, resp, err)
 	return
 }

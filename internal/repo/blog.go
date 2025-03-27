@@ -3,18 +3,18 @@ package repo
 import (
 	"errors"
 	"fmt"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/pkg/redisx"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"gorm.io/gorm"
-	"time"
 )
 
 const (
-	BLOG_ID  = "blog_id"
-	IS_LIKED = "is_liked"
+	BLOG_ID      = "blog_id"
+	IS_LIKED     = "is_liked"
+	IS_COLLECTED = "is_collected"
+	BE_COLLECTED = "be_collected"
+	BE_LIKED     = "be_liked"
 )
 const blogSelectFields = `blog.id AS blog_id, blog.created_at AS create_at, blog.updated_at AS update_at, 
                           blog.title, blog.content, blog.be_liked, blog.be_collected, blog.comment_count, 
@@ -178,79 +178,99 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 	return blogs, total, nil
 }
 
-// IsCollected 检查用户是否已经收藏某个帖子
-func (r *BlogRepo) IsCollected(userID, blogID int64) (bool, error) {
-	var count int64
-	err := r.DB.Model(&model.Collection{}).
-		Where("user_id = ? AND blog_id = ?", userID, blogID).
-		Count(&count).Error
-	return count > 0, err
-}
+// CollectBlog 收藏/取消收藏帖子
+func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, error) {
+	var isCollected bool = false
 
-// CollectBlog 用户收藏帖子
-func (r *BlogRepo) CollectBlog(userID, blogID int64) error {
-	lockKey := fmt.Sprintf("blog:collect:%d", blogID)
-	lockValue := fmt.Sprintf("%d-%d", userID, time.Now().UnixNano())
-	expiration := 10 * time.Second
+	tx := r.DB.Begin()
 
-	// 尝试获取锁
-	locked, err := redisx.Lock(global.Rdb, lockKey, lockValue, expiration)
+	// 查询收藏状态
+	err := tx.Model(&model.Collection{}).
+		Select(IS_COLLECTED).
+		Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
+		First(&isCollected).
+		Error
+
 	if err != nil {
-		return err
-	}
-	if !locked {
-		return errors.New("failed to acquire lock")
-	}
-	defer func() {
-		// 释放锁
-		if err := redisx.Unlock(global.Rdb, lockKey, lockValue); err != nil {
-			zlog.Errorf("Failed to unlock: %v", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 初始化收藏记录
+			err = tx.Model(&model.Collection{}).
+				Create(&model.Collection{
+					UserID:      UserID,
+					BlogID:      BlogID,
+					IsCollected: false,
+				}).Error
+			if err != nil {
+				tx.Rollback()
+				zlog.Errorf("初始化收藏表失败：%v", err)
+				return nil, err
+			}
+		} else {
+			tx.Rollback()
+			zlog.Errorf("查询收藏状态失败：%v", err)
+			return nil, err
 		}
-	}()
+	}
 
-	// 检查是否已经收藏
-	isCollected, err := r.IsCollected(userID, blogID)
+	// 查询当前收藏数
+	var collectCount int64
+	err = tx.Model(&model.Blog{}).
+		Select(BE_COLLECTED).
+		Where(fmt.Sprintf("%s = ? ", BLOG_ID), BlogID).
+		First(&collectCount).
+		Error
 	if err != nil {
-		return err
-	}
-	if isCollected {
-		return errors.New("already collected this blog")
-	}
-
-	// 创建新的收藏记录
-	collection := model.Collection{
-		UserID:      userID,
-		BlogID:      blogID,
-		IsCollected: true,
+		tx.Rollback()
+		zlog.Errorf("查询收藏数失败：%v", err)
+		return nil, err
 	}
 
-	// 插入收藏记录
-	if err := r.DB.Create(&collection).Error; err != nil {
-		return err
-	}
-
-	// 更新帖子的收藏数
-	return r.DB.Model(&model.Blog{}).Where("id = ?", blogID).Update("be_collected", gorm.Expr("be_collected + 1")).Error
-}
-
-// UncollectBlog 用户取消收藏帖子
-func (r *BlogRepo) UncollectBlog(userID, blogID int64) error {
-	// 检查是否已经收藏
-	isCollected, err := r.IsCollected(userID, blogID)
-	if err != nil {
-		return err
-	}
+	// 切换收藏状态
 	if !isCollected {
-		return errors.New("not collected this blog")
+		// 执行收藏
+		err = tx.Model(&model.Collection{}).
+			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
+			Update(IS_COLLECTED, true).
+			Error
+		if err != nil {
+			tx.Rollback()
+			zlog.Errorf("收藏操作失败：%v", err)
+			return nil, err
+		}
+		collectCount++
+	} else {
+		// 取消收藏
+		err = tx.Model(&model.Collection{}).
+			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
+			Update(IS_COLLECTED, false).
+			Error
+		if err != nil {
+			tx.Rollback()
+			zlog.Errorf("取消收藏失败：%v", err)
+			return nil, err
+		}
+		collectCount--
 	}
 
-	// 删除收藏记录
-	if err := r.DB.Delete(&model.Collection{}, "user_id = ? AND blog_id = ?", userID, blogID).Error; err != nil {
-		return err
+	// 更新博客收藏数
+	err = tx.Model(&model.Blog{}).
+		Where(fmt.Sprintf("%s = ? ", BLOG_ID), BlogID).
+		Update(BE_COLLECTED, collectCount).
+		Error
+	if err != nil {
+		tx.Rollback()
+		zlog.Errorf("更新收藏数失败：%v", err)
+		return nil, err
 	}
 
-	// 更新帖子的收藏数
-	return r.DB.Model(&model.Blog{}).Where("id = ?", blogID).Update("be_collected", gorm.Expr("be_collected - 1")).Error
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	return &types.CollectBlogResp{
+		IsCollected:  !isCollected, // 返回操作后的新状态
+		CollectCount: collectCount,
+	}, nil
 }
 
 func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
@@ -287,9 +307,9 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	}
 
 	// 查询当前点赞数
-	var likeCount uint64
+	var likeCount int64
 	err = tx.Model(&model.Blog{}).
-		Select("be_liked").
+		Select(BE_LIKED).
 		Where("id = ?", BlogID).
 		First(&likeCount).
 		Error
@@ -328,8 +348,8 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 
 	// 更新博客点赞数
 	err = tx.Model(&model.Blog{}).
-		Where("id = ?", BlogID).
-		Update("be_liked", likeCount).
+		Where(fmt.Sprintf("%s = ? ", BLOG_ID), BlogID).
+		Update(BE_LIKED, likeCount).
 		Error
 	if err != nil {
 		tx.Rollback()
@@ -342,7 +362,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	}
 
 	return &types.LikeBlogResp{
-		Liked:     !isLiked, // 返回操作后的新状态
+		IsLiked:   !isLiked, // 返回操作后的新状态
 		LikeCount: likeCount,
 	}, nil
 }
