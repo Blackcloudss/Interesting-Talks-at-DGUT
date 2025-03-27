@@ -38,6 +38,7 @@ var (
 	USER_ACCOUNT_ALREADY_EXIST = MsgCode{20007, "账号已存在"}
 	CAPTCHA_ERROR              = MsgCode{20500, "验证码错误"}
 	INSUFFICENT_PERMISSIONS    = MsgCode{20403, "权限不足"}
+	USER_OPERATION_LOCKED      = MsgCode{20008, "操作被锁定，请稍后再试"} // 新增的操作锁定状态码
 
 	/* 微信错误 50000 ~ 59999 */
 	GET_WXATOKEN_FAULT = MsgCode{50002, "获取微信的access_token失败"}
