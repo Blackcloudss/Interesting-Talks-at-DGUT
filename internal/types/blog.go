@@ -23,7 +23,7 @@ type CreateBlogResp struct {
 
 // UpdateBlogReq 更新帖子请求体
 type UpdateBlogReq struct {
-	ID             int64                   `form:"id"`
+	BlogID         int64                   `form:"blog_id"`
 	Title          string                  `form:"title"`
 	Content        string                  `form:"content"`
 	BlogTag        string                  `form:"blog_tag"`
@@ -39,7 +39,7 @@ type UpdateBlogResp struct {
 
 // DeleteBlogReq 删除帖子请求体
 type DeleteBlogReq struct {
-	ID int64 `json:"blog_id"`
+	BlogID int64 `json:"blog_id"`
 }
 
 // DeleteBlogResp 删除帖子响应体
@@ -53,8 +53,8 @@ type BlogResp struct {
 	UpdateAt       time.Time `json:"update_at"`
 	Title          string    `json:"title"`
 	Content        string    `json:"content"`
-	BeLiked        int       ` json:"be_liked"  `     // 点赞数，默认为0
-	BeCollected    int       `json:"be_collected"`    // 收藏数，默认为0
+	LikeCount      int       ` json:"like_count"  `   // 点赞数，默认为0
+	CollectCount   int       `json:"collect_count"`   // 收藏数，默认为0
 	CommentCount   int       ` json:"comment_count"`  // 评论数，默认为0（字段名更清晰）
 	BlogTag        string    ` json:"blog_tag"`       // 帖子分区（主标签）
 	SubTag         string    ` json:"sub_tag"`        // 子标签
@@ -67,7 +67,7 @@ type BlogResp struct {
 
 // GetBlogByIDReq 获取帖子详情请求体
 type GetBlogByIDReq struct {
-	ID int64 `json:"id" form:"id" `
+	BlogID int64 `json:"blog_id" form:"id" `
 }
 
 // GetBlogByIDResp 获取帖子详情响应体
@@ -135,17 +135,9 @@ type CollectBlogReq struct {
 	BlogID int64 `json:"blog_id"`
 }
 
-// CollectBlogResp 收藏帖子响应体
 type CollectBlogResp struct {
-}
-
-// UncollectBlogReq 取消收藏帖子请求体
-type UncollectBlogReq struct {
-	BlogID int64 `json:"blog_id"`
-}
-
-// UncollectBlogResp 取消收藏帖子响应体
-type UncollectBlogResp struct {
+	IsCollected  bool  `json:"is_collected"`  // 当前是否已收藏
+	CollectCount int64 `json:"collect_count"` // 当前收藏总数
 }
 
 // GetCollectedBlogsReq 获取用户收藏的帖子请求体
@@ -156,8 +148,7 @@ type GetCollectedBlogsReq struct {
 // GetCollectedBlogsResp 获取用户收藏的帖子响应体
 type GetCollectedBlogsResp struct {
 	Blogs []BlogResp `json:"blogs"` // 帖子列表
-	//Images map[int64][]string `json:"images"` // 每个帖子的图片列表
-	Total int64 `json:"total"` // 总帖子数
+	Total int64      `json:"total"` // 总帖子数
 	PageReq
 }
 
@@ -167,6 +158,6 @@ type LikeBlogReq struct {
 }
 
 type LikeBlogResp struct {
-	Liked     bool   `json:"liked"`      // 当前点赞状态
-	LikeCount uint64 `json:"like_count"` // 当前点赞总数
+	IsLiked   bool  `json:"is_liked"`   // 当前点赞状态
+	LikeCount int64 `json:"like_count"` // 当前点赞总数
 }
