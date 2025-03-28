@@ -117,11 +117,19 @@ func (r *FollowRepo) Follow(followerID, followedID int64) (*types.FollowResp, er
 	}, nil
 }
 func (r *FollowRepo) IsFollowing(followerID, followedID int64) bool {
-	var count int64
-	r.DB.Model(&model.Follow{}).
+	err := r.DB.Model(&model.Follow{}).
 		Where(fmt.Sprintf("%s = ? AND %s = ? AND %s = ?", FOLLOWER_ID, FOLLOWED_ID, IS_FOLLOWING), followerID, followedID, true).
-		Count(&count)
-	return count > 0
+		First(&model.Follow{}).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Infof("用户未关注：%v", err)
+			return false
+		}
+		zlog.Errorf("查询用户关注状态失败：%v", err)
+		return false
+	}
+	return true
 }
 
 // 关注列表
