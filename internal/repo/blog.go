@@ -28,8 +28,8 @@ const (
 
 const (
 	BLOG_SELECT_FIELDS = `blog.id, 
-                         blog.created_at, 
-                         blog.updated_at, 
+                         blog.create_at, 
+                         blog.update_at, 
                          blog.title, 
                          blog.content, 
                          blog.like_count, 
