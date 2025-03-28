@@ -129,8 +129,8 @@ func (r *BlogRepo) GetBlogs(page, pageSize int) ([]types.BlogResp, int64, error)
 	query := r.DB.Model(&model.Blog{}).
 		Select(BLOG_SELECT_FIELDS).
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where(fmt.Sprintf("%s IS NULL", DELETED_AT)).
-		Order(fmt.Sprintf("%s DESC", CREATED_AT))
+		Where(fmt.Sprintf("blog.%s IS NULL", DELETED_AT)).
+		Order(fmt.Sprintf("blog.%s DESC", CREATED_AT))
 
 	if err := query.Count(&total).Error; err != nil {
 		zlog.Errorf(fmt.Sprintf("统计帖子总数失败: %v", err))
