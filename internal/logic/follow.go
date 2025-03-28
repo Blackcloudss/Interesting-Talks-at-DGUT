@@ -14,10 +14,7 @@ import (
 
 // 定义内部逻辑错误
 var (
-	codeFollowFailed        = response.MsgCode{Code: 40035, Msg: "关注失败"}
-	codeUnfollowFailed      = response.MsgCode{Code: 40036, Msg: "取消关注失败"}
-	codeAlreadyFollowing    = response.MsgCode{Code: 40037, Msg: "已经关注该用户"}
-	codeNotFollowing        = response.MsgCode{Code: 40038, Msg: "未关注该用户"}
+	codeFollowFailed        = response.MsgCode{Code: 40035, Msg: "关注或取消关注失败"}
 	codeGetFollowingsFailed = response.MsgCode{Code: 40039, Msg: "获取关注列表失败"}
 	codeGetFollowersFailed  = response.MsgCode{Code: 40040, Msg: "获取粉丝列表失败"}
 )
