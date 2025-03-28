@@ -5,7 +5,7 @@ type FirstComment struct {
 	BlogID       int64  `gorm:"column:blog_id;not null" json:"blog_id"`
 	UserID       int64  `gorm:"column:user_id;not null" json:"user_id"`
 	Content      string `gorm:"column:content;type:text;not null" json:"content"`
-	LikesCount   int    `gorm:"column:likes_count;default:0" json:"likes_count"`
+	LikeCount    int    `gorm:"column:likes_count;default:0" json:"like_count"`
 	RepliesCount int    `gorm:"column:replies_count;default:0" json:"replies_count"`
 
 	// 添加与帖子的关联关系
@@ -36,7 +36,7 @@ type CommentLike struct {
 	CommonModel
 	CommentID int64 `gorm:"column:comment_id;not null" json:"comment_id"` // 所属评论或回复ID
 	UserID    int64 `gorm:"column:user_id;not null" json:"user_id"`       // 点赞用户ID
-	IsLiked   bool  `gorm:"column:is_liked;default:false"`
+	IsLiked   bool  `gorm:"column:is_liked;default:false" json:"is_liked"`
 }
 
 func (t *CommentLike) TableName() string { return "comment_like" }
