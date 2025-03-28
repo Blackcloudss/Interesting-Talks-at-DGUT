@@ -22,7 +22,6 @@ var (
 	codeBlogDeleteFailed   = response.MsgCode{Code: 40023, Msg: "删除帖子失败"}
 	codeImageCreateFailed  = response.MsgCode{Code: 40024, Msg: "上传图片失败"}
 	codeCollectFailed      = response.MsgCode{Code: 40026, Msg: "收藏帖子失败"}
-	codeUncollectFailed    = response.MsgCode{Code: 40027, Msg: "取消收藏失败"}
 	codeGetCollectedFailed = response.MsgCode{Code: 40028, Msg: "获取收藏帖子失败"}
 	codeLikeFailed         = response.MsgCode{Code: 40041, Msg: "点赞失败"}
 )

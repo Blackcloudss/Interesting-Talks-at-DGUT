@@ -27,7 +27,7 @@ const (
 )
 
 const (
-	BLOG_SELECT_FIELDS = `blog.id, 
+	BLOG_SELECT_FIELDS = `blog.id as blog_id, 
                          blog.created_at, 
                          blog.updated_at, 
                          blog.title, 
@@ -109,7 +109,7 @@ func (r *BlogRepo) GetBlogByID(blogID int64) (types.BlogResp, error) {
 	err := r.DB.Model(&model.Blog{}).
 		Select(BLOG_SELECT_FIELDS).
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where(fmt.Sprintf("%s = ? AND %s IS NULL", BLOG_ID, DELETED_AT), blogID).
+		Where(fmt.Sprintf("%s = ? AND blog.%s IS NULL", BLOG_ID, DELETED_AT), blogID).
 		Scan(&blogResp).
 		Error
 
@@ -234,7 +234,6 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 	return blogs, total, nil
 }
 
-// CollectBlog 收藏/取消收藏帖子
 func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, error) {
 	var isCollected bool = false
 
@@ -243,7 +242,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 	// 查询收藏状态
 	err := tx.Model(&model.Collection{}).
 		Select(IS_COLLECTED).
-		Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
+		Where("user_id = ? AND blog_id = ?", UserID, BlogID). // 直接使用 "blog_id"
 		First(&isCollected).
 		Error
 
@@ -272,7 +271,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 	var collectCount int64
 	err = tx.Model(&model.Blog{}).
 		Select(COLLECT_COUNT).
-		Where(fmt.Sprintf("%s = ? ", BLOG_ID), BlogID).
+		Where("id = ?", BlogID). // 直接使用 "id" 或 BLOG_ID（如果是 blog 表）
 		First(&collectCount).
 		Error
 	if err != nil {
@@ -285,7 +284,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 	if !isCollected {
 		// 执行收藏
 		err = tx.Model(&model.Collection{}).
-			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
+			Where("user_id = ? AND blog_id = ?", UserID, BlogID). // 直接使用 "blog_id"
 			Update(IS_COLLECTED, true).
 			Error
 		if err != nil {
@@ -297,7 +296,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 	} else {
 		// 取消收藏
 		err = tx.Model(&model.Collection{}).
-			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
+			Where("user_id = ? AND blog_id = ?", UserID, BlogID). // 直接使用 "blog_id"
 			Update(IS_COLLECTED, false).
 			Error
 		if err != nil {
@@ -310,7 +309,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 
 	// 更新博客收藏数
 	err = tx.Model(&model.Blog{}).
-		Where(fmt.Sprintf("%s = ? ", BLOG_ID), BlogID).
+		Where("id = ?", BlogID). // 直接使用 "id" 或 BLOG_ID（如果是 blog 表）
 		Update(COLLECT_COUNT, collectCount).
 		Error
 	if err != nil {
@@ -324,7 +323,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 	}
 
 	return &types.CollectBlogResp{
-		IsCollected:  !isCollected, // 返回操作后的新状态
+		IsCollected:  !isCollected,
 		CollectCount: collectCount,
 	}, nil
 }
@@ -337,7 +336,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	// 查询点赞状态
 	err := tx.Model(&model.Like{}).
 		Select(IS_LIKED).
-		Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
+		Where("user_id = ? AND blog_id = ?", UserID, BlogID). // 直接使用 "blog_id"
 		First(&isLiked).
 		Error
 
@@ -366,7 +365,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	var likeCount int64
 	err = tx.Model(&model.Blog{}).
 		Select(LIKE_COUNT).
-		Where("id = ?", BlogID).
+		Where("id = ?", BlogID). // 直接使用 "id" 或 BLOG_ID（如果是 blog 表）
 		First(&likeCount).
 		Error
 	if err != nil {
@@ -379,7 +378,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	if !isLiked {
 		// 执行点赞
 		err = tx.Model(&model.Like{}).
-			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
+			Where("user_id = ? AND blog_id = ?", UserID, BlogID). // 直接使用 "blog_id"
 			Update(IS_LIKED, true).
 			Error
 		if err != nil {
@@ -391,7 +390,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	} else {
 		// 取消点赞
 		err = tx.Model(&model.Like{}).
-			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
+			Where("user_id = ? AND blog_id = ?", UserID, BlogID). // 直接使用 "blog_id"
 			Update(IS_LIKED, false).
 			Error
 		if err != nil {
@@ -404,7 +403,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 
 	// 更新博客点赞数
 	err = tx.Model(&model.Blog{}).
-		Where(fmt.Sprintf("%s = ? ", BLOG_ID), BlogID).
+		Where("id = ?", BlogID). // 直接使用 "id" 或 BLOG_ID（如果是 blog 表）
 		Update(LIKE_COUNT, likeCount).
 		Error
 	if err != nil {
@@ -418,7 +417,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	}
 
 	return &types.LikeBlogResp{
-		IsLiked:   !isLiked, // 返回操作后的新状态
+		IsLiked:   !isLiked,
 		LikeCount: likeCount,
 	}, nil
 }

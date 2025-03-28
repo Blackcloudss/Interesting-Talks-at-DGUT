@@ -67,7 +67,7 @@ type BlogResp struct {
 
 // GetBlogByIDReq 获取帖子详情请求体
 type GetBlogByIDReq struct {
-	BlogID int64 `json:"blog_id" form:"id" `
+	BlogID int64 `json:"blog_id" form:"blog_id" `
 }
 
 // GetBlogByIDResp 获取帖子详情响应体
