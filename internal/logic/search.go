@@ -28,7 +28,7 @@ func (l *SearchLogic) SearchBlogs(ctx context.Context, req types.SearchBlogsReq,
 	}
 
 	// 记录搜索历史
-	if err := repo.NewSearchRepo(global.DB).RecordSearchHistory(UserID, req.Keyword); err != nil {
+	if err = repo.NewSearchRepo(global.DB).RecordSearchHistory(UserID, req.Keyword); err != nil {
 		zlog.CtxErrorf(ctx, "RecordSearchHistory failed: %v", err)
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (l *SearchLogic) DeleteSearchHistory(ctx context.Context, req types.DeleteS
 }
 
 // SearchLogic
-func (l *SearchLogic) GetHotSearch(ctx context.Context, req types.GetHotSearchReq) (resp *types.GetHotSearchResp, err error) {
+func (l *SearchLogic) GetHotSearch(ctx context.Context) (resp *types.GetHotSearchResp, err error) {
 	defer utils.RecordTime(time.Now())()
 	resp, err = repo.NewSearchRepo(global.DB).GetHotSearchRepo()
 	if err != nil {
