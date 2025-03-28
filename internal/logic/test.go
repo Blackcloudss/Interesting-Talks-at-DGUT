@@ -9,6 +9,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/snowflake"
 	"gorm.io/gorm"
 	"time"
 )
@@ -37,7 +38,6 @@ var (
 func (l *TestLogic) TestLogic(ctx context.Context, req types.TestO1Req) (resp *types.Test01Resp, err error) {
 	defer utils.RecordTime(time.Now())()
 	//..... some logic
-
 	user, err := repo.NewTestRepo(global.DB).GetUserById(req.UserID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -53,5 +53,20 @@ func (l *TestLogic) TestLogic(ctx context.Context, req types.TestO1Req) (resp *t
 	resp.Name = user.Name
 	resp.Age = user.Age
 
+	return
+}
+
+func (l *TestLogic) CreateMember(ctx context.Context) (resp *types.CreateMemberResp, err error) {
+	defer utils.RecordTime(time.Now())()
+	Testid := snowflake.GetString12Id(global.Node)
+	//判断 该用户是否在数据库中,没有则存放数据库中
+	userId, err := repo.NewUserRepo(global.DB).JudgeUser(Testid)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "GenLoginData err: %v", err)
+		return resp, response.ErrResp(err, response.COMMON_FAIL)
+	}
+	resp = &types.CreateMemberResp{
+		UserId: userId,
+	}
 	return
 }

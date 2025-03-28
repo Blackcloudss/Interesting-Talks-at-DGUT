@@ -13,3 +13,7 @@ type Test01Resp struct {
 	Name string `json:"name"`
 	Age  int    `json:"age"`
 }
+
+type CreateMemberResp struct {
+	UserId int64 `json:"user_id"`
+}

@@ -46,7 +46,8 @@ func listen() (*gin.Engine, error) {
 func registerRoutes(routeManager *manager.RouteManager) {
 	//测试相关路由
 	routeManager.RegisterTestRoutes(func(rg *gin.RouterGroup) {
-		rg.GET("", api.Display) // 测试路由
+		rg.GET("", api.Display)              // 测试路由
+		rg.POST("/create", api.CreateMember) //创建测试成员
 	})
 
 	//通用功能相关路由
