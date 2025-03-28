@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
@@ -12,6 +13,10 @@ import (
 type CommentRepo struct {
 	DB *gorm.DB
 }
+
+const (
+	COMMENT_ID = "comment_id"
+)
 
 func NewCommentRepo(db *gorm.DB) *CommentRepo {
 	return &CommentRepo{
@@ -83,94 +88,98 @@ func (r *CommentRepo) DeleteComment(commentID, blogID int64, isFirstComment bool
 		return nil
 	})
 }
+func (r *CommentRepo) LikeComment(userID, commentID int64) (*types.LikeCommentResp, error) {
+	var isLiked bool = false
 
-// LikeComment 点赞评论
-func (r *CommentRepo) LikeComment(userID, commentID int64) error {
 	tx := r.DB.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-	defer func() {
-		if r := recover(); r != nil {
+
+	// 查询点赞状态
+	err := tx.Model(&model.CommentLike{}).
+		Select(IS_LIKED).
+		Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, COMMENT_ID), userID, commentID).
+		First(&isLiked).
+		Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 初始化点赞记录
+			err = tx.Model(&model.CommentLike{}).
+				Create(&model.CommentLike{
+					UserID:    userID,
+					CommentID: commentID,
+					IsLiked:   false,
+				}).Error
+			if err != nil {
+				tx.Rollback()
+				zlog.Errorf("初始化评论点赞表失败：%v", err)
+				return nil, err
+			}
+		} else {
 			tx.Rollback()
-			panic(r)
+			zlog.Errorf("查询评论点赞状态失败：%v", err)
+			return nil, err
 		}
-	}()
+	}
 
-	// 检查是否已经点赞
-	isLiked, err := r.IsCommentLiked(userID, commentID)
+	// 查询当前点赞数
+	var likeCount int64
+	err = tx.Model(&model.FirstComment{}).
+		Select(LIKE_COUNT).
+		Where("id = ?", commentID).
+		First(&likeCount).
+		Error
 	if err != nil {
 		tx.Rollback()
-		return err
-	}
-	if isLiked {
-		tx.Rollback()
-		return errors.New("already liked this comment")
+		zlog.Errorf("查询评论点赞数失败：%v", err)
+		return nil, err
 	}
 
-	// 插入点赞记录
-	if err := tx.Create(&model.CommentLike{
-		CommentID: commentID,
-		UserID:    userID,
-		IsLiked:   true,
-	}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// 更新评论的点赞数
-	if err := tx.Model(&model.FirstComment{}).Where("id = ?", commentID).Update("likes_count", gorm.Expr("likes_count + 1")).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	return tx.Commit().Error
-}
-
-// UnlikeComment 取消点赞评论
-func (r *CommentRepo) UnlikeComment(userID, commentID int64) error {
-	tx := r.DB.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	// 检查是否已经点赞
-	isLiked, err := r.IsCommentLiked(userID, commentID)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
+	// 切换点赞状态
 	if !isLiked {
-		tx.Rollback()
-		return errors.New("not liked this comment")
-	}
-
-	// 删除点赞记录
-	if err := tx.Where("user_id = ? AND comment_id = ?", userID, commentID).Delete(&model.CommentLike{}).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// 更新评论的点赞数
-	if err := tx.Model(&model.FirstComment{}).Where("id = ?", commentID).Update("likes_count", gorm.Expr("likes_count - 1")).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	return tx.Commit().Error
-}
-
-// IsCommentLiked 检查用户是否已经点赞了评论
-func (r *CommentRepo) IsCommentLiked(userID, commentID int64) (bool, error) {
-	var like model.CommentLike
-	result := r.DB.Where("user_id = ? AND comment_id = ?", userID, commentID).First(&like)
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return false, nil
+		// 执行点赞
+		err = tx.Model(&model.CommentLike{}).
+			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, COMMENT_ID), userID, commentID).
+			Update(IS_LIKED, true).
+			Error
+		if err != nil {
+			tx.Rollback()
+			zlog.Errorf("评论点赞操作失败：%v", err)
+			return nil, err
 		}
-		return false, result.Error
+		likeCount++
+	} else {
+		// 取消点赞
+		err = tx.Model(&model.CommentLike{}).
+			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, COMMENT_ID), userID, commentID).
+			Update(IS_LIKED, false).
+			Error
+		if err != nil {
+			tx.Rollback()
+			zlog.Errorf("取消评论点赞失败：%v", err)
+			return nil, err
+		}
+		likeCount--
 	}
-	return like.IsLiked, nil
+
+	// 更新评论点赞数
+	err = tx.Model(&model.FirstComment{}).
+		Where(fmt.Sprintf("%s = ?", COMMENT_ID), commentID).
+		Update(LIKE_COUNT, likeCount).
+		Error
+	if err != nil {
+		tx.Rollback()
+		zlog.Errorf("更新评论点赞数失败：%v", err)
+		return nil, err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	return &types.LikeCommentResp{
+		IsLiked:   !isLiked, // 返回操作后的新状态
+		LikeCount: likeCount,
+	}, nil
 }
 
 // GetCommentByID 根据评论ID获取评论信息

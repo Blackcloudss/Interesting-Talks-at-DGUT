@@ -26,22 +26,15 @@ type DeleteCommentReq struct {
 type DeleteCommentResp struct {
 }
 
-// LikeCommentReq 点赞评论请求结构体
+// LikeCommentReq 点赞/取消点赞评论请求
 type LikeCommentReq struct {
-	CommentID int64 `json:"comment_id" form:"comment_id"` // 要点赞的评论 ID
+	CommentID int64 `json:"comment_id" binding:"required"`
 }
 
-// LikeCommentResp 点赞评论响应结构体
+// LikeCommentResp 点赞/取消点赞评论响应
 type LikeCommentResp struct {
-}
-
-// UnlikeCommentReq 取消点赞评论请求结构体
-type UnlikeCommentReq struct {
-	CommentID int64 `json:"comment_id"` // 要取消点赞的评论 ID
-}
-
-// UnlikeCommentResp 取消点赞评论响应结构体
-type UnlikeCommentResp struct {
+	IsLiked   bool  `json:"is_liked"`   // 操作后的点赞状态
+	LikeCount int64 `json:"like_count"` // 操作后的点赞数
 }
 
 // GetCommentListReq 获取评论列表请求结构体

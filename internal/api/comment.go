@@ -39,7 +39,7 @@ func DeleteComment(c *gin.Context) {
 	return
 }
 
-// LikeComment 点赞评论
+// LikeComment 点赞/取消点赞评论
 func LikeComment(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.LikeCommentReq](c)
@@ -49,22 +49,7 @@ func LikeComment(c *gin.Context) {
 	}
 	zlog.CtxInfof(ctx, "LikeComment request: %+v", req)
 	UserID := jwt.GetUserId(c)
-	resp, err := logic.NewCommentLogic().LikeComment(ctx, req, UserID)
-	response.Response(c, resp, err)
-	return
-}
-
-// UnlikeComment 取消点赞评论
-func UnlikeComment(c *gin.Context) {
-	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.UnlikeCommentReq](c)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "UnlikeComment request error: %v", err)
-		return
-	}
-	zlog.CtxInfof(ctx, "UnlikeComment request: %+v", req)
-	UserID := jwt.GetUserId(c)
-	resp, err := logic.NewCommentLogic().UnlikeComment(ctx, req, UserID)
+	resp, err := logic.NewCommentLogic().LikeComment(ctx, req.CommentID, UserID)
 	response.Response(c, resp, err)
 	return
 }
