@@ -13,9 +13,9 @@ import (
 // @Update       XdpCs 2025-02-24 下午11:00
 // CommonModel 每张表都有的四个东西，最好不要用 gorm.model（虽然他们一模一样）
 type CommonModel struct {
-	ID        int64 `gorm:"primaryKey;column:id;type:bigint"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        int64          `gorm:"primaryKey;column:id;type:bigint"`
+	CreatedAt time.Time      `json:"create_at"`
+	UpdatedAt time.Time      `json:"update_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
