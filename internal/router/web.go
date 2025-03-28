@@ -101,23 +101,31 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/create", middleware.IncreasePoint(), api.CreateBlogHandler) // 创建帖子
 		rg.PUT("/update", api.UpdateBlogHandler)                              // 更新帖子
 		rg.DELETE("/delete/:blog_id", api.DeleteBlogHandler)                  // 删除帖子
-		rg.GET("/get", api.GetBlogByIDHandler)                                // 获取帖子详情
-		rg.GET("/list", api.GetBlogsHandler)                                  // 首页显示帖子
-		rg.GET("/list_by_tag", api.GetBlogsByTagHandler)                      // 根据标签显示帖子列表
-		rg.GET("/my_blogs", api.GetMyBlogsHandler)                            // 获取当前用户发布的帖子
-		rg.GET("/other_blogs", api.GetBlogsByUserIDHandler)                   // 获取其他用户的帖子（点击其他用户主页可看到）
 		rg.POST("/collect", api.CollectBlogHandler)                           // 收藏或取消收藏帖子
-		rg.GET("/collected", api.GetCollectedBlogsHandler)                    // 获取用户收藏的帖子（我的帖子）
 		rg.POST("/like", api.LikeBlogHandler)                                 // 点赞或取消点赞帖子
+
+		BlogShow := rg.Group("/show")
+		{
+			BlogShow.GET("/detail", api.GetBlogByIDHandler)     // 获取帖子详情
+			BlogShow.GET("/list", api.GetBlogsHandler)          // 首页显示帖子
+			BlogShow.GET("/list/tag", api.GetBlogsByTagHandler) // 根据标签显示帖子列表
+		}
+
+		MyselfBlog := rg.Group("/myself")
+		{
+			MyselfBlog.GET("", api.GetMyBlogsHandler)                  // 获取当前用户发布的帖子
+			MyselfBlog.GET("/collected", api.GetCollectedBlogsHandler) // 获取用户收藏的帖子（我的帖子）
+		}
+		rg.GET("/other", api.GetBlogsByUserIDHandler) // 获取其他用户的帖子（点击其他用户主页可看到）
 	})
 
 	//搜索模块相关路由
 	routeManager.RegisterSearchRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken())                           // 检查 Atoken
-		rg.GET("/blogs", api.SearchBlogsHandler)                   //关键词搜索帖子
-		rg.GET("/get_history", api.GetSearchHistoryHandler)        //获取搜索历史
-		rg.POST("/delete_history", api.DeleteSearchHistoryHandler) //删除搜索历史
-		rg.GET("/hot_search", api.GetHotSearch)                    //热搜榜
+		rg.Use(middleware.CheckAtoken())                      // 检查 Atoken
+		rg.GET("/blogs", api.SearchBlogsHandler)              //关键词搜索帖子
+		rg.GET("/history", api.GetSearchHistoryHandler)       //获取搜索历史
+		rg.DELETE("/history", api.DeleteSearchHistoryHandler) //删除搜索历史
+		rg.GET("/hot-blogs", api.GetHotSearch)                //热搜榜
 	})
 
 	//评论相关路由
@@ -137,18 +145,24 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.POST("/create", api.CreateNoticeHandler)              //创建公告
 		rg.PUT("/update", api.UpdateNoticeHandler)               //修改公告
 		rg.DELETE("/delete/:notice_id", api.DeleteNoticeHandler) //删除公告
-		rg.GET("/get", api.GetNoticeHandler)                     //获取公告
+		rg.GET("/show", api.GetNoticeHandler)                    //获取公告
 	})
 
 	//关注相关路由
 	routeManager.RegisterFollowRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken())                           // 检查 Atoken
-		rg.POST("/follow", api.FollowHandler)                      // 关注用户
-		rg.POST("/unfollow", api.UnfollowHandler)                  // 取消关注用户
-		rg.GET("/followings", api.GetFollowingsHandler)            // 获取当前用户关注的用户列表
-		rg.GET("/followers", api.GetFollowersHandler)              // 获取当前用户的粉丝列表
-		rg.GET("/followings/other", api.GetOtherFollowingsHandler) // 获取其他用户关注的用户列表
-		rg.GET("/followers/other", api.GetOtherFollowersHandler)   // 获取其他用户的粉丝列表
+		rg.Use(middleware.CheckAtoken())          // 检查 Atoken
+		rg.POST("/follow", api.FollowHandler)     // 关注用户
+		rg.POST("/unfollow", api.UnfollowHandler) // 取消关注用户
+		MySelfFollow := rg.Group("/myself")
+		{
+			MySelfFollow.GET("/followings", api.GetFollowingsHandler) // 获取当前用户关注的用户列表
+			MySelfFollow.GET("/followers", api.GetFollowersHandler)   // 获取当前用户的粉丝列表
+		}
+		OtherFollow := rg.Group("/other")
+		{
+			OtherFollow.GET("/followings", api.GetOtherFollowingsHandler) // 获取其他用户关注的用户列表
+			OtherFollow.GET("/followers", api.GetOtherFollowersHandler)   // 获取其他用户的粉丝列表
+		}
 	})
 
 }
