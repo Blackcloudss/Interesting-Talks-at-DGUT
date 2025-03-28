@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	BLOG_ID         = "blog.id"
+	BLOG_ID         = "blog_id" // 修改为 blog_id
 	IS_LIKED        = "is_liked"
 	IS_COLLECTED    = "is_collected"
 	LIKE_COUNT      = "like_count"
@@ -65,7 +65,7 @@ func (r *BlogRepo) CreateBlog(blog *model.Blog) error {
 // UpdateBlog 更新帖子
 func (r *BlogRepo) UpdateBlog(blog *model.Blog) error {
 	if err := r.DB.Model(&model.Blog{}).
-		Where(fmt.Sprintf("%s = ?", BLOG_ID), blog.ID).
+		Where(fmt.Sprintf("blog.%s = ?", ID), blog.ID).
 		Updates(blog).Error; err != nil {
 		zlog.Errorf(fmt.Sprintf("更新帖子失败: %v", err))
 		return err
@@ -76,7 +76,7 @@ func (r *BlogRepo) UpdateBlog(blog *model.Blog) error {
 // DeleteBlog 删除帖子（软删除）
 func (r *BlogRepo) DeleteBlog(blogID int64) error {
 	if err := r.DB.Model(&model.Blog{}).
-		Where(fmt.Sprintf("%s = ?", BLOG_ID), blogID).
+		Where(fmt.Sprintf("blog.%s = ?", ID), blogID).
 		Update(DELETED_AT, gorm.Expr("NOW()")).Error; err != nil {
 		zlog.Errorf(fmt.Sprintf("删除帖子失败: %v", err))
 		return err
@@ -88,7 +88,7 @@ func (r *BlogRepo) DeleteBlog(blogID int64) error {
 func (r *BlogRepo) CheckBlogExists(blogID int64) (*model.Blog, error) {
 	var blog model.Blog
 	err := r.DB.Model(&model.Blog{}).
-		Where(fmt.Sprintf("%s = ? AND %s IS NULL", BLOG_ID, DELETED_AT), blogID).
+		Where(fmt.Sprintf("blog.%s = ? AND %s IS NULL", ID, DELETED_AT), blogID).
 		First(&blog).
 		Error
 
@@ -109,7 +109,7 @@ func (r *BlogRepo) GetBlogByID(blogID int64) (types.BlogResp, error) {
 	err := r.DB.Model(&model.Blog{}).
 		Select(BLOG_SELECT_FIELDS).
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where(fmt.Sprintf("%s = ? AND blog.%s IS NULL", BLOG_ID, DELETED_AT), blogID).
+		Where(fmt.Sprintf("blog.%s = ? AND blog.%s IS NULL", ID, DELETED_AT), blogID).
 		Scan(&blogResp).
 		Error
 
@@ -218,7 +218,7 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 		Order(fmt.Sprintf("blog.%s DESC", CREATED_AT))
 
 	if err := query.Count(&total).Error; err != nil {
-		zlog.Errorf(fmt.Sprintf("统计收藏帖子总数失败: %v", err))
+		zlog.Errorf("统计收藏帖子总数失败: %v", err)
 		return nil, 0, err
 	}
 
@@ -227,7 +227,7 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 		Limit(pageSize).
 		Scan(&blogs).
 		Error; err != nil {
-		zlog.Errorf(fmt.Sprintf("获取收藏帖子列表失败: %v", err))
+		zlog.Errorf("获取收藏帖子列表失败: %v", err)
 		return nil, 0, err
 	}
 
@@ -242,7 +242,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 	// 查询收藏状态
 	err := tx.Model(&model.Collection{}).
 		Select(IS_COLLECTED).
-		Where("user_id = ? AND blog_id = ?", UserID, BlogID). // 直接使用 "blog_id"
+		Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
 		First(&isCollected).
 		Error
 
@@ -271,7 +271,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 	var collectCount int64
 	err = tx.Model(&model.Blog{}).
 		Select(COLLECT_COUNT).
-		Where("id = ?", BlogID). // 直接使用 "id" 或 BLOG_ID（如果是 blog 表）
+		Where(fmt.Sprintf("%s = ?", ID), BlogID).
 		First(&collectCount).
 		Error
 	if err != nil {
@@ -284,7 +284,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 	if !isCollected {
 		// 执行收藏
 		err = tx.Model(&model.Collection{}).
-			Where("user_id = ? AND blog_id = ?", UserID, BlogID). // 直接使用 "blog_id"
+			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
 			Update(IS_COLLECTED, true).
 			Error
 		if err != nil {
@@ -296,7 +296,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 	} else {
 		// 取消收藏
 		err = tx.Model(&model.Collection{}).
-			Where("user_id = ? AND blog_id = ?", UserID, BlogID). // 直接使用 "blog_id"
+			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
 			Update(IS_COLLECTED, false).
 			Error
 		if err != nil {
@@ -309,7 +309,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 
 	// 更新博客收藏数
 	err = tx.Model(&model.Blog{}).
-		Where("id = ?", BlogID). // 直接使用 "id" 或 BLOG_ID（如果是 blog 表）
+		Where(fmt.Sprintf("%s = ?", ID), BlogID).
 		Update(COLLECT_COUNT, collectCount).
 		Error
 	if err != nil {
@@ -336,7 +336,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	// 查询点赞状态
 	err := tx.Model(&model.Like{}).
 		Select(IS_LIKED).
-		Where("user_id = ? AND blog_id = ?", UserID, BlogID). // 直接使用 "blog_id"
+		Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
 		First(&isLiked).
 		Error
 
@@ -365,7 +365,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	var likeCount int64
 	err = tx.Model(&model.Blog{}).
 		Select(LIKE_COUNT).
-		Where("id = ?", BlogID). // 直接使用 "id" 或 BLOG_ID（如果是 blog 表）
+		Where(fmt.Sprintf("%s = ?", ID), BlogID).
 		First(&likeCount).
 		Error
 	if err != nil {
@@ -378,7 +378,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	if !isLiked {
 		// 执行点赞
 		err = tx.Model(&model.Like{}).
-			Where("user_id = ? AND blog_id = ?", UserID, BlogID). // 直接使用 "blog_id"
+			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
 			Update(IS_LIKED, true).
 			Error
 		if err != nil {
@@ -390,7 +390,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	} else {
 		// 取消点赞
 		err = tx.Model(&model.Like{}).
-			Where("user_id = ? AND blog_id = ?", UserID, BlogID). // 直接使用 "blog_id"
+			Where(fmt.Sprintf("%s = ? AND %s = ?", USER_ID, BLOG_ID), UserID, BlogID).
 			Update(IS_LIKED, false).
 			Error
 		if err != nil {
@@ -403,7 +403,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 
 	// 更新博客点赞数
 	err = tx.Model(&model.Blog{}).
-		Where("id = ?", BlogID). // 直接使用 "id" 或 BLOG_ID（如果是 blog 表）
+		Where(fmt.Sprintf("%s = ?", ID), BlogID).
 		Update(LIKE_COUNT, likeCount).
 		Error
 	if err != nil {
