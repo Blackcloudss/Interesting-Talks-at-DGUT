@@ -28,8 +28,8 @@ const (
 
 const (
 	BLOG_SELECT_FIELDS = `blog.id, 
-                         blog.create_at, 
-                         blog.update_at, 
+                         blog.created_at, 
+                         blog.updated_at, 
                          blog.title, 
                          blog.content, 
                          blog.like_count, 
@@ -157,8 +157,8 @@ func (r *BlogRepo) GetBlogsByTag(subTag string, page, pageSize int) ([]types.Blo
 	query := r.DB.Model(&model.Blog{}).
 		Select(BLOG_SELECT_FIELDS).
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where(fmt.Sprintf("%s = ? AND %s IS NULL", SUB_TAG, DELETED_AT), subTag).
-		Order(fmt.Sprintf("%s DESC", CREATED_AT))
+		Where(fmt.Sprintf("%s = ? AND blog.%s IS NULL", SUB_TAG, DELETED_AT), subTag).
+		Order(fmt.Sprintf("blog.%s DESC", CREATED_AT))
 
 	if err := query.Count(&total).Error; err != nil {
 		zlog.Errorf(fmt.Sprintf("统计标签帖子总数失败: %v", err))
@@ -185,8 +185,8 @@ func (r *BlogRepo) GetBlogsByUserID(userID int64, page, pageSize int) ([]types.B
 	query := r.DB.Model(&model.Blog{}).
 		Select(BLOG_SELECT_FIELDS).
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where(fmt.Sprintf("%s = ? AND %s IS NULL", USER_ID, DELETED_AT), userID).
-		Order(fmt.Sprintf("%s DESC", CREATED_AT))
+		Where(fmt.Sprintf("%s = ? AND blog.%s IS NULL", USER_ID, DELETED_AT), userID).
+		Order(fmt.Sprintf("blog.%s DESC", CREATED_AT))
 
 	if err := query.Count(&total).Error; err != nil {
 		zlog.Errorf(fmt.Sprintf("统计用户帖子总数失败: %v", err))
@@ -214,8 +214,8 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 		Select(BLOG_SELECT_FIELDS).
 		Joins("INNER JOIN collection ON collection.blog_id = blog.id").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where(fmt.Sprintf("collection.%s = ? AND %s IS NULL", USER_ID, DELETED_AT), userID).
-		Order(fmt.Sprintf("%s DESC", CREATED_AT))
+		Where(fmt.Sprintf("collection.%s = ? AND blog.%s IS NULL", USER_ID, DELETED_AT), userID).
+		Order(fmt.Sprintf("blog.%s DESC", CREATED_AT))
 
 	if err := query.Count(&total).Error; err != nil {
 		zlog.Errorf(fmt.Sprintf("统计收藏帖子总数失败: %v", err))

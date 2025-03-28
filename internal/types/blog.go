@@ -17,8 +17,8 @@ type CreateBlogReq struct {
 
 // CreateBlogResp 创建帖子响应体
 type CreateBlogResp struct {
-	BlogID   int64     `json:"blog_id"`
-	CreateAt time.Time `json:"create_at"`
+	BlogID    int64     `json:"blog_id"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // UpdateBlogReq 更新帖子请求体
@@ -34,7 +34,7 @@ type UpdateBlogReq struct {
 
 // UpdateBlogResp 更新帖子响应体
 type UpdateBlogResp struct {
-	UpdateAt time.Time `json:"update_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // DeleteBlogReq 删除帖子请求体
@@ -49,8 +49,8 @@ type DeleteBlogResp struct {
 // 获取帖子内容通用响应体
 type BlogResp struct {
 	BlogID         int64     `json:"blog_id"`
-	CreateAt       time.Time `json:"create_at"`
-	UpdateAt       time.Time `json:"update_at"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 	Title          string    `json:"title"`
 	Content        string    `json:"content"`
 	LikeCount      int       ` json:"like_count"  `   // 点赞数，默认为0
