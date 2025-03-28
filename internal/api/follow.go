@@ -22,35 +22,21 @@ func FollowHandler(c *gin.Context) {
 	response.Response(c, resp, err)
 }
 
-// GetFollowingsHandler 获取用户关注的用户列表
+// GetFollowingsHandler 获取我的关注列表
 func GetFollowingsHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.GetFollowingsReq](c)
+	_, err := types.BindReq[types.GetFollowingsReq](c)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GetFollowings request error: %v", err)
 		return
 	}
-	zlog.CtxInfof(ctx, "GetFollowings request: %+v", req)
-	UserID := jwt.GetUserId(c)
-	resp, err := logic.NewFollowLogic().GetFollowings(ctx, UserID)
+
+	currentUserID := jwt.GetUserId(c)
+	resp, err := logic.NewFollowLogic().GetFollowings(ctx, currentUserID, currentUserID)
 	response.Response(c, resp, err)
 }
 
-// GetFollowersHandler 获取用户的粉丝列表
-func GetFollowersHandler(c *gin.Context) {
-	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.GetFollowersReq](c)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "GetFollowers request error: %v", err)
-		return
-	}
-	zlog.CtxInfof(ctx, "GetFollowers request: %+v", req)
-	UserID := jwt.GetUserId(c)
-	resp, err := logic.NewFollowLogic().GetFollowers(ctx, UserID)
-	response.Response(c, resp, err)
-}
-
-// GetOtherFollowingsHandler 获取其他用户关注的用户列表
+// GetOtherFollowingsHandler 获取其他用户关注列表
 func GetOtherFollowingsHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.GetOtherFollowingsReq](c)
@@ -58,12 +44,27 @@ func GetOtherFollowingsHandler(c *gin.Context) {
 		zlog.CtxErrorf(ctx, "GetOtherFollowings request error: %v", err)
 		return
 	}
-	zlog.CtxInfof(ctx, "GetOtherFollowings request: %+v", req)
-	resp, err := logic.NewFollowLogic().GetFollowings(ctx, req.OtherUserID)
+
+	currentUserID := jwt.GetUserId(c)
+	resp, err := logic.NewFollowLogic().GetFollowings(ctx, currentUserID, req.OtherUserID)
 	response.Response(c, resp, err)
 }
 
-// GetOtherFollowersHandler 获取其他用户的粉丝列表
+// GetFollowersHandler 获取我的粉丝列表
+func GetFollowersHandler(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	_, err := types.BindReq[types.GetFollowersReq](c)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "GetFollowers request error: %v", err)
+		return
+	}
+
+	currentUserID := jwt.GetUserId(c)
+	resp, err := logic.NewFollowLogic().GetFollowers(ctx, currentUserID, currentUserID)
+	response.Response(c, resp, err)
+}
+
+// GetOtherFollowersHandler 获取其他用户粉丝列表
 func GetOtherFollowersHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.GetOtherFollowersReq](c)
@@ -71,7 +72,8 @@ func GetOtherFollowersHandler(c *gin.Context) {
 		zlog.CtxErrorf(ctx, "GetOtherFollowers request error: %v", err)
 		return
 	}
-	zlog.CtxInfof(ctx, "GetOtherFollowers request: %+v", req)
-	resp, err := logic.NewFollowLogic().GetFollowers(ctx, req.OtherUserID)
+
+	currentUserID := jwt.GetUserId(c)
+	resp, err := logic.NewFollowLogic().GetFollowers(ctx, currentUserID, req.OtherUserID)
 	response.Response(c, resp, err)
 }

@@ -44,17 +44,17 @@ func (l *FollowLogic) Follow(ctx context.Context, req types.FollowReq, UserID in
 
 	resp, err = repo.NewFollowRepo(global.DB).Follow(UserID, req.FollowedID)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "ToggleFollow failed: %v", err)
+		zlog.CtxErrorf(ctx, "Follow failed: %v", err)
 		return nil, response.ErrResp(err, codeFollowFailed)
 	}
 	return resp, nil
 }
 
-// GetFollowings 获取用户关注的用户列表(我的和其他用户的都可以使用）
-func (l *FollowLogic) GetFollowings(ctx context.Context, UserID int64) (*types.GetFollowingsResp, error) {
-	followings, err := repo.NewFollowRepo(global.DB).GetFollowings(UserID)
+// GetFollowings 获取用户关注的用户列表
+func (l *FollowLogic) GetFollowings(ctx context.Context, currentUserID, targetUserID int64) (*types.GetFollowingsResp, error) {
+	followings, err := repo.NewFollowRepo(global.DB).GetFollowings(targetUserID)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "Failed to get followings for user (userID: %d): %v", UserID, err)
+		zlog.CtxErrorf(ctx, "Failed to get followings for user (userID: %d): %v", targetUserID, err)
 		return nil, response.ErrResp(err, codeGetFollowingsFailed)
 	}
 
@@ -63,24 +63,27 @@ func (l *FollowLogic) GetFollowings(ctx context.Context, UserID int64) (*types.G
 		Followings: make([]types.FollowInfo, len(followings)),
 	}
 	for i, user := range followings {
+		// 如果是查询自己的关注列表，则 IsFollowing = true（因为是自己的关注列表）
+		// 如果是查询别人的关注列表，则需要检查当前用户是否关注了这些用户
+		isFollowing := targetUserID == currentUserID || repo.NewFollowRepo(global.DB).IsFollowing(currentUserID, user.UserID)
 		resp.Followings[i] = types.FollowInfo{
 			UserID:      user.UserID,
 			Nickname:    user.Nickname,
 			Avatar:      user.Avatar,
 			FollowedAt:  user.FollowedAt,
-			IsFollowing: repo.NewFollowRepo(global.DB).IsFollowing(user.UserID, UserID),
+			IsFollowing: isFollowing,
 		}
 	}
 
-	zlog.CtxInfof(ctx, "Followings retrieved successfully (userID: %d)", UserID)
+	zlog.CtxInfof(ctx, "Followings retrieved successfully (userID: %d)", targetUserID)
 	return resp, nil
 }
 
-// GetFollowers 获取用户的粉丝列表(我的和其他用户的都可以使用）
-func (l *FollowLogic) GetFollowers(ctx context.Context, UserID int64) (*types.GetFollowersResp, error) {
-	followers, err := repo.NewFollowRepo(global.DB).GetFollowers(UserID)
+// GetFollowers 获取用户的粉丝列表
+func (l *FollowLogic) GetFollowers(ctx context.Context, currentUserID, targetUserID int64) (*types.GetFollowersResp, error) {
+	followers, err := repo.NewFollowRepo(global.DB).GetFollowers(targetUserID)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "Failed to get followers for user (userID: %d): %v", UserID, err)
+		zlog.CtxErrorf(ctx, "Failed to get followers for user (userID: %d): %v", targetUserID, err)
 		return nil, response.ErrResp(err, codeGetFollowersFailed)
 	}
 
@@ -89,15 +92,17 @@ func (l *FollowLogic) GetFollowers(ctx context.Context, UserID int64) (*types.Ge
 		Followers: make([]types.FollowInfo, len(followers)),
 	}
 	for i, user := range followers {
+		// 检查当前用户是否关注了这些粉丝
+		isFollowing := repo.NewFollowRepo(global.DB).IsFollowing(currentUserID, user.UserID)
 		resp.Followers[i] = types.FollowInfo{
 			UserID:      user.UserID,
 			Nickname:    user.Nickname,
 			Avatar:      user.Avatar,
 			FollowedAt:  user.FollowedAt,
-			IsFollowing: repo.NewFollowRepo(global.DB).IsFollowing(user.UserID, UserID),
+			IsFollowing: isFollowing,
 		}
 	}
 
-	zlog.CtxInfof(ctx, "Followers retrieved successfully (userID: %d)", UserID)
+	zlog.CtxInfof(ctx, "Followers retrieved successfully (userID: %d)", targetUserID)
 	return resp, nil
 }
