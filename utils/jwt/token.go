@@ -5,6 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"sync"
+	"time"
+
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
@@ -13,17 +19,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/golang-jwt/jwt/v4"
-	"io"
-	"net/http"
-	"net/url"
-	"sync"
-	"time"
 )
 
 const (
 	BLANK_TOKEN = ""
-	ATOKEN_URL  = "https://api.weixin.qq.com/cgi-bin/stable_token"
 	GRANT_TYPE  = "client_credential"
+	ATOKEN_URL  = "https://api.weixin.qq.com/cgi-bin/token"
 )
 
 var (
@@ -131,7 +132,7 @@ func JudgeWxAtoken(ctx context.Context) (WxAtoken string, err error) {
 		// 再次检查防止锁内已更新
 		exists, err = global.Rdb.Exists(ctx, global.REDIS_WXATOKEN_KEY).Result()
 		if exists == 0 {
-			WxAtoken, err = GetWxAtoken(ctx)
+			WxAtoken, err = GetWechatAccessToken(ctx)
 			if err != nil {
 				zlog.CtxErrorf(ctx, "获取微信access_token失败: %v", err)
 				return BLANK_TOKEN, err
@@ -147,7 +148,7 @@ func JudgeWxAtoken(ctx context.Context) (WxAtoken string, err error) {
 	return WxAtoken, nil
 }
 
-// GetWxAtoken
+// GetWechatAccessToken
 //
 //	@Description:
 //	@receiver l
@@ -156,14 +157,41 @@ func JudgeWxAtoken(ctx context.Context) (WxAtoken string, err error) {
 //	@return err
 //
 // 获取微信的access_token, 每次调用不强制刷新
-func GetWxAtoken(ctx context.Context) (WxAtoken string, err error) {
-	client := &http.Client{Timeout: 5 * time.Second}
-	params := url.Values{}
-	params.Add("grant_type", GRANT_TYPE)
-	params.Add("appid", configs.Conf.Wechat.AppID)
-	params.Add("secret", configs.Conf.Wechat.AppSecret)
+func GetWechatAccessToken(ctx context.Context) (string, error) {
+	// 1. 先检查配置是否正确
+	if global.Config.Wechat.AppID == "" || global.Config.Wechat.AppSecret == "" {
+		return "", errors.New("微信配置参数缺失")
+	}
 
-	result, err := client.PostForm(ATOKEN_URL, params)
+	// 检查配置文件中的参数
+	fmt.Printf("AppID: %s\n", global.Config.Wechat.AppID)
+	fmt.Printf("AppSecret: %s\n", global.Config.Wechat.AppSecret)
+
+	// 2. 添加重试机制
+	maxRetries := 3
+	for i := 0; i < maxRetries; i++ {
+		token, err := tryGetAccessToken(ctx)
+		if err == nil && token != "" {
+			return token, nil
+		}
+
+		// 如果失败，等待一段时间后重试
+		time.Sleep(time.Second * 2)
+	}
+
+	return "", errors.New("无法获取微信access token")
+}
+
+func tryGetAccessToken(ctx context.Context) (string, error) {
+	client := &http.Client{Timeout: 5 * time.Second}
+	reqUrl := fmt.Sprintf("%s?grant_type=%s&appid=%s&secret=%s",
+		ATOKEN_URL,
+		GRANT_TYPE,
+		url.QueryEscape(configs.Conf.Wechat.AppID),
+		url.QueryEscape(configs.Conf.Wechat.AppSecret),
+	)
+	//获取access_token接口 要求使用 GET 请求
+	result, err := client.Get(reqUrl)
 	// 先检查错误再判断状态码
 	if err != nil {
 		zlog.CtxErrorf(ctx, "调用微信getStableAccessToken接口失败：%v", err)
@@ -194,7 +222,7 @@ func GetWxAtoken(ctx context.Context) (WxAtoken string, err error) {
 		zlog.CtxErrorf(ctx, "获取的微信atoken为空值：%v", err)
 		return BLANK_TOKEN, response.ErrResp(err, WXATOKEN_IS_BLANK)
 	}
-	WxAtoken = req.AccessToken
+	WxAtoken := req.AccessToken
 	zlog.CtxInfof(ctx, "获取微信access_token成功: %v", WxAtoken)
 	// 将微信的atoken存储到redis中
 	key := fmt.Sprintf(global.REDIS_WXATOKEN_KEY, configs.Conf.Wechat.AppID)
@@ -202,7 +230,7 @@ func GetWxAtoken(ctx context.Context) (WxAtoken string, err error) {
 		zlog.CtxErrorf(ctx, "redis 存储微信Atoken失败: %v", err)
 		return BLANK_TOKEN, response.ErrResp(err, REDIS_SET_FAULT)
 	}
-	return
+	return WxAtoken, nil
 }
 
 // GetUserId

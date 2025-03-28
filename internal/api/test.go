@@ -38,3 +38,10 @@ func Display(c *gin.Context) {
 	response.Response(c, TEST, nil)
 	return
 }
+
+// 创建测试成员
+func CreateMember(c *gin.Context) {
+	ctx := zlog.GetCtxFromGin(c)
+	resp, err := logic.NewTestLogic().CreateMember(ctx)
+	response.Response(c, resp, err)
+}
