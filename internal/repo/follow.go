@@ -1,9 +1,17 @@
 package repo
 
 import (
+	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
+)
+
+const (
+	IS_FOLLOWING = "is_following"
+	IS_FRIEND    = "is_friend"
 )
 
 type FollowRepo struct {
@@ -16,39 +24,106 @@ func NewFollowRepo(db *gorm.DB) *FollowRepo {
 	}
 }
 
-// Follow 关注用户
-func (r *FollowRepo) Follow(followerID, followedID int64) error {
-	// 检查是否已经关注
-	if r.IsFollowing(followerID, followedID) {
-		return nil // 如果已经关注，直接返回
+func (r *FollowRepo) Follow(followerID, followedID int64) (*types.FollowResp, error) {
+	var isFollowing bool
+
+	tx := r.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 查询关注状态
+	err := tx.Model(&model.Follow{}).
+		Select(IS_FOLLOWING).
+		Where(fmt.Sprintf("%s = ? AND %s = ?", FOLLOWER_ID, FOLLOWED_ID), followerID, followedID).
+		First(&isFollowing).
+		Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 初始化关注记录
+			isFollowing = true
+			follow := model.Follow{
+				FollowerID:  followerID,
+				FollowedID:  followedID,
+				IsFriend:    r.IsFollowing(followedID, followerID),
+				IsFollowing: true,
+			}
+			if err := tx.Create(&follow).Error; err != nil {
+				tx.Rollback()
+				zlog.Errorf("创建关注关系失败: %v", err)
+				return nil, err
+			}
+
+			// 如果对方已经关注了当前用户，更新对方的关注记录为好友
+			if follow.IsFriend {
+				if err := tx.Model(&model.Follow{}).
+					Where(fmt.Sprintf("%s = ? AND %s = ?", FOLLOWER_ID, FOLLOWED_ID), followedID, followerID).
+					Update(IS_FRIEND, true).Error; err != nil {
+					tx.Rollback()
+					zlog.Errorf("更新对方关注关系为好友失败: %v", err)
+					return nil, err
+				}
+			}
+		} else {
+			tx.Rollback()
+			zlog.Errorf("查询关注状态失败: %v", err)
+			return nil, err
+		}
+	} else {
+		// 切换关注状态
+		isFollowing = !isFollowing
+		if isFollowing {
+			// 重新关注
+			follow := model.Follow{
+				FollowerID:  followerID,
+				FollowedID:  followedID,
+				IsFriend:    r.IsFollowing(followedID, followerID),
+				IsFollowing: true,
+			}
+			if err := tx.Create(&follow).Error; err != nil {
+				tx.Rollback()
+				zlog.Errorf("重新关注失败: %v", err)
+				return nil, err
+			}
+		} else {
+			// 取消关注
+			if err := tx.Where(fmt.Sprintf("%s = ? AND %s = ?", FOLLOWER_ID, FOLLOWED_ID), followerID, followedID).
+				Delete(&model.Follow{}).Error; err != nil {
+				tx.Rollback()
+				zlog.Errorf("取消关注失败: %v", err)
+				return nil, err
+			}
+		}
+
+		// 更新好友关系状态
+		if err := tx.Model(&model.Follow{}).
+			Where(fmt.Sprintf("%s = ? AND %s = ?", FOLLOWER_ID, FOLLOWED_ID), followedID, followerID).
+			Update(IS_FRIEND, isFollowing && r.IsFollowing(followedID, followerID)).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			tx.Rollback()
+			zlog.Errorf("更新好友关系状态失败: %v", err)
+			return nil, err
+		}
 	}
 
-	// 检查对方是否已经关注了当前用户
-	isFollowedBack := r.IsFollowing(followedID, followerID)
-
-	// 创建关注记录
-	follow := &model.Follow{
-		FollowerID: followerID,
-		FollowedID: followedID,
-		IsFriend:   isFollowedBack, // 如果对方已经关注了当前用户，标记为好友
-	}
-	if err := r.DB.Create(follow).Error; err != nil {
-		return err
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
 	}
 
-	// 如果对方已经关注了当前用户，更新对方的关注记录，将对方的关注关系也标记为好友
-	if isFollowedBack {
-		return r.DB.Model(&model.Follow{}).
-			Where("follower_id = ? AND followed_id = ?", followedID, followerID).
-			Update("is_friend", true).Error
-	}
-
-	return nil
+	return &types.FollowResp{
+		IsFollowing: isFollowing,
+	}, nil
 }
 
-// Unfollow 取消关注
-func (r *FollowRepo) Unfollow(followerID, followedID int64) error {
-	return r.DB.Where("follower_id = ? AND followed_id = ?", followerID, followedID).Delete(&model.Follow{}).Error
+func (r *FollowRepo) IsFollowing(followerID, followedID int64) bool {
+	var count int64
+	r.DB.Model(&model.Follow{}).
+		Where(fmt.Sprintf("%s = ? AND %s = ? AND %s = ?", FOLLOWER_ID, FOLLOWED_ID, IS_FOLLOWING),
+			followerID, followedID, true).
+		Count(&count)
+	return count > 0
 }
 
 // GetFollowings 获取用户关注的用户列表
@@ -71,13 +146,4 @@ func (r *FollowRepo) GetFollowers(userID int64) ([]types.FollowInfo, error) {
 		Where("followed_id = ?", userID).
 		Scan(&users).Error
 	return users, err
-}
-
-// IsFollowing 检查是否已经关注
-func (r *FollowRepo) IsFollowing(followerID, followedID int64) bool {
-	var count int64
-	r.DB.Model(&model.Follow{}).
-		Where("follower_id = ? AND followed_id = ?", followerID, followedID).
-		Count(&count)
-	return count > 0
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// FollowHandler 关注用户
 func FollowHandler(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
 	req, err := types.BindReq[types.FollowReq](c)
@@ -20,20 +19,6 @@ func FollowHandler(c *gin.Context) {
 	zlog.CtxInfof(ctx, "Follow request: %+v", req)
 	UserID := jwt.GetUserId(c)
 	resp, err := logic.NewFollowLogic().Follow(ctx, req, UserID)
-	response.Response(c, resp, err)
-}
-
-// UnfollowHandler 取消关注用户
-func UnfollowHandler(c *gin.Context) {
-	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.UnfollowReq](c)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "Unfollow request error: %v", err)
-		return
-	}
-	zlog.CtxInfof(ctx, "Unfollow request: %+v", req)
-	UserID := jwt.GetUserId(c)
-	resp, err := logic.NewFollowLogic().Unfollow(ctx, req, UserID)
 	response.Response(c, resp, err)
 }
 

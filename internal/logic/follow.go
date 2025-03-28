@@ -2,11 +2,14 @@ package logic
 
 import (
 	"context"
+	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
+	"time"
 )
 
 // 定义内部逻辑错误
@@ -25,40 +28,29 @@ func NewFollowLogic() *FollowLogic {
 	return &FollowLogic{}
 }
 
-// Follow 关注用户
-func (l *FollowLogic) Follow(ctx context.Context, req types.FollowReq, UserID int64) (*types.FollowResp, error) {
-	// 检查是否已经关注
-	if repo.NewFollowRepo(global.DB).IsFollowing(UserID, req.FollowedID) {
-		zlog.CtxInfof(ctx, "Follow skipped: already following (followerID: %d, followedID: %d)", UserID, req.FollowedID)
-		return nil, response.ErrResp(nil, codeAlreadyFollowing)
-	}
+// FollowLogic.go
+func (l *FollowLogic) Follow(ctx context.Context, req types.FollowReq, UserID int64) (resp *types.FollowResp, err error) {
+	defer utils.RecordTime(time.Now())()
 
-	// 插入关注关系
-	if err := repo.NewFollowRepo(global.DB).Follow(UserID, req.FollowedID); err != nil {
-		zlog.CtxErrorf(ctx, "Follow failed: %v", err)
+	// 用 redis 加锁
+	lockKey := fmt.Sprintf("follow:lock:follower:%d:followed:%d", UserID, req.FollowedID)
+	locked, err := global.Rdb.SetNX(ctx, lockKey, 1, 1*time.Second).Result()
+	if err != nil {
+		zlog.CtxErrorf(ctx, "Redis 上锁失败: %v", err)
+		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
+	}
+	if !locked {
+		zlog.CtxInfof(ctx, "关注/取消关注操作正被 user: %d, followed: %d 使用，请稍等 1 s", UserID, req.FollowedID)
+		return nil, response.ErrResp(err, response.USER_OPERATION_LOCKED)
+	}
+	defer global.Rdb.Del(ctx, lockKey)
+
+	resp, err = repo.NewFollowRepo(global.DB).Follow(UserID, req.FollowedID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "ToggleFollow failed: %v", err)
 		return nil, response.ErrResp(err, codeFollowFailed)
 	}
-
-	zlog.CtxInfof(ctx, "Followed successfully (followerID: %d, followedID: %d)", UserID, req.FollowedID)
-	return &types.FollowResp{}, nil
-}
-
-// Unfollow 取消关注
-func (l *FollowLogic) Unfollow(ctx context.Context, req types.UnfollowReq, UserID int64) (*types.UnfollowResp, error) {
-	// 检查是否已经取消关注
-	if !repo.NewFollowRepo(global.DB).IsFollowing(UserID, req.FollowedID) {
-		zlog.CtxInfof(ctx, "Unfollow skipped: not following (followerID: %d, followedID: %d)", UserID, req.FollowedID)
-		return nil, response.ErrResp(nil, codeNotFollowing)
-	}
-
-	// 删除关注关系
-	if err := repo.NewFollowRepo(global.DB).Unfollow(UserID, req.FollowedID); err != nil {
-		zlog.CtxErrorf(ctx, "Unfollow failed: %v", err)
-		return nil, response.ErrResp(err, codeUnfollowFailed)
-	}
-
-	zlog.CtxInfof(ctx, "Unfollowed successfully (followerID: %d, followedID: %d)", UserID, req.FollowedID)
-	return &types.UnfollowResp{}, nil
+	return resp, nil
 }
 
 // GetFollowings 获取用户关注的用户列表(我的和其他用户的都可以使用）
@@ -75,11 +67,11 @@ func (l *FollowLogic) GetFollowings(ctx context.Context, UserID int64) (*types.G
 	}
 	for i, user := range followings {
 		resp.Followings[i] = types.FollowInfo{
-			UserID:       user.UserID,
-			Nickname:     user.Nickname,
-			Avatar:       user.Avatar,
-			FollowedAt:   user.FollowedAt,
-			IsFollowedBy: repo.NewFollowRepo(global.DB).IsFollowing(user.UserID, UserID),
+			UserID:      user.UserID,
+			Nickname:    user.Nickname,
+			Avatar:      user.Avatar,
+			FollowedAt:  user.FollowedAt,
+			IsFollowing: repo.NewFollowRepo(global.DB).IsFollowing(user.UserID, UserID),
 		}
 	}
 
@@ -101,11 +93,11 @@ func (l *FollowLogic) GetFollowers(ctx context.Context, UserID int64) (*types.Ge
 	}
 	for i, user := range followers {
 		resp.Followers[i] = types.FollowInfo{
-			UserID:       user.UserID,
-			Nickname:     user.Nickname,
-			Avatar:       user.Avatar,
-			FollowedAt:   user.FollowedAt,
-			IsFollowedBy: repo.NewFollowRepo(global.DB).IsFollowing(user.UserID, UserID),
+			UserID:      user.UserID,
+			Nickname:    user.Nickname,
+			Avatar:      user.Avatar,
+			FollowedAt:  user.FollowedAt,
+			IsFollowing: repo.NewFollowRepo(global.DB).IsFollowing(user.UserID, UserID),
 		}
 	}
 
