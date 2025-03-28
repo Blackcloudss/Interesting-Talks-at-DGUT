@@ -17,7 +17,7 @@ const (
 
 	REDIS_SESSIONKEY          = "ITAD:openid.login:%s:string"
 	SESSIONKEY_EFFECTIVE_TIME = time.Hour * 24 * 7
-	REDIS_WXATOKEN_KEY        = "ITAD:WxAtoken"
+	REDIS_WXATOKEN_KEY        = "ITAD:WxAtoken:%s:string"
 	WXATOKEN_EFFECTIVE_TIME   = time.Minute * 108
 	REDIS_MESSAGES_KEY        = "Chat:%s, Type:%v"
 	MESSAGES_EFFECTIVE_TIME   = time.Hour * 24 * 30

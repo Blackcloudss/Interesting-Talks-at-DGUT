@@ -23,8 +23,8 @@ import (
 
 const (
 	BLANK_TOKEN = ""
-	ATOKEN_URL  = "https://api.weixin.qq.com/cgi-bin/stable_token"
 	GRANT_TYPE  = "client_credential"
+	ATOKEN_URL  = "https://api.weixin.qq.com/cgi-bin/token"
 )
 
 var (
@@ -184,12 +184,14 @@ func GetWechatAccessToken(ctx context.Context) (string, error) {
 
 func tryGetAccessToken(ctx context.Context) (string, error) {
 	client := &http.Client{Timeout: 5 * time.Second}
-	params := url.Values{}
-	params.Add("grant_type", GRANT_TYPE)
-	params.Add("appid", configs.Conf.Wechat.AppID)
-	params.Add("secret", configs.Conf.Wechat.AppSecret)
-
-	result, err := client.PostForm(ATOKEN_URL, params)
+	reqUrl := fmt.Sprintf("%s?grant_type=%s&appid=%s&secret=%s",
+		ATOKEN_URL,
+		GRANT_TYPE,
+		url.QueryEscape(configs.Conf.Wechat.AppID),
+		url.QueryEscape(configs.Conf.Wechat.AppSecret),
+	)
+	//获取access_token接口 要求使用 GET 请求
+	result, err := client.Get(reqUrl)
 	// 先检查错误再判断状态码
 	if err != nil {
 		zlog.CtxErrorf(ctx, "调用微信getStableAccessToken接口失败：%v", err)
