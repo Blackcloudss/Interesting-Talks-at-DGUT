@@ -33,8 +33,8 @@ func DeleteComment(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "DeleteComment request: %+v", req)
-	//UserID := jwt.GetUserId(c)
-	resp, err := logic.NewCommentLogic().DeleteComment(ctx, req)
+	UserID := jwt.GetUserId(c)
+	resp, err := logic.NewCommentLogic().DeleteComment(ctx, req, UserID)
 	response.Response(c, resp, err)
 	return
 }
@@ -72,16 +72,16 @@ func GetCommentList(c *gin.Context) {
 	response.Response(c, resp, err)
 }
 
-// GetMoreSecondCommentHandler 获取更多二级评论
-func GetMoreSecondComment(c *gin.Context) {
+// GetRepliesList 获取回复
+func GetRepliesList(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)
-	req, err := types.BindReq[types.GetSecondCommentListReq](c)
+	req, err := types.BindReq[types.GetRepliesListReq](c)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "GetMoreSecondComment request error: %v", err)
+		zlog.CtxErrorf(ctx, "GetRepliesList request error: %v", err)
 		return
 	}
-	zlog.CtxInfof(ctx, "GetMoreSecondComment request: %+v", req)
+	zlog.CtxInfof(ctx, "GetRepliesList request: %+v", req)
 
-	resp, err := logic.NewCommentLogic().GetSecondCommentList(ctx, req)
+	resp, err := logic.NewCommentLogic().GetRepliesList(ctx, req)
 	response.Response(c, resp, err)
 }

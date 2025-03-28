@@ -71,9 +71,7 @@ func migrateTables() {
 		//自动迁移 收藏表，确保表结构存在
 		&model.Collection{},
 		//自动迁移 评论表，确保表结构存在
-		&model.FirstComment{},
-		//自动迁移 二级评论表，确保表结构存在
-		&model.SecondComment{},
+		&model.Comment{},
 		//自动迁移 评论点赞表，确保表结构存在
 		&model.CommentLike{},
 		//自动迁移 通知表，确保表结构存在

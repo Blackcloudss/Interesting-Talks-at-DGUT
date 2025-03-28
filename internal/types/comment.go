@@ -36,13 +36,31 @@ type LikeCommentResp struct {
 	IsLiked   bool  `json:"is_liked"`   // 操作后的点赞状态
 	LikeCount int64 `json:"like_count"` // 操作后的点赞数
 }
+type CommentDetail struct {
+	ID           int64     `json:"id"`
+	BlogID       int64     `json:"blog_id"`
+	UserID       int64     `json:"user_id"`
+	Content      string    `json:"content"`
+	CreatedAt    time.Time `json:"created_at"`
+	LikesCount   int       `json:"likes_count"`
+	RepliesCount int       `json:"replies_count"`
+	ParentID     *int64    `json:"parent_id,omitempty"` // 为nil表示一级评论
+
+	// 用户信息
+	Nickname string `json:"nickname"`
+	Avatar   string `json:"avatar"`
+	Tag      string `json:"tag"`
+
+	// 回复列表（可选）
+	Replies []CommentDetail `json:"replies,omitempty"`
+}
 
 // GetCommentListReq 获取评论列表请求结构体
 type GetCommentListReq struct {
-	BlogID   int64  `form:"blog_id" binding:"required"`                     // 所属帖子 ID
-	Page     int    `form:"page" binding:"required"`                        // 当前页码
-	PageSize int    `form:"page_size" binding:"required"`                   // 每页大小
-	SortBy   string `form:"sort_by" binding:"oneof=created_at likes_count"` // 排序方式：created_at（按发布时间）或按likes_count（按点赞数）
+	BlogID   int64  `form:"blog_id" binding:"required"`                    // 所属帖子 ID
+	Page     int    `form:"page" binding:"required"`                       // 当前页码
+	PageSize int    `form:"page_size" binding:"required"`                  // 每页大小
+	SortBy   string `form:"sort_by" binding:"oneof=created_at like_count"` // 排序方式：created_at（按发布时间）或按likes_count（按点赞数）
 }
 
 // GetCommentListResp 获取评论列表响应结构体
@@ -53,21 +71,33 @@ type GetCommentListResp struct {
 	Comments   []CommentDetail `json:"comments"` // 评论列表
 }
 
+// GetRepliesListReq 获取回复列表
+type GetRepliesListReq struct {
+	ParentID int64 `form:"parent_id" binding:"required"`
+	Page     int   `form:"page" binding:"required,min=1"`
+	PageSize int   `form:"page_size" binding:"required,min=1,max=100"`
+}
+
+/*
 // GetSecondCommentListReq 获取更多二级评论请求结构体
 type GetSecondCommentListReq struct {
 	ParentID int64 `form:"parent_id"`                    // 根评论ID
 	Page     int   `form:"page" binding:"required"`      // 当前页码
 	PageSize int   `form:"page_size" binding:"required"` // 每页大小
-}
+}*/
 
+/*
 // GetSecondCommentListResp 获取更多二级评论响应结构体
-type GetSecondCommentListResp struct {
-	TotalCount     int64                 `json:"total_count"` // 总评论数
-	Page           int                   `json:"page"`
-	PageSize       int                   `json:"page_size"`
-	SecondComments []SecondCommentDetail `json:"second_comments"` // 二级评论列表
-}
 
+	type GetSecondCommentListResp struct {
+		TotalCount     int64                 `json:"total_count"` // 总评论数
+		Page           int                   `json:"page"`
+		PageSize       int                   `json:"page_size"`
+		SecondComments []SecondCommentDetail `json:"second_comments"` // 二级评论列表
+	}
+*/
+
+/*
 // CommentDetail 评论详情
 type CommentDetail struct {
 	ID           int64     `json:"id" gorm:"column:id"`
@@ -101,3 +131,4 @@ type SecondCommentDetail struct {
 	Avatar   string `json:"avatar" gorm:"column:avatar"`
 	Tag      string `json:"tag" gorm:"column:tag"`
 }
+*/

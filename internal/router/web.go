@@ -133,8 +133,8 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.Use(middleware.CheckAtoken())                                  // 检查 Atoken
 		rg.POST("/create", middleware.IncreasePoint(), api.CreateComment) // 创建评论
 		rg.DELETE("/delete/:comment_id", api.DeleteComment)               // 删除评论
-		rg.GET("/list", api.GetCommentList)                               // 获取一级评论列表（显示部分二级评论）
-		rg.GET("/secondlist", api.GetMoreSecondComment)                   //获取更多二级评论
+		rg.GET("/GetComment", api.GetCommentList)                         // 获取一级评论列表
+		rg.GET("/GetReplies", api.GetRepliesList)                         //获取更多二级评论
 		rg.POST("/like", api.LikeComment)                                 //点赞评论
 	})
 

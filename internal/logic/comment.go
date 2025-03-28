@@ -2,10 +2,7 @@ package logic
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
-
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
@@ -13,7 +10,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
-	"gorm.io/gorm"
+	"time"
 )
 
 // 定义内部逻辑错误
@@ -32,90 +29,55 @@ func NewCommentLogic() *CommentLogic {
 	return &CommentLogic{}
 }
 
-// CreateComment 创建评论
-func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommentReq, UserID int64) (*types.CreateCommentResp, error) {
-	defer utils.RecordTime(time.Now())()
-	// 构建评论对象
-	if req.ParentID == 0 { // 一级评论
-		comment := model.FirstComment{
-			UserID:  UserID,
-			BlogID:  req.BlogID,
-			Content: req.Content,
-		}
-		// 创建一级评论
-		commentRepo := repo.NewCommentRepo(global.DB)
-		err := commentRepo.CreateFirstComment(&comment)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "CreateComment failed: %v", err)
-			return nil, response.ErrResp(err, codeCommentCreateFailed)
-		}
-		// 返回创建成功的一级评论信息
-		resp := &types.CreateCommentResp{
-			CommentID: comment.ID,
-			CreatedAt: comment.CreatedAt,
-		}
-		return resp, nil
-	} else { // 回复（二级评论）
-		comment := model.SecondComment{
-			UserID:   UserID,
-			BlogID:   req.BlogID,
-			Content:  req.Content,
-			ParentID: req.ParentID,
-		}
-		// 创建二级评论
-		commentRepo := repo.NewCommentRepo(global.DB)
-		err := commentRepo.CreateSecondComment(&comment)
-		if err != nil {
-			zlog.CtxErrorf(ctx, "CreateComment failed: %v", err)
-			return nil, response.ErrResp(err, codeCommentCreateFailed)
-		}
-		// 返回创建成功的二级评论信息
-		resp := &types.CreateCommentResp{
-			CommentID: comment.ID,
-			CreatedAt: comment.CreatedAt,
-		}
-		return resp, nil
+func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommentReq, userID int64) (*types.CreateCommentResp, error) {
+	comment := &model.Comment{
+		UserID:  userID,
+		BlogID:  req.BlogID,
+		Content: req.Content,
 	}
+
+	if req.ParentID != 0 {
+		comment.ParentID = req.ParentID
+	}
+
+	if err := repo.NewCommentRepo(global.DB).CreateComment(comment); err != nil {
+		zlog.CtxErrorf(ctx, "创建评论失败: %v", err)
+		return nil, response.ErrResp(err, codeCommentCreateFailed)
+	}
+
+	return &types.CreateCommentResp{
+		CommentID: comment.ID,
+		CreatedAt: comment.CreatedAt,
+	}, nil
 }
 
 // DeleteComment 删除评论
-func (l *CommentLogic) DeleteComment(ctx context.Context, req types.DeleteCommentReq) (*types.DeleteCommentResp, error) {
-	defer utils.RecordTime(time.Now())()
+func (l *CommentLogic) DeleteComment(ctx context.Context, req types.DeleteCommentReq, userID int64) (*types.DeleteCommentResp, error) {
+	defer utils.RecordTime(time.Now())
 
-	// 检查评论是否存在
-	commentRepo := repo.NewCommentRepo(global.DB)
-	firstComment, secondComment, err := commentRepo.GetCommentByID(req.CommentID)
+	comment, err := repo.NewCommentRepo(global.DB).GetCommentByID(req.CommentID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			zlog.CtxWarnf(ctx, "DeleteComment failed: comment not found (commentID: %d)", req.CommentID)
-			return nil, response.ErrResp(err, codeCommentNotFound)
-		}
-		zlog.CtxErrorf(ctx, "GetCommentByID failed: %v", err)
+		zlog.CtxErrorf(ctx, "获取评论失败: %v", err)
+		return nil, response.ErrResp(err, codeCommentNotFound)
+	}
+
+	// 判断用户是否为评论者
+	if comment.UserID != userID {
+		return nil, response.ErrResp(err, response.INSUFFICENT_PERMISSIONS)
+	}
+
+	// 3. 删除评论并更新计数
+	err = repo.NewCommentRepo(global.DB).DeleteComment(req.CommentID, comment.BlogID, comment.ParentID)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "删除评论失败: %v", err)
 		return nil, response.ErrResp(err, codeCommentDeleteFailed)
 	}
 
-	// 判断是一级评论还是二级评论
-	isFirstComment := firstComment != nil
-
-	var blogID int64
-	if isFirstComment {
-		blogID = firstComment.BlogID
-	} else {
-		blogID = secondComment.BlogID
-	}
-
-	// 删除评论并更新帖子的评论数
-	err = commentRepo.DeleteComment(req.CommentID, blogID, isFirstComment)
-	if err != nil {
-		zlog.CtxErrorf(ctx, "DeleteComment failed: %v", err)
-		return nil, response.ErrResp(err, codeCommentDeleteFailed)
-	}
-
-	zlog.CtxInfof(ctx, "Comment deleted successfully (commentID: %d, blogID: %d)", req.CommentID, blogID)
+	zlog.CtxInfof(ctx, "评论删除成功 (commentID: %d)", req.CommentID)
 	return &types.DeleteCommentResp{}, nil
 }
 
-// ToggleLikeComment 点赞或取消点赞评论
+// LikeComment 点赞或取消点赞评论
 func (l *CommentLogic) LikeComment(ctx context.Context, commentID int64, userID int64) (resp *types.LikeCommentResp, err error) {
 	defer utils.RecordTime(time.Now())()
 
@@ -141,55 +103,39 @@ func (l *CommentLogic) LikeComment(ctx context.Context, commentID int64, userID 
 	return resp, nil
 }
 
-// GetCommentList 获取一级评论列表，并显示部分二级评论
-func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentListReq) (resp *types.GetCommentListResp, err error) {
-	defer utils.RecordTime(time.Now())()
-
-	// 调用 repo 层获取一级评论列表
-	comments, err := repo.NewCommentRepo(global.DB).GetFirstCommentList(req.BlogID, req.PageSize)
+func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentListReq) (*types.GetCommentListResp, error) {
+	comments, total, err := repo.NewCommentRepo(global.DB).GetCommentList(
+		req.BlogID,
+		req.Page,
+		req.PageSize,
+		req.SortBy,
+	)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "获取一级评论列表失败: %v", err)
 		return nil, response.ErrResp(err, codeGetCommentFail)
 	}
 
-	// 获取总评论数
-	var totalCount int64
-	if err := global.DB.Model(&model.FirstComment{}).
-		Where("blog_id = ? AND deleted_at IS NULL", req.BlogID).
-		Count(&totalCount).Error; err != nil {
-		zlog.CtxErrorf(ctx, "获取评论总数失败: %v", err)
-		return nil, response.ErrResp(err, codeGetCommentFail)
-	}
-
-	// 构造响应数据
-	resp = &types.GetCommentListResp{
-		TotalCount: totalCount,
+	return &types.GetCommentListResp{
+		TotalCount: total,
 		Page:       req.Page,
 		PageSize:   req.PageSize,
 		Comments:   comments,
-	}
-
-	return resp, nil
+	}, nil
 }
 
-// GetSecondCommentList 获取更多二级评论
-func (l *CommentLogic) GetSecondCommentList(ctx context.Context, req types.GetSecondCommentListReq) (resp *types.GetSecondCommentListResp, err error) {
-	defer utils.RecordTime(time.Now())()
-
-	// 调用 repo 层获取二级评论列表
-	comments, totalCount, err := repo.NewCommentRepo(global.DB).GetSecondCommentList(req)
+func (l *CommentLogic) GetRepliesList(ctx context.Context, req types.GetRepliesListReq) (*types.GetCommentListResp, error) {
+	replies, total, err := repo.NewCommentRepo(global.DB).GetReplies(
+		req.ParentID,
+		req.Page,
+		req.PageSize,
+	)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "获取二级评论列表失败: %v", err)
 		return nil, response.ErrResp(err, codeGetCommentFail)
 	}
 
-	// 构造响应数据
-	resp = &types.GetSecondCommentListResp{
-		TotalCount:     totalCount,
-		Page:           req.Page,
-		PageSize:       req.PageSize,
-		SecondComments: comments,
-	}
-
-	return resp, nil
+	return &types.GetCommentListResp{
+		TotalCount: total,
+		Page:       req.Page,
+		PageSize:   req.PageSize,
+		Comments:   replies,
+	}, nil
 }
