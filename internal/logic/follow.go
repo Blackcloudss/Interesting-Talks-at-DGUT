@@ -44,7 +44,7 @@ func (l *FollowLogic) Follow(ctx context.Context, req types.FollowReq, UserID in
 
 	resp, err = repo.NewFollowRepo(global.DB).Follow(UserID, req.FollowedID)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "ToggleFollow failed: %v", err)
+		zlog.CtxErrorf(ctx, "Follow failed: %v", err)
 		return nil, response.ErrResp(err, codeFollowFailed)
 	}
 	return resp, nil
@@ -68,7 +68,7 @@ func (l *FollowLogic) GetFollowings(ctx context.Context, UserID int64) (*types.G
 			Nickname:    user.Nickname,
 			Avatar:      user.Avatar,
 			FollowedAt:  user.FollowedAt,
-			IsFollowing: repo.NewFollowRepo(global.DB).IsFollowing(user.UserID, UserID),
+			IsFollowing: user.IsFollowing,
 		}
 	}
 
@@ -94,7 +94,7 @@ func (l *FollowLogic) GetFollowers(ctx context.Context, UserID int64) (*types.Ge
 			Nickname:    user.Nickname,
 			Avatar:      user.Avatar,
 			FollowedAt:  user.FollowedAt,
-			IsFollowing: repo.NewFollowRepo(global.DB).IsFollowing(user.UserID, UserID),
+			IsFollowing: user.IsFollowing,
 		}
 	}
 

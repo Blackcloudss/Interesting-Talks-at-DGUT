@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
@@ -10,8 +9,10 @@ import (
 )
 
 const (
-	IS_FOLLOWING = "is_following"
-	IS_FRIEND    = "is_friend"
+	FollowerID  = "follower_id"
+	FollowedID  = "followed_id"
+	IsFollowing = "is_following"
+	IsFriend    = "is_friend"
 )
 
 type FollowRepo struct {
@@ -19,37 +20,33 @@ type FollowRepo struct {
 }
 
 func NewFollowRepo(db *gorm.DB) *FollowRepo {
-	return &FollowRepo{
-		DB: db,
-	}
+	return &FollowRepo{DB: db}
 }
 
 func (r *FollowRepo) Follow(followerID, followedID int64) (*types.FollowResp, error) {
-	var isFollowing bool
-
+	if followerID == followedID {
+		return nil, errors.New("不能关注自己")
+	}
 	tx := r.DB.Begin()
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 		}
 	}()
+	var follow model.Follow
+	err := tx.Where("follower_id = ? AND followed_id = ?", followerID, followedID).
+		First(&follow).Error
 
-	// 查询关注状态
-	err := tx.Model(&model.Follow{}).
-		Select(IS_FOLLOWING).
-		Where(fmt.Sprintf("%s = ? AND %s = ?", FOLLOWER_ID, FOLLOWED_ID), followerID, followedID).
-		First(&isFollowing).
-		Error
-
+	var isFollowing bool
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// 初始化关注记录
+			// 创建新的关注关系
 			isFollowing = true
-			follow := model.Follow{
+			follow = model.Follow{
 				FollowerID:  followerID,
 				FollowedID:  followedID,
-				IsFriend:    r.IsFollowing(followedID, followerID),
 				IsFollowing: true,
+				IsFriend:    r.IsFollowing(followedID, followerID),
 			}
 			if err := tx.Create(&follow).Error; err != nil {
 				tx.Rollback()
@@ -57,13 +54,13 @@ func (r *FollowRepo) Follow(followerID, followedID int64) (*types.FollowResp, er
 				return nil, err
 			}
 
-			// 如果对方已经关注了当前用户，更新对方的关注记录为好友
+			// 如果对方已经关注了当前用户，更新对方记录为好友
 			if follow.IsFriend {
 				if err := tx.Model(&model.Follow{}).
-					Where(fmt.Sprintf("%s = ? AND %s = ?", FOLLOWER_ID, FOLLOWED_ID), followedID, followerID).
-					Update(IS_FRIEND, true).Error; err != nil {
+					Where("follower_id = ? AND followed_id = ?", followedID, followerID).
+					Update("is_friend", true).Error; err != nil {
 					tx.Rollback()
-					zlog.Errorf("更新对方关注关系为好友失败: %v", err)
+					zlog.Errorf("更新对方好友状态失败: %v", err)
 					return nil, err
 				}
 			}
@@ -74,36 +71,34 @@ func (r *FollowRepo) Follow(followerID, followedID int64) (*types.FollowResp, er
 		}
 	} else {
 		// 切换关注状态
-		isFollowing = !isFollowing
+		isFollowing = !follow.IsFollowing
 		if isFollowing {
 			// 重新关注
-			follow := model.Follow{
-				FollowerID:  followerID,
-				FollowedID:  followedID,
-				IsFriend:    r.IsFollowing(followedID, followerID),
-				IsFollowing: true,
-			}
-			if err := tx.Create(&follow).Error; err != nil {
+			if err := tx.Model(&follow).
+				Updates(map[string]interface{}{
+					"is_following": true,
+					"is_friend":    r.IsFollowing(followedID, followerID),
+				}).Error; err != nil {
 				tx.Rollback()
-				zlog.Errorf("重新关注失败: %v", err)
+				zlog.Errorf("更新关注状态失败: %v", err)
 				return nil, err
 			}
 		} else {
 			// 取消关注
-			if err := tx.Where(fmt.Sprintf("%s = ? AND %s = ?", FOLLOWER_ID, FOLLOWED_ID), followerID, followedID).
-				Delete(&model.Follow{}).Error; err != nil {
+			if err := tx.Model(&follow).
+				Update("is_following", false).Error; err != nil {
 				tx.Rollback()
 				zlog.Errorf("取消关注失败: %v", err)
 				return nil, err
 			}
 		}
 
-		// 更新好友关系状态
+		// 更新对方的好友状态
 		if err := tx.Model(&model.Follow{}).
-			Where(fmt.Sprintf("%s = ? AND %s = ?", FOLLOWER_ID, FOLLOWED_ID), followedID, followerID).
-			Update(IS_FRIEND, isFollowing && r.IsFollowing(followedID, followerID)).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			Where("follower_id = ? AND followed_id = ?", followedID, followerID).
+			Update("is_friend", false).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			tx.Rollback()
-			zlog.Errorf("更新好友关系状态失败: %v", err)
+			zlog.Errorf("更新对方好友状态失败: %v", err)
 			return nil, err
 		}
 	}
@@ -112,38 +107,34 @@ func (r *FollowRepo) Follow(followerID, followedID int64) (*types.FollowResp, er
 		return nil, err
 	}
 
-	return &types.FollowResp{
-		IsFollowing: isFollowing,
-	}, nil
+	return &types.FollowResp{IsFollowing: isFollowing}, nil
 }
 
 func (r *FollowRepo) IsFollowing(followerID, followedID int64) bool {
 	var count int64
 	r.DB.Model(&model.Follow{}).
-		Where(fmt.Sprintf("%s = ? AND %s = ? AND %s = ?", FOLLOWER_ID, FOLLOWED_ID, IS_FOLLOWING),
+		Where("follower_id = ? AND followed_id = ? AND is_following = ?",
 			followerID, followedID, true).
 		Count(&count)
 	return count > 0
 }
 
-// GetFollowings 获取用户关注的用户列表
 func (r *FollowRepo) GetFollowings(userID int64) ([]types.FollowInfo, error) {
 	var users []types.FollowInfo
 	err := r.DB.Model(&model.Follow{}).
-		Select("user_display.id, user_display.nickname, user_display.avatar, follow.created_at as followed_at").
-		Joins("INNER JOIN user_display ON user_display.id = follow.followed_id").
-		Where("follower_id = ?", userID).
+		Select("user_display.id as user_id, user_display.nickname, user_display.avatar, follow.created_at as followed_at, follow.is_following").
+		Joins("JOIN user_display ON user_display.id = follow.followed_id").
+		Where("follow.follower_id = ? AND follow.is_following = ?", userID, true).
 		Scan(&users).Error
 	return users, err
 }
 
-// GetFollowers 获取用户的粉丝列表
 func (r *FollowRepo) GetFollowers(userID int64) ([]types.FollowInfo, error) {
 	var users []types.FollowInfo
 	err := r.DB.Model(&model.Follow{}).
-		Select("user_display.id, user_display.nickname, user_display.avatar, follow.created_at as followed_at").
-		Joins("INNER JOIN user_display ON user_display.id = follow.follower_id").
-		Where("followed_id = ?", userID).
+		Select("user_display.id as user_id, user_display.nickname, user_display.avatar, follow.created_at as followed_at, follow.is_following").
+		Joins("JOIN user_display ON user_display.id = follow.follower_id").
+		Where("follow.followed_id = ? AND follow.is_following = ?", userID, true).
 		Scan(&users).Error
 	return users, err
 }
