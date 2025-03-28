@@ -5,7 +5,6 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/response"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,8 +17,7 @@ func CreateNoticeHandler(c *gin.Context) {
 		return
 	}
 	zlog.CtxInfof(ctx, "CreateNotice request: %+v", req)
-	UserID := jwt.GetUserId(c)
-	resp, err := logic.NewNoticeLogic().CreateNotice(ctx, req, UserID)
+	resp, err := logic.NewNoticeLogic().CreateNotice(ctx, req)
 	response.Response(c, resp, err)
 	return
 }

@@ -18,9 +18,7 @@ func SearchBlogsHandler(c *gin.Context) {
 		zlog.CtxErrorf(ctx, "SearchBlogs request error: %v", err)
 		return
 	}
-
 	UserID := jwt.GetUserId(c)
-
 	resp, err := logic.NewSearchLogic().SearchBlogs(ctx, req, UserID)
 	response.Response(c, resp, err)
 }
@@ -63,6 +61,7 @@ func GetHotSearch(c *gin.Context) {
 		zlog.CtxErrorf(ctx, "GetHotSearch request error: %v", err)
 		return
 	}
-	resp, err := logic.NewSearchLogic().GetHotSearch(ctx, req)
+	zlog.CtxInfof(ctx, "GetHotSearch request: %v", req)
+	resp, err := logic.NewSearchLogic().GetHotSearch(ctx)
 	response.Response(c, resp, err)
 }

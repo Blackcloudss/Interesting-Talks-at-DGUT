@@ -1,8 +1,10 @@
 package repo
 
 import (
+	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"gorm.io/gorm"
 )
 
@@ -17,46 +19,52 @@ func NewNoticeRepo(db *gorm.DB) *NoticeRepo {
 }
 
 // CreateNotice 创建公告
-func (r *NoticeRepo) CreateNotice(req types.CreateNoticeReq, UserID int64) (notice model.Notice, err error) {
-	err = r.DB.Transaction(func(tx *gorm.DB) error {
-		notice := model.Notice{
-			Content: req.Content,
-			UserID:  UserID,
-		}
-		if err := tx.Create(&notice).Error; err != nil {
-			return err
-		}
-		return nil
-	})
+func (r *NoticeRepo) CreateNotice(req types.CreateNoticeReq) (notice model.Notice, err error) {
+	err = r.DB.Create(&model.Notice{
+		Content: req.Content,
+	}).Error
+	if err != nil {
+		zlog.Errorf(fmt.Sprintf("创建公告失败: %v", err))
+		return
+	}
 	return notice, err
 }
 
 // UpdateNotice 更新公告
 func (r *NoticeRepo) UpdateNotice(req types.UpdateNoticeReq) error {
-	return r.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&model.Notice{}).Where("id = ?", req.ID).Updates(model.Notice{
-			Content: req.Content,
-		}).Error; err != nil {
-			return err
-		}
-		return nil
-	})
+	err := r.DB.Model(&model.Notice{}).
+		Where(fmt.Sprintf("%v = ?", ID), req.ID).Updates(&model.Notice{
+		Content: req.Content,
+	}).Error
+	if err != nil {
+		zlog.Errorf(fmt.Sprintf("更新公告失败: %v", err))
+		return err
+	}
+	return nil
 }
 
 // DeleteNotice 删除公告
 func (r *NoticeRepo) DeleteNotice(id int64) error {
-	return r.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Delete(&model.Notice{}, id).Error; err != nil {
-			return err
-		}
-		return nil
-	})
+	err := r.DB.Model(&model.Notice{}).
+		Where(fmt.Sprintf("%v = ?", ID), id).
+		Delete(&model.Notice{}).
+		Error
+	if err != nil {
+		zlog.Errorf(fmt.Sprintf("删除公告失败: %v", err))
+		return err
+	}
+	return nil
 }
 
 // GetNoticeByID 根据公告ID获取公告
 func (r *NoticeRepo) GetNoticeByID(id int64) (*model.Notice, error) {
 	var notice model.Notice
-	if err := r.DB.First(&notice, id).Error; err != nil {
+	err := r.DB.Model(&model.Notice{}).
+		Where(fmt.Sprintf("%v = ?", ID), id).
+		First(&notice).
+		Error
+	if err != nil {
+		zlog.Errorf(fmt.Sprintf("获取公告失败: %v", err))
 		return nil, err
 	}
 	return &notice, nil

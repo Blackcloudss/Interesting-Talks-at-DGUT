@@ -14,10 +14,11 @@ import (
 
 // 定义内部逻辑错误
 var (
-	codeNoticeNotFound     = response.MsgCode{Code: 40041, Msg: "通知不存在"}
-	codeNoticeCreateFailed = response.MsgCode{Code: 40042, Msg: "创建通知失败"}
-	codeNoticeUpdateFailed = response.MsgCode{Code: 40043, Msg: "更新通知失败"}
-	codeNoticeDeleteFailed = response.MsgCode{Code: 40044, Msg: "删除通知失败"}
+	NOTICE_NOT_FOUND     = response.MsgCode{Code: 40041, Msg: "公告不存在"}
+	NOTICE_CREATE_FAILED = response.MsgCode{Code: 40042, Msg: "创建公告失败"}
+	NOTICE_UPDATE_FAILED = response.MsgCode{Code: 40043, Msg: "更新公告失败"}
+	NOTICE_DELETE_FAILED = response.MsgCode{Code: 40044, Msg: "删除公告失败"}
+	NOTICE_GET_FAILED    = response.MsgCode{Code: 40045, Msg: "获取公告失败"}
 )
 
 type NoticeLogic struct{}
@@ -28,12 +29,11 @@ func NewNoticeLogic() *NoticeLogic {
 }
 
 // CreateNotice 创建公告
-func (l *NoticeLogic) CreateNotice(ctx context.Context, req types.CreateNoticeReq, UserID int64) (*types.CreateNoticeResp, error) {
-	noticeRepo := repo.NewNoticeRepo(global.DB)
-	notice, err := noticeRepo.CreateNotice(req, UserID)
+func (l *NoticeLogic) CreateNotice(ctx context.Context, req types.CreateNoticeReq) (*types.CreateNoticeResp, error) {
+	notice, err := repo.NewNoticeRepo(global.DB).CreateNotice(req)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "CreateNotice failed: %v", err)
-		return nil, response.ErrResp(err, codeNoticeCreateFailed)
+		return nil, response.ErrResp(err, NOTICE_CREATE_FAILED)
 	}
 	zlog.CtxInfof(ctx, "Notice created successfully (noticeID: %d)", notice.ID)
 	return &types.CreateNoticeResp{
@@ -44,10 +44,9 @@ func (l *NoticeLogic) CreateNotice(ctx context.Context, req types.CreateNoticeRe
 
 // UpdateNotice 更新公告
 func (l *NoticeLogic) UpdateNotice(ctx context.Context, req types.UpdateNoticeReq) (*types.UpdateNoticeResp, error) {
-	noticeRepo := repo.NewNoticeRepo(global.DB)
-	if err := noticeRepo.UpdateNotice(req); err != nil {
+	if err := repo.NewNoticeRepo(global.DB).UpdateNotice(req); err != nil {
 		zlog.CtxErrorf(ctx, "UpdateNotice failed: %v", err)
-		return nil, response.ErrResp(err, codeNoticeUpdateFailed)
+		return nil, response.ErrResp(err, NOTICE_UPDATE_FAILED)
 	}
 	zlog.CtxInfof(ctx, "Notice updated successfully (noticeID: %d)", req.ID)
 	return &types.UpdateNoticeResp{
@@ -57,10 +56,9 @@ func (l *NoticeLogic) UpdateNotice(ctx context.Context, req types.UpdateNoticeRe
 
 // DeleteNotice 删除公告
 func (l *NoticeLogic) DeleteNotice(ctx context.Context, req types.DeleteNoticeReq) (*types.DeleteNoticeResp, error) {
-	noticeRepo := repo.NewNoticeRepo(global.DB)
-	if err := noticeRepo.DeleteNotice(req.ID); err != nil {
+	if err := repo.NewNoticeRepo(global.DB).DeleteNotice(req.ID); err != nil {
 		zlog.CtxErrorf(ctx, "DeleteNotice failed: %v", err)
-		return nil, response.ErrResp(err, codeNoticeDeleteFailed)
+		return nil, response.ErrResp(err, NOTICE_DELETE_FAILED)
 	}
 	zlog.CtxInfof(ctx, "Notice deleted successfully (noticeID: %d)", req.ID)
 	return &types.DeleteNoticeResp{}, nil
@@ -68,15 +66,14 @@ func (l *NoticeLogic) DeleteNotice(ctx context.Context, req types.DeleteNoticeRe
 
 // GetNoticeByID 获取公告详情
 func (l *NoticeLogic) GetNoticeByID(ctx context.Context, req types.GetNoticeReq) (*types.GetNoticeResp, error) {
-	noticeRepo := repo.NewNoticeRepo(global.DB)
-	notice, err := noticeRepo.GetNoticeByID(req.ID)
+	notice, err := repo.NewNoticeRepo(global.DB).GetNoticeByID(req.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			zlog.CtxWarnf(ctx, "GetNoticeByID failed: notice not found (noticeID: %d)", req.ID)
-			return nil, response.ErrResp(err, codeNoticeNotFound)
+			return nil, response.ErrResp(err, NOTICE_NOT_FOUND)
 		}
 		zlog.CtxErrorf(ctx, "GetNoticeByID failed: %v", err)
-		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
+		return nil, response.ErrResp(err, NOTICE_GET_FAILED)
 	}
 	zlog.CtxInfof(ctx, "Notice retrieved successfully (noticeID: %d)", req.ID)
 	return &types.GetNoticeResp{

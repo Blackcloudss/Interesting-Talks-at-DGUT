@@ -18,7 +18,8 @@ func NewSearchRepo(db *gorm.DB) *SearchRepo {
 	}
 }
 
-// SearchBlogs 搜索帖子
+const HOT_BLOGS_LIMIT = 10
+
 // SearchBlogs 搜索帖子
 func (r *SearchRepo) SearchBlogs(keyword string, searchType string, page, pageSize int) ([]types.BlogResp, int64, error) {
 	var blogs []types.BlogResp
@@ -110,7 +111,7 @@ func (r *SearchRepo) GetHotSearchRepo() (*types.GetHotSearchResp, error) {
 	if err := r.DB.Model(&model.Blog{}).
 		Select("title").
 		Order("created_at DESC, be_liked DESC").
-		Limit(10).
+		Limit(HOT_BLOGS_LIMIT).
 		Scan(&hotSearchList).Error; err != nil {
 		return nil, err
 	}
