@@ -14,8 +14,8 @@ const (
 	BLOG_ID         = "blog.id"
 	IS_LIKED        = "is_liked"
 	IS_COLLECTED    = "is_collected"
-	BE_COLLECTED    = "be_collected"
-	BE_LIKED        = "be_liked"
+	LIKE_COUNT      = "like_count"
+	COLLECT_COUNT   = "collect_count"
 	COMMENT_COUNT   = "comment_count"
 	BLOG_TAG        = "blog_tag"
 	SUB_TAG         = "sub_tag"
@@ -32,8 +32,8 @@ const (
                          blog.updated_at, 
                          blog.title, 
                          blog.content, 
-                         blog.be_liked, 
-                         blog.be_collected, 
+                         blog.like_count, 
+                         blog.collect_count, 
                          blog.comment_count, 
                          blog.blog_tag, 
                          blog.sub_tag, 
@@ -44,19 +44,6 @@ const (
                          user_display.tag`
 )
 
-/*
-数据持久化模块 - 帖子相关
-主要功能：
-1. 帖子CRUD操作
-2. 帖子列表查询（分页、按标签、按用户）
-3. 收藏帖子管理
-4. 点赞状态管理
-*/
-
-// @Title        blog.go
-// @Description  帖子数据访问层
-// @Create       XdpCs 2025-03-20
-// @Update       XdpCs 2025-03-20
 type BlogRepo struct {
 	DB *gorm.DB
 }
@@ -284,7 +271,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 	// 查询当前收藏数
 	var collectCount int64
 	err = tx.Model(&model.Blog{}).
-		Select(BE_COLLECTED).
+		Select(COLLECT_COUNT).
 		Where(fmt.Sprintf("%s = ? ", BLOG_ID), BlogID).
 		First(&collectCount).
 		Error
@@ -324,7 +311,7 @@ func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, er
 	// 更新博客收藏数
 	err = tx.Model(&model.Blog{}).
 		Where(fmt.Sprintf("%s = ? ", BLOG_ID), BlogID).
-		Update(BE_COLLECTED, collectCount).
+		Update(COLLECT_COUNT, collectCount).
 		Error
 	if err != nil {
 		tx.Rollback()
@@ -378,7 +365,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	// 查询当前点赞数
 	var likeCount int64
 	err = tx.Model(&model.Blog{}).
-		Select(BE_LIKED).
+		Select(LIKE_COUNT).
 		Where("id = ?", BlogID).
 		First(&likeCount).
 		Error
@@ -418,7 +405,7 @@ func (r *BlogRepo) LikeBlog(UserID, BlogID int64) (*types.LikeBlogResp, error) {
 	// 更新博客点赞数
 	err = tx.Model(&model.Blog{}).
 		Where(fmt.Sprintf("%s = ? ", BLOG_ID), BlogID).
-		Update(BE_LIKED, likeCount).
+		Update(LIKE_COUNT, likeCount).
 		Error
 	if err != nil {
 		tx.Rollback()
