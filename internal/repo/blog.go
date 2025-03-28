@@ -235,7 +235,7 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 }
 
 func (r *BlogRepo) CollectBlog(UserID, BlogID int64) (*types.CollectBlogResp, error) {
-	var isCollected bool = false
+	var isCollected = false
 
 	tx := r.DB.Begin()
 
