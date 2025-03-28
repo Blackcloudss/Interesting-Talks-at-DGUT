@@ -5,7 +5,7 @@ type Comment struct {
 	BlogID       int64  `gorm:"column:blog_id;not null" json:"blog_id"`
 	UserID       int64  `gorm:"column:user_id;not null" json:"user_id"`
 	Content      string `gorm:"column:content;type:text;not null" json:"content"`
-	LikeCount    int    `gorm:"column:likes_count;default:0" json:"like_count"`
+	LikeCount    int    `gorm:"column:like_count;default:0" json:"like_count"`
 	RepliesCount int    `gorm:"column:replies_count;default:0" json:"replies_count"`
 	ParentID     int64  `gorm:"column:parent_id;default:null" json:"parent_id"`
 

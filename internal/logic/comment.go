@@ -10,6 +10,8 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
+	"github.com/pkg/errors"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -51,24 +53,14 @@ func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommen
 	}, nil
 }
 
-// DeleteComment 删除评论
 func (l *CommentLogic) DeleteComment(ctx context.Context, req types.DeleteCommentReq, userID int64) (*types.DeleteCommentResp, error) {
 	defer utils.RecordTime(time.Now())
-
-	comment, err := repo.NewCommentRepo(global.DB).GetCommentByID(req.CommentID)
+	err := repo.NewCommentRepo(global.DB).DeleteComment(req.CommentID)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "获取评论失败: %v", err)
-		return nil, response.ErrResp(err, codeCommentNotFound)
-	}
-
-	// 判断用户是否为评论者
-	if comment.UserID != userID {
-		return nil, response.ErrResp(err, response.INSUFFICENT_PERMISSIONS)
-	}
-
-	// 3. 删除评论并更新计数
-	err = repo.NewCommentRepo(global.DB).DeleteComment(req.CommentID, comment.BlogID, comment.ParentID)
-	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.CtxErrorf(ctx, "评论不存在或用户无权限 (commentID: %d)", req.CommentID)
+			return nil, response.ErrResp(err, codeCommentNotFound)
+		}
 		zlog.CtxErrorf(ctx, "删除评论失败: %v", err)
 		return nil, response.ErrResp(err, codeCommentDeleteFailed)
 	}
@@ -122,7 +114,7 @@ func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentL
 	}, nil
 }
 
-func (l *CommentLogic) GetRepliesList(ctx context.Context, req types.GetRepliesListReq) (*types.GetCommentListResp, error) {
+func (l *CommentLogic) GetRepliesList(ctx context.Context, req types.GetRepliesListReq) (*types.GetRepliesListResp, error) {
 	replies, total, err := repo.NewCommentRepo(global.DB).GetReplies(
 		req.ParentID,
 		req.Page,
@@ -132,10 +124,10 @@ func (l *CommentLogic) GetRepliesList(ctx context.Context, req types.GetRepliesL
 		return nil, response.ErrResp(err, codeGetCommentFail)
 	}
 
-	return &types.GetCommentListResp{
+	return &types.GetRepliesListResp{
 		TotalCount: total,
 		Page:       req.Page,
 		PageSize:   req.PageSize,
-		Comments:   replies,
+		Replies:    replies,
 	}, nil
 }

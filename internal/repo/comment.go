@@ -70,8 +70,8 @@ func (r *CommentRepo) CreateComment(comment *model.Comment) error {
 	return tx.Commit().Error
 }
 
-// DeleteComment 软删除评论并更新相关计数
-func (r *CommentRepo) DeleteComment(commentID, blogID, parentID int64) error {
+// DeleteCommentDirectly 删除评论
+func (r *CommentRepo) DeleteComment(commentID int64) error {
 	tx := r.DB.Begin()
 	if tx.Error != nil {
 		zlog.Errorf("删除评论事务开始失败: %v", tx.Error)
@@ -83,7 +83,22 @@ func (r *CommentRepo) DeleteComment(commentID, blogID, parentID int64) error {
 		}
 	}()
 
-	// 软删除评论记录
+	// 1. 获取评论信息（仅用于后续更新计数）
+	var comment model.Comment
+	if err := tx.Model(&model.Comment{}).
+		Where(fmt.Sprintf("comment.%s = ? AND comment.%s IS NULL", ID, DELETED_AT), commentID).
+		First(&comment).
+		Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Errorf("评论不存在 (commentID: %d)", commentID)
+			return errors.Wrap(err, "评论不存在或已被删除")
+		}
+		zlog.Errorf("获取评论信息失败: %v", err)
+		return errors.Wrap(err, "获取评论信息失败")
+	}
+
+	// 2. 软删除评论
 	if err := tx.Model(&model.Comment{}).
 		Where(fmt.Sprintf("%s = ?", ID), commentID).
 		Update(DELETED_AT, gorm.Expr("NOW()")).
@@ -93,20 +108,21 @@ func (r *CommentRepo) DeleteComment(commentID, blogID, parentID int64) error {
 		return errors.Wrap(err, "软删除评论失败")
 	}
 
-	// 如果是顶级评论，更新博客的评论数
-	if parentID == 0 {
+	// 3. 更新计数逻辑
+	if comment.ParentID == 0 {
+		// 顶级评论：减少博客的评论数
 		if err := tx.Model(&model.Blog{}).
-			Where(fmt.Sprintf("%s = ?", ID), blogID).
+			Where(fmt.Sprintf("%s = ?", ID), comment.BlogID).
 			Update("comment_count", gorm.Expr("comment_count - 1")).
 			Error; err != nil {
 			tx.Rollback()
-			zlog.Errorf("更新帖子评论数失败: %v", err)
-			return errors.Wrap(err, "更新帖子评论数失败")
+			zlog.Errorf("更新博客评论数失败: %v", err)
+			return errors.Wrap(err, "更新博客评论数失败")
 		}
 	} else {
-		// 如果是回复评论，更新父评论的回复数
+		// 子评论：减少父评论的回复数
 		if err := tx.Model(&model.Comment{}).
-			Where(fmt.Sprintf("%s = ? AND %s IS NULL", ID, DELETED_AT), parentID).
+			Where(fmt.Sprintf("%s = ? AND %s IS NULL", ID, DELETED_AT), comment.ParentID).
 			Update(REPLIES_COUNT, gorm.Expr("replies_count - 1")).
 			Error; err != nil {
 			tx.Rollback()
@@ -116,118 +132,10 @@ func (r *CommentRepo) DeleteComment(commentID, blogID, parentID int64) error {
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		zlog.Errorf("删除评论事务提交失败: %v", err)
+		zlog.Errorf("提交事务失败: %v", err)
 		return errors.Wrap(err, "提交事务失败")
 	}
-
 	return nil
-}
-
-// GetCommentByID 根据评论ID获取评论信息
-func (r *CommentRepo) GetCommentByID(commentID int64) (*model.Comment, error) {
-	var comment model.Comment
-
-	if err := r.DB.Model(&model.Comment{}).
-		Where(fmt.Sprintf("%s = ? AND %s IS NULL", ID, DELETED_AT), commentID).
-		First(&comment).
-		Error; err != nil {
-		zlog.Errorf("根据ID获取评论失败: %v", err)
-		return nil, errors.Wrap(err, "未找到评论")
-	}
-
-	return &comment, nil
-}
-
-// GetCommentList 获取顶级评论列表
-func (r *CommentRepo) GetCommentList(blogID int64, page, pageSize int, sortBy string) ([]types.CommentDetail, int64, error) {
-	var (
-		comments   []types.CommentDetail
-		totalCount int64
-	)
-
-	// 查询顶级评论总数
-	if err := r.DB.Model(&model.Comment{}).
-		Where(fmt.Sprintf("%s = ? AND %s IS NULL AND %s = 0", BLOG_ID, DELETED_AT, PARENT_ID), blogID).
-		Count(&totalCount).Error; err != nil {
-		zlog.Errorf("获取评论总数失败: %v", err)
-		return nil, 0, errors.Wrap(err, "获取评论总数失败")
-	}
-
-	// 构建查询
-	query := r.DB.Table("comment").
-		Select("comment.*, user_display.nickname, user_display.avatar, user_display.tag").
-		Joins("LEFT JOIN user_display ON comment.user_id = user_display.id").
-		Where(fmt.Sprintf("comment.%s = ? AND comment.%s IS NULL AND comment.%s = 0", BLOG_ID, DELETED_AT, PARENT_ID), blogID)
-
-	// 添加排序
-	switch sortBy {
-	case LIKE_COUNT:
-		query = query.Order(fmt.Sprintf("comment.%s DESC", LIKE_COUNT))
-	default:
-		query = query.Order(fmt.Sprintf("comment.%s DESC", CREATED_AT))
-	}
-
-	// 添加分页
-	query = query.Offset((page - 1) * pageSize).Limit(pageSize)
-
-	// 执行查询
-	if err := query.Scan(&comments).Error; err != nil {
-		zlog.Errorf("获取评论列表失败: %v", err)
-		return nil, 0, errors.Wrap(err, "获取评论列表失败")
-	}
-
-	// 为每个顶级评论获取前3条回复
-	for i := range comments {
-		var replies []types.CommentDetail
-		err := r.DB.Table("comment").
-			Select("comment.*, user_display.nickname, user_display.avatar, user_display.tag").
-			Joins("LEFT JOIN user_display ON comment.user_id = user_display.id").
-			Where(fmt.Sprintf("comment.%s = ? AND comment.%s IS NULL", PARENT_ID, DELETED_AT), comments[i].ID).
-			Order(fmt.Sprintf("comment.%s ASC", CREATED_AT)).
-			Limit(3).
-			Scan(&replies).Error
-
-		if err != nil {
-			zlog.Errorf("获取评论回复失败: %v", err)
-			continue
-		}
-		comments[i].Replies = replies
-	}
-
-	return comments, totalCount, nil
-}
-
-// GetReplies 获取评论的回复列表
-func (r *CommentRepo) GetReplies(parentID int64, page, pageSize int) ([]types.CommentDetail, int64, error) {
-	var (
-		replies    []types.CommentDetail
-		totalCount int64
-	)
-
-	// 查询回复总数
-	if err := r.DB.Model(&model.Comment{}).
-		Where(fmt.Sprintf("%s = ? AND %s IS NULL", PARENT_ID, DELETED_AT), parentID).
-		Count(&totalCount).Error; err != nil {
-		zlog.Errorf("获取回复总数失败: %v", err)
-		return nil, 0, errors.Wrap(err, "获取回复总数失败")
-	}
-
-	// 构建查询
-	query := r.DB.Table("comment").
-		Select("comment.*, user_display.nickname, user_display.avatar, user_display.tag").
-		Joins("LEFT JOIN user_display ON comment.user_id = user_display.id").
-		Where(fmt.Sprintf("comment.%s = ? AND comment.%s IS NULL", PARENT_ID, DELETED_AT), parentID).
-		Order(fmt.Sprintf("comment.%s ASC", CREATED_AT)).
-		Offset((page - 1) * pageSize).
-		Limit(pageSize)
-
-	// 执行查询
-	if err := query.Scan(&replies).Error; err != nil {
-		zlog.Errorf("获取回复列表失败: %v", err)
-		return nil, 0, errors.Wrap(err, "获取回复列表失败")
-	}
-
-	return replies, totalCount, nil
 }
 
 // LikeComment 点赞/取消点赞评论
@@ -328,4 +236,92 @@ func (r *CommentRepo) LikeComment(userID, commentID int64) (*types.LikeCommentRe
 		IsLiked:   !isLiked, // 返回操作后的新状态
 		LikeCount: likeCount,
 	}, nil
+}
+
+// GetCommentList 获取顶级评论列表（带分页和排序）
+func (r *CommentRepo) GetCommentList(blogID int64, page, pageSize int, sortBy string) ([]types.CommentDetail, int64, error) {
+	var comments []types.CommentDetail
+	var total int64
+
+	query := r.DB.Model(&model.Comment{}).
+		Select(`
+            comment.id,
+            comment.blog_id,
+            comment.user_id,
+            comment.content,
+            comment.like_count,
+            comment.replies_count,
+            comment.created_at,
+            user_display.nickname,
+            user_display.avatar,
+            user_display.tag
+        `).
+		Joins("LEFT JOIN user_display ON comment.user_id = user_display.id").
+		Where("comment.blog_id = ? AND comment.parent_id = 0 AND comment.deleted_at IS NULL", blogID)
+
+	// 添加排序
+	switch sortBy {
+	case "like_count":
+		query = query.Order("comment.like_count DESC")
+	default:
+		query = query.Order("comment.created_at DESC")
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		zlog.Errorf("统计评论总数失败: %v", err)
+		return nil, 0, err
+	}
+
+	if err := query.
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Scan(&comments).
+		Error; err != nil {
+		zlog.Errorf("获取评论列表失败: %v", err)
+		return nil, 0, err
+	}
+
+	return comments, total, nil
+}
+
+// GetReplies 获取评论的回复列表（带分页）
+func (r *CommentRepo) GetReplies(parentID int64, page, pageSize int) ([]types.ReplyDetail, int64, error) {
+	var replies []types.ReplyDetail
+	var total int64
+
+	query := r.DB.Model(&model.Comment{}).
+		Select(`
+            comment.id,
+            comment.blog_id,
+            comment.user_id,
+            comment.content,
+            comment.like_count,
+            comment.created_at,
+            reply_user.nickname,
+            reply_user.avatar,
+            reply_user.tag,
+            parent.user_id AS parent_user_id,
+            parent_user.nickname AS parent_nick
+        `).
+		Joins("LEFT JOIN user_display AS reply_user ON comment.user_id = reply_user.id").
+		Joins("LEFT JOIN comment AS parent ON comment.parent_id = parent.id").
+		Joins("LEFT JOIN user_display AS parent_user ON parent.user_id = parent_user.id").
+		Where("comment.parent_id = ? AND comment.deleted_at IS NULL", parentID).
+		Order("comment.created_at ASC")
+
+	if err := query.Count(&total).Error; err != nil {
+		zlog.Errorf("统计回复总数失败, parentID:%d, error:%v", parentID, err)
+		return nil, 0, err
+	}
+
+	if err := query.
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Scan(&replies).
+		Error; err != nil {
+		zlog.Errorf("获取回复列表失败, parentID:%d, error:%v", parentID, err)
+		return nil, 0, err
+	}
+
+	return replies, total, nil
 }
