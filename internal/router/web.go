@@ -150,9 +150,8 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//关注相关路由
 	routeManager.RegisterFollowRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken())          // 检查 Atoken
-		rg.POST("/follow", api.FollowHandler)     // 关注用户
-		rg.POST("/unfollow", api.UnfollowHandler) // 取消关注用户
+		rg.Use(middleware.CheckAtoken())      // 检查 Atoken
+		rg.POST("/follow", api.FollowHandler) // 关注用户
 		MySelfFollow := rg.Group("/myself")
 		{
 			MySelfFollow.GET("/followings", api.GetFollowingsHandler) // 获取当前用户关注的用户列表
