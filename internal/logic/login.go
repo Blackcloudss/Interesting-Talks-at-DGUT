@@ -4,7 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"time"
+
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/configs"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/repo"
@@ -14,9 +19,6 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/snowflake"
-	"io"
-	"net/http"
-	"time"
 )
 
 var (
@@ -43,6 +45,17 @@ func NewWechatLoginLogic() *WechatLogic {
 
 // / 微信登陆
 func (l *WechatLogic) WechatLogin(ctx context.Context, req types.WechatLoginReq) (resp *types.WechatLoginResp, err error) {
+	// 获取token前先验证
+	token, err := jwt.GetWechatAccessToken(ctx)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "获取微信access token失败: %v", err)
+		return nil, response.ErrResp(err, response.COMMON_FAIL)
+	}
+
+	if token == "" {
+		return nil, response.ErrResp(errors.New("access token为空"), response.COMMON_FAIL)
+	}
+
 	defer utils.RecordTime(time.Now())()
 	resp, err = WxLogin(ctx, req.JsCode)
 	if err != nil {
