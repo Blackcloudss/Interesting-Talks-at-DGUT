@@ -70,12 +70,32 @@ func (r *CommentRepo) CreateComment(comment *model.Comment) error {
 	return tx.Commit().Error
 }
 
-// DeleteCommentDirectly 删除评论
-func (r *CommentRepo) DeleteComment(commentID int64) error {
+// GetCommentByID 获取评论基础信息
+func (r *CommentRepo) GetCommentByID(id int64) (*model.Comment, error) {
+	var comment model.Comment
+	err := r.DB.
+		Model(&model.Comment{}).
+		Where("id = ? AND deleted_at IS NULL", id).
+		First(&comment).
+		Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warnf("评论不存在 ID:%d", id)
+			return nil, errors.New("评论不存在")
+		}
+		zlog.Errorf("获取评论失败 ID:%d 错误:%v", id, err)
+		return nil, errors.Wrap(err, "数据库查询失败")
+	}
+	return &comment, nil
+}
+
+// DeleteComment 删除评论
+func (r *CommentRepo) DeleteComment(comment *model.Comment) error {
 	tx := r.DB.Begin()
 	if tx.Error != nil {
-		zlog.Errorf("删除评论事务开始失败: %v", tx.Error)
-		return tx.Error
+		zlog.Errorf("事务启动失败 评论ID:%d 错误:%v", comment.ID, tx.Error)
+		return errors.New("事务处理失败")
 	}
 	defer func() {
 		if r := recover(); r != nil {
@@ -83,58 +103,42 @@ func (r *CommentRepo) DeleteComment(commentID int64) error {
 		}
 	}()
 
-	// 1. 获取评论信息（仅用于后续更新计数）
-	var comment model.Comment
-	if err := tx.Model(&model.Comment{}).
-		Where(fmt.Sprintf("comment.%s = ? AND comment.%s IS NULL", ID, DELETED_AT), commentID).
-		First(&comment).
+	// 1. 执行软删除
+	if err := tx.Model(comment).
+		Update("deleted_at", gorm.Expr("NOW()")).
 		Error; err != nil {
 		tx.Rollback()
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			zlog.Errorf("评论不存在 (commentID: %d)", commentID)
-			return errors.Wrap(err, "评论不存在或已被删除")
-		}
-		zlog.Errorf("获取评论信息失败: %v", err)
-		return errors.Wrap(err, "获取评论信息失败")
+		zlog.Errorf("软删除失败 评论ID:%d 错误:%v", comment.ID, err)
+		return errors.New("评论删除失败")
 	}
 
-	// 2. 软删除评论
-	if err := tx.Model(&model.Comment{}).
-		Where(fmt.Sprintf("%s = ?", ID), commentID).
-		Update(DELETED_AT, gorm.Expr("NOW()")).
-		Error; err != nil {
-		tx.Rollback()
-		zlog.Errorf("软删除评论失败: %v", err)
-		return errors.Wrap(err, "软删除评论失败")
-	}
-
-	// 3. 更新计数逻辑
+	// 2. 更新计数器
+	var updateErr error
 	if comment.ParentID == 0 {
-		// 顶级评论：减少博客的评论数
-		if err := tx.Model(&model.Blog{}).
-			Where(fmt.Sprintf("%s = ?", ID), comment.BlogID).
+		// 主评论：减少博客评论数
+		updateErr = tx.Model(&model.Blog{}).
+			Where("id = ?", comment.BlogID).
 			Update("comment_count", gorm.Expr("comment_count - 1")).
-			Error; err != nil {
-			tx.Rollback()
-			zlog.Errorf("更新博客评论数失败: %v", err)
-			return errors.Wrap(err, "更新博客评论数失败")
-		}
+			Error
 	} else {
-		// 子评论：减少父评论的回复数
-		if err := tx.Model(&model.Comment{}).
-			Where(fmt.Sprintf("%s = ? AND %s IS NULL", ID, DELETED_AT), comment.ParentID).
-			Update(REPLIES_COUNT, gorm.Expr("replies_count - 1")).
-			Error; err != nil {
-			tx.Rollback()
-			zlog.Errorf("更新父评论回复数失败: %v", err)
-			return errors.Wrap(err, "更新父评论回复数失败")
-		}
+		// 子评论：减少父评论回复数
+		updateErr = tx.Model(&model.Comment{}).
+			Where("id = ? AND deleted_at IS NULL", comment.ParentID).
+			Update("replies_count", gorm.Expr("replies_count - 1")).
+			Error
+	}
+
+	if updateErr != nil {
+		tx.Rollback()
+		zlog.Errorf("计数器更新失败 评论ID:%d 错误:%v", comment.ID, updateErr)
+		return errors.New("计数器更新失败")
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		zlog.Errorf("提交事务失败: %v", err)
-		return errors.Wrap(err, "提交事务失败")
+		zlog.Errorf("事务提交失败 评论ID:%d 错误:%v", comment.ID, err)
+		return errors.New("事务提交失败")
 	}
+
 	return nil
 }
 

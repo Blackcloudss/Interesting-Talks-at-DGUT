@@ -26,12 +26,13 @@ var (
 
 type CommentLogic struct{}
 
-// NewCommentLogic 创建评论逻辑层实例
 func NewCommentLogic() *CommentLogic {
 	return &CommentLogic{}
 }
 
 func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommentReq, userID int64) (*types.CreateCommentResp, error) {
+	defer utils.RecordTime(time.Now())()
+
 	comment := &model.Comment{
 		UserID:  userID,
 		BlogID:  req.BlogID,
@@ -47,33 +48,42 @@ func (l *CommentLogic) CreateComment(ctx context.Context, req types.CreateCommen
 		return nil, response.ErrResp(err, codeCommentCreateFailed)
 	}
 
+	zlog.CtxInfof(ctx, "评论创建成功 (commentID: %d, userID: %d)", comment.ID, userID)
 	return &types.CreateCommentResp{
 		CommentID: comment.ID,
 		CreatedAt: comment.CreatedAt,
 	}, nil
 }
 
+// DeleteComment 删除评论（优化版）
 func (l *CommentLogic) DeleteComment(ctx context.Context, req types.DeleteCommentReq, userID int64) (*types.DeleteCommentResp, error) {
-	defer utils.RecordTime(time.Now())
-	err := repo.NewCommentRepo(global.DB).DeleteComment(req.CommentID)
+	defer utils.RecordTime(time.Now())()
+
+	// 1. 获取评论信息
+	comment, err := repo.NewCommentRepo(global.DB).GetCommentByID(req.CommentID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			zlog.CtxErrorf(ctx, "评论不存在或用户无权限 (commentID: %d)", req.CommentID)
+			zlog.CtxWarnf(ctx, "评论不存在 ID:%d", req.CommentID)
 			return nil, response.ErrResp(err, codeCommentNotFound)
 		}
-		zlog.CtxErrorf(ctx, "删除评论失败: %v", err)
+		zlog.CtxErrorf(ctx, "获取评论失败 ID:%d 错误:%v", req.CommentID, err)
+		return nil, response.ErrResp(err, codeGetCommentFail)
+	}
+
+	// 2. 执行删除
+	if err := repo.NewCommentRepo(global.DB).DeleteComment(comment); err != nil {
+		zlog.CtxErrorf(ctx, "删除评论失败 ID:%d 错误:%v", req.CommentID, err)
 		return nil, response.ErrResp(err, codeCommentDeleteFailed)
 	}
 
-	zlog.CtxInfof(ctx, "评论删除成功 (commentID: %d)", req.CommentID)
+	zlog.CtxInfof(ctx, "评论删除成功 ID:%d", req.CommentID)
 	return &types.DeleteCommentResp{}, nil
 }
 
-// LikeComment 点赞或取消点赞评论
-func (l *CommentLogic) LikeComment(ctx context.Context, commentID int64, userID int64) (resp *types.LikeCommentResp, err error) {
+func (l *CommentLogic) LikeComment(ctx context.Context, commentID int64, userID int64) (*types.LikeCommentResp, error) {
 	defer utils.RecordTime(time.Now())()
 
-	// 用 redis 加锁
+	// 用 redis 加锁防止重复操作
 	lockKey := fmt.Sprintf("comment:like:lock:user:%d:comment:%d", userID, commentID)
 	locked, err := global.Rdb.SetNX(ctx, lockKey, 1, 1*time.Second).Result()
 	if err != nil {
@@ -81,21 +91,34 @@ func (l *CommentLogic) LikeComment(ctx context.Context, commentID int64, userID 
 		return nil, response.ErrResp(err, response.INTERNAL_ERROR)
 	}
 	if !locked {
-		// 未获取到锁，说明该操作正在被其他请求处理
-		zlog.CtxInfof(ctx, "点赞/取消赞操作正被 user: %d, comment: %d 使用，请稍等 1 s", userID, commentID)
-		return nil, response.ErrResp(err, response.USER_OPERATION_LOCKED) // 用户操作被锁定
+		zlog.CtxInfof(ctx, "操作频繁，请稍后重试 (userID: %d, commentID: %d)", userID, commentID)
+		return nil, response.ErrResp(errors.New("操作过于频繁"), response.USER_OPERATION_LOCKED)
 	}
 	defer global.Rdb.Del(ctx, lockKey)
 
-	resp, err = repo.NewCommentRepo(global.DB).LikeComment(userID, commentID)
+	// 检查评论是否存在
+	if _, err := repo.NewCommentRepo(global.DB).GetCommentByID(commentID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.CtxWarnf(ctx, "评论不存在 (commentID: %d)", commentID)
+			return nil, response.ErrResp(err, codeCommentNotFound)
+		}
+		zlog.CtxErrorf(ctx, "获取评论失败: %v", err)
+		return nil, response.ErrResp(err, codeGetCommentFail)
+	}
+
+	resp, err := repo.NewCommentRepo(global.DB).LikeComment(userID, commentID)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "ToggleLikeComment failed: %v", err)
+		zlog.CtxErrorf(ctx, "点赞操作失败: %v", err)
 		return nil, response.ErrResp(err, codeCommentLikeFailed)
 	}
+
+	zlog.CtxInfof(ctx, "点赞状态更新成功 (commentID: %d, action: %s)", commentID, resp.IsLiked)
 	return resp, nil
 }
 
 func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentListReq) (*types.GetCommentListResp, error) {
+	defer utils.RecordTime(time.Now())()
+
 	comments, total, err := repo.NewCommentRepo(global.DB).GetCommentList(
 		req.BlogID,
 		req.Page,
@@ -103,9 +126,11 @@ func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentL
 		req.SortBy,
 	)
 	if err != nil {
+		zlog.CtxErrorf(ctx, "获取评论列表失败: %v", err)
 		return nil, response.ErrResp(err, codeGetCommentFail)
 	}
 
+	zlog.CtxInfof(ctx, "获取评论列表成功 (blogID: %d, count: %d)", req.BlogID, len(comments))
 	return &types.GetCommentListResp{
 		TotalCount: total,
 		Page:       req.Page,
@@ -115,15 +140,19 @@ func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentL
 }
 
 func (l *CommentLogic) GetRepliesList(ctx context.Context, req types.GetRepliesListReq) (*types.GetRepliesListResp, error) {
+	defer utils.RecordTime(time.Now())()
+
 	replies, total, err := repo.NewCommentRepo(global.DB).GetReplies(
 		req.ParentID,
 		req.Page,
 		req.PageSize,
 	)
 	if err != nil {
+		zlog.CtxErrorf(ctx, "获取回复列表失败: %v", err)
 		return nil, response.ErrResp(err, codeGetCommentFail)
 	}
 
+	zlog.CtxInfof(ctx, "获取回复列表成功 (parentID: %d, count: %d)", req.ParentID, len(replies))
 	return &types.GetRepliesListResp{
 		TotalCount: total,
 		Page:       req.Page,

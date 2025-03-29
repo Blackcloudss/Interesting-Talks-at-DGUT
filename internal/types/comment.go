@@ -19,7 +19,7 @@ type CreateCommentResp struct {
 
 // DeleteCommentReq 删除评论请求结构体
 type DeleteCommentReq struct {
-	CommentID int64 `json:"comment_id"` // 要删除的评论 ID
+	CommentID int64 `json:"comment_id" binding:"required"`
 }
 
 // DeleteCommentResp 删除评论响应结构体
@@ -44,11 +44,11 @@ type CommentDetail struct {
 	UserID       int64     `json:"user_id"`
 	Content      string    `json:"content"`
 	LikeCount    int       `json:"like_count"`
-	RepliesCount int       `json:"replies_count"`
 	CreatedAt    time.Time `json:"created_at"`
-	Nickname     string    `json:"nickname"`
-	Avatar       string    `json:"avatar"`
-	Tag          string    `json:"tag"`
+	Nickname     string    `json:"nickname"` // 回复者昵称
+	Avatar       string    `json:"avatar"`   // 回复者头像
+	Tag          string    `json:"tag"`      // 回复者标签
+	RepliesCount int       `json:"replies_count"`
 }
 
 // GetCommentListReq 获取评论列表请求结构体
@@ -56,7 +56,7 @@ type GetCommentListReq struct {
 	BlogID   int64  ` json:"blog_id" form:"blog_id" `                                     // 所属帖子 ID
 	Page     int    `json:"page" form:"page" `                                            // 当前页码
 	PageSize int    `json:"page_size" form:"page_size" `                                  // 每页大小
-	SortBy   string `json:"sort_by" form:"sort_by" binding:"oneof=created_at like_count"` // 排序方式：created_at（按发布时间）或按likes_count（按点赞数）
+	SortBy   string `json:"sort_by" form:"sort_by" binding:"oneof=created_at like_count"` // 排序方式：created_at（按发布时间）或按like_count（按点赞数）
 }
 
 // GetCommentListResp 获取评论列表响应结构体
