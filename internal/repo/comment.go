@@ -242,8 +242,8 @@ func (r *CommentRepo) LikeComment(userID, commentID int64) (*types.LikeCommentRe
 	}, nil
 }
 
-// GetCommentList 获取顶级评论列表（带分页和排序）
-func (r *CommentRepo) GetCommentList(blogID int64, page, pageSize int, sortBy string) ([]types.CommentDetail, int64, error) {
+// GetComments 获取评论列表（带分页）
+func (r *CommentRepo) GetComments(blogID int64, page, pageSize int, sortBy string) ([]types.CommentDetail, int64, error) {
 	var comments []types.CommentDetail
 	var total int64
 
@@ -254,25 +254,24 @@ func (r *CommentRepo) GetCommentList(blogID int64, page, pageSize int, sortBy st
             comment.user_id,
             comment.content,
             comment.like_count,
-            comment.replies_count,
             comment.created_at,
-            user_display.nickname,
-            user_display.avatar,
-            user_display.tag
+            comment.replies_count,
+            user.nickname,
+            user.avatar,
+            user.tag
         `).
-		Joins("LEFT JOIN user_display ON comment.user_id = user_display.id").
-		Where("comment.blog_id = ? AND comment.parent_id = 0 AND comment.deleted_at IS NULL", blogID)
+		Joins("LEFT JOIN user_display AS user ON comment.user_id = user.id").
+		Where("comment.blog_id = ? AND comment.parent_id IS NULL AND comment.deleted_at IS NULL", blogID)
 
-	// 添加排序
-	switch sortBy {
-	case "like_count":
-		query = query.Order("comment.like_count DESC")
-	default:
+	// 设置排序方式
+	if sortBy == "like_count" {
+		query = query.Order("comment.like_count DESC, comment.created_at DESC")
+	} else {
 		query = query.Order("comment.created_at DESC")
 	}
 
 	if err := query.Count(&total).Error; err != nil {
-		zlog.Errorf("统计评论总数失败: %v", err)
+		zlog.Errorf("统计评论总数失败, blogID:%d, error:%v", blogID, err)
 		return nil, 0, err
 	}
 
@@ -281,7 +280,7 @@ func (r *CommentRepo) GetCommentList(blogID int64, page, pageSize int, sortBy st
 		Limit(pageSize).
 		Scan(&comments).
 		Error; err != nil {
-		zlog.Errorf("获取评论列表失败: %v", err)
+		zlog.Errorf("获取评论列表失败, blogID:%d, error:%v", blogID, err)
 		return nil, 0, err
 	}
 

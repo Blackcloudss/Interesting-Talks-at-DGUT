@@ -56,8 +56,7 @@ func LikeComment(c *gin.Context) {
 
 // 获取评论列表，按发布时间排序或按点赞数排列（分页）
 // 分页加载：通过滚动事件触发分页加载更多评论。
-//展开二级评论：点击“展开更多”按钮，发送请求加载更多二级评论。
-
+// 展开二级评论：点击“展开更多”按钮，发送请求加载更多二级评论。
 // GetCommentList 获取评论列表
 func GetCommentList(c *gin.Context) {
 	ctx := zlog.GetCtxFromGin(c)

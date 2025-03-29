@@ -52,14 +52,14 @@ type CommentDetail struct {
 	RepliesCount int       `json:"replies_count"`
 }
 
-// GetCommentListReq 获取评论列表请求结构体
+// GetCommentListReq 获取评论列表请求
 type GetCommentListReq struct {
-	BlogID int64 ` json:"blog_id" form:"blog_id" ` // 所属帖子 ID
+	BlogID int64 `form:"blog_id" binding:"required"` // 博客ID
 	PageReq
-	SortBy string `json:"sort_by" form:"sort_by" binding:"one of=created_at like_count"` // 排序方式：created_at（按发布时间）或按like_count（按点赞数）
+	SortBy string `json:"sort_by" form:"sort_by" binding:"oneof=created_at like_count"` // 排序方式：created_at（按发布时间）或按like_count（按点赞数）
 }
 
-// GetCommentListResp 获取评论列表响应结构体
+// GetCommentListResp 评论列表响应
 type GetCommentListResp struct {
 	TotalCount int64 `json:"total_count"` // 总评论数
 	PageReq

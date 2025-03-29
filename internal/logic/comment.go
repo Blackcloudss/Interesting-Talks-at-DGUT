@@ -119,7 +119,7 @@ func (l *CommentLogic) LikeComment(ctx context.Context, commentID int64, userID 
 func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentListReq) (*types.GetCommentListResp, error) {
 	defer utils.RecordTime(time.Now())()
 
-	comments, total, err := repo.NewCommentRepo(global.DB).GetCommentList(
+	comments, total, err := repo.NewCommentRepo(global.DB).GetComments(
 		req.BlogID,
 		req.Page,
 		req.PageSize,
@@ -140,7 +140,6 @@ func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentL
 		Comments: comments,
 	}, nil
 }
-
 func (l *CommentLogic) GetRepliesList(ctx context.Context, req types.GetRepliesListReq) (*types.GetRepliesListResp, error) {
 	defer utils.RecordTime(time.Now())()
 
