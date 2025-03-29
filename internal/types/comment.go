@@ -19,7 +19,8 @@ type CreateCommentResp struct {
 
 // DeleteCommentReq 删除评论请求结构体
 type DeleteCommentReq struct {
-	CommentID int64 `json:"comment_id" binding:"required"`
+	// DeleteCommentReq 删除评论请求结构体
+	CommentID int64 `uri:"comment_id" binding:"required"`
 }
 
 // DeleteCommentResp 删除评论响应结构体
