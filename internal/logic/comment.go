@@ -133,9 +133,11 @@ func (l *CommentLogic) GetCommentList(ctx context.Context, req types.GetCommentL
 	zlog.CtxInfof(ctx, "获取评论列表成功 (blogID: %d, count: %d)", req.BlogID, len(comments))
 	return &types.GetCommentListResp{
 		TotalCount: total,
-		Page:       req.Page,
-		PageSize:   req.PageSize,
-		Comments:   comments,
+		PageReq: types.PageReq{
+			Page:     req.Page,
+			PageSize: req.PageSize,
+		},
+		Comments: comments,
 	}, nil
 }
 
@@ -155,8 +157,10 @@ func (l *CommentLogic) GetRepliesList(ctx context.Context, req types.GetRepliesL
 	zlog.CtxInfof(ctx, "获取回复列表成功 (parentID: %d, count: %d)", req.ParentID, len(replies))
 	return &types.GetRepliesListResp{
 		TotalCount: total,
-		Page:       req.Page,
-		PageSize:   req.PageSize,
-		Replies:    replies,
+		PageReq: types.PageReq{
+			Page:     req.Page,
+			PageSize: req.PageSize,
+		},
+		Replies: replies,
 	}, nil
 }
