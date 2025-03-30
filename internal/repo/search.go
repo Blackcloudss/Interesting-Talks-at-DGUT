@@ -1,8 +1,10 @@
 package repo
 
 import (
+	"fmt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/model"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"gorm.io/gorm"
 )
 
@@ -25,39 +27,39 @@ func (r *SearchRepo) SearchBlogs(keyword string, searchType string, page, pageSi
 	var blogs []types.BlogResp
 	var total int64
 
-	var query *gorm.DB
+	query := r.DB.Model(&model.Blog{}).
+		Select(BLOG_SELECT_FIELDS).
+		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
+		Where(fmt.Sprintf("blog.%s IS NULL", DELETED_AT))
+
+	// 根据搜索类型添加不同的查询条件
 	switch searchType {
 	case "title":
-		query = r.DB.Model(&model.Blog{}).
-			Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-			Where("blog.title LIKE ?", "%"+keyword+"%")
+		query = query.Where("blog.title LIKE ?", "%"+keyword+"%")
 	case "tag":
-		query = r.DB.Model(&model.Blog{}).
-			Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-			Where("blog.blog_tag LIKE ? OR blog.sub_tag LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+		query = query.Where("blog.blog_tag LIKE ? OR blog.sub_tag LIKE ?",
+			"%"+keyword+"%", "%"+keyword+"%")
 	case "nickname":
-		query = r.DB.Model(&model.Blog{}).
-			Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-			Where("user_display.nickname LIKE ?", "%"+keyword+"%")
+		query = query.Where("user_display.nickname LIKE ?", "%"+keyword+"%")
 	default: // 综合搜索
-		query = r.DB.Model(&model.Blog{}).
-			Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-			Where("blog.title LIKE ? OR blog.blog_tag LIKE ? OR blog.sub_tag LIKE ? OR user_display.nickname LIKE ?",
-				"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+		query = query.Where("blog.title LIKE ? OR blog.blog_tag LIKE ? OR blog.sub_tag LIKE ? OR user_display.nickname LIKE ?",
+			"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
 	}
 
-	// 查询符合条件的帖子总数
+	// 统计总数
 	if err := query.Count(&total).Error; err != nil {
+		zlog.Errorf("统计搜索结果总数失败: %v", err)
 		return nil, 0, err
 	}
 
-	// 分页查询帖子和用户信息
+	// 分页查询
 	if err := query.
-		Select("blog.*, user_display.nickname, user_display.avatar, user_display.tag").
-		Order("blog.created_at DESC").
+		Order(fmt.Sprintf("blog.%s DESC", CREATED_AT)).
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
-		Scan(&blogs).Error; err != nil {
+		Scan(&blogs).
+		Error; err != nil {
+		zlog.Errorf("搜索帖子失败: %v", err)
 		return nil, 0, err
 	}
 
