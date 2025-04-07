@@ -249,17 +249,17 @@ func (r *CommentRepo) GetComments(blogID int64, page, pageSize int, sortBy strin
 
 	query := r.DB.Model(&model.Comment{}).
 		Select(`
-            comment.id,
-            comment.blog_id,
-            comment.user_id,
-            comment.content,
-            comment.like_count,
-            comment.created_at,
-            comment.replies_count,
-            user.nickname,
-            user.avatar,
-            user.tag
-        `).
+        comment.id AS comment_id,
+        comment.blog_id,
+        comment.user_id,
+        comment.content,
+        comment.like_count,
+        comment.created_at,
+        comment.replies_count,
+        user.nickname,
+        user.avatar,
+        user.tag
+    `).
 		Joins("LEFT JOIN user_display AS user ON comment.user_id = user.id").
 		Where("comment.blog_id = ? AND comment.parent_id IS NULL AND comment.deleted_at IS NULL", blogID)
 
