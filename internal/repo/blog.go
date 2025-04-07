@@ -77,8 +77,8 @@ func (r *BlogRepo) UpdateBlog(blog *model.Blog) error {
 func (r *BlogRepo) DeleteBlog(blogID int64) error {
 	if err := r.DB.Model(&model.Blog{}).
 		Where(fmt.Sprintf("blog.%s = ?", ID), blogID).
-		Update(DELETED_AT, gorm.Expr("NOW()")).Error; err != nil {
-		zlog.Errorf(fmt.Sprintf("删除帖子失败: %v", err))
+		Delete(&model.Blog{}).Error; err != nil {
+		zlog.Errorf("删除帖子失败: %v", err)
 		return err
 	}
 	return nil
@@ -204,8 +204,6 @@ func (r *BlogRepo) GetBlogsByUserID(userID int64, page, pageSize int) ([]types.B
 
 	return blogs, total, nil
 }
-
-// GetCollectedBlogs 获取用户收藏的帖子列表
 func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.BlogResp, int64, error) {
 	var blogs []types.BlogResp
 	var total int64
@@ -214,7 +212,7 @@ func (r *BlogRepo) GetCollectedBlogs(userID int64, page, pageSize int) ([]types.
 		Select(BLOG_SELECT_FIELDS).
 		Joins("INNER JOIN collection ON collection.blog_id = blog.id").
 		Joins("LEFT JOIN user_display ON blog.user_id = user_display.id").
-		Where(fmt.Sprintf("collection.%s = ? AND blog.%s IS NULL", USER_ID, DELETED_AT), userID).
+		Where(fmt.Sprintf("collection.%s = ? AND collection.%s = ? AND blog.%s IS NULL", USER_ID, IS_COLLECTED, DELETED_AT), userID, true).
 		Order(fmt.Sprintf("blog.%s DESC", CREATED_AT))
 
 	if err := query.Count(&total).Error; err != nil {
