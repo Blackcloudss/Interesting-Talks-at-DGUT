@@ -104,14 +104,6 @@ func AIChatStream(c *gin.Context) {
 			}
 		}
 	}
-	//	添加流结束标识 明确告知客户端 流已传输完毕，避免因无限等待超时。
-	_, err = fmt.Fprintf(c.Writer, "event: end\ndata: stream completed\n\n")
-	if err != nil {
-		response.SendSSEError(c, "流式传输中断")
-		return
-	}
-	flusher.Flush()
-
 	// 持久化存储AI对话记录
 	messages = append(messages, types.Message{
 		Role:    role.ASSISTANT,
