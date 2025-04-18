@@ -21,6 +21,9 @@ func WechatLogin(c *gin.Context) {
 	}
 	zlog.CtxInfof(ctx, "WechatLogin request: %v", req)
 	resp, err := logic.NewWechatLoginLogic().WechatLogin(ctx, req)
+
+	zlog.CtxErrorf(ctx, "微信登陆错误打印: %v", err)
+
 	response.Response(c, resp, err)
 	return
 }

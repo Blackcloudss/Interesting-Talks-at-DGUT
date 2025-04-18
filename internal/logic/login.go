@@ -66,9 +66,9 @@ func (l *WechatLogic) WechatLogin(ctx context.Context, req types.WechatLoginReq)
 }
 
 // 向微信服务器请求code2Session
-func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err error) {
+func WxLogin(ctx context.Context, code string) (*types.WechatLoginResp, error) {
 	zlog.CtxInfof(ctx, "确认请求参数js_code: %s", code)
-	resp = &types.WechatLoginResp{}
+	resp := &types.WechatLoginResp{}
 	url := fmt.Sprintf(configs.Conf.Wechat.BaseUrl, configs.Conf.Wechat.AppID, configs.Conf.Wechat.AppSecret, code)
 	client := &http.Client{Timeout: 5 * time.Second}
 	result, err := client.Get(url)
