@@ -105,12 +105,12 @@ func WxLogin(ctx context.Context, code string) (*types.WechatLoginResp, error) {
 	if C2S.Errcode != 0 {
 		zlog.CtxErrorf(ctx, "微信接口业务错误: %d-%s", C2S.Errcode, C2S.Errmsg)
 		WXAPI_ERROR := response.MsgCode{C2S.Errcode, C2S.Errmsg}
-		return nil, response.ErrResp(errors.New(WXAPI_ERROR.Msg), WXAPI_ERROR)
+		return nil, response.ErrResp(err, WXAPI_ERROR)
 	}
 	// 增加空值保护
 	if C2S.Openid == "" {
 		zlog.CtxErrorf(ctx, "openid为空，微信响应数据: %+v", C2S)
-		return nil, response.ErrResp(errors.New(OPENID_EMPTY.Msg), OPENID_EMPTY)
+		return nil, response.ErrResp(err, OPENID_EMPTY)
 	}
 
 	//判断 该用户是否在数据库中,没有则存放数据库中
