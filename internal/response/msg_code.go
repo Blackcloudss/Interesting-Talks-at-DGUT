@@ -38,7 +38,7 @@ func Response(c *gin.Context, data interface{}, err error) {
 			c.JSON(code200, JsonMsgResult{
 				Code:    respErr.Code,
 				Message: respErr.Message,
-				Data:    nil,
+				Data:    respErr.Data,
 			})
 			return
 		} else {
@@ -62,14 +62,6 @@ func Response(c *gin.Context, data interface{}, err error) {
 
 func NewResponse(c *gin.Context) *JsonMsgResponse {
 	return &JsonMsgResponse{Ctx: c}
-}
-
-func (r *JsonMsgResponse) Success(data interface{}) {
-	res := JsonMsgResult{}
-	res.Code = SUCCESS_CODE
-	res.Message = SUCCESS_MSG
-	res.Data = data
-	r.Ctx.JSON(code200, res)
 }
 
 func (r *JsonMsgResponse) Error(mc MsgCode) {

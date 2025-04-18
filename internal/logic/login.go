@@ -68,6 +68,7 @@ func (l *WechatLogic) WechatLogin(ctx context.Context, req types.WechatLoginReq)
 
 // 向微信服务器请求code2Session
 func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err error) {
+	zlog.CtxInfof(ctx, "确认请求参数js_code: %s", code)
 	resp = &types.WechatLoginResp{}
 	url := fmt.Sprintf(configs.Conf.Wechat.BaseUrl, configs.Conf.Wechat.AppID, configs.Conf.Wechat.AppSecret, code)
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -105,12 +106,12 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 	if C2S.Errcode != 0 {
 		zlog.CtxErrorf(ctx, "微信接口业务错误: %d-%s", C2S.Errcode, C2S.Errmsg)
 		WECHAT_API_FAIL := response.MsgCode{C2S.Errcode, C2S.Errmsg}
-		return resp, response.ErrResp(err, WECHAT_API_FAIL)
+		return resp, response.ErrResp(errors.New(WECHAT_API_FAIL.Msg), WECHAT_API_FAIL)
 	}
 	// 增加空值保护
 	if C2S.Openid == "" {
 		zlog.CtxErrorf(ctx, "openid为空，微信响应数据: %+v", C2S)
-		return nil, response.ErrResp(err, OPENID_EMPTY)
+		return nil, response.ErrResp(errors.New(OPENID_EMPTY.Msg), OPENID_EMPTY)
 	}
 
 	//判断 该用户是否在数据库中,没有则存放数据库中
