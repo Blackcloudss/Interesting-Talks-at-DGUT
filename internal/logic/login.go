@@ -24,6 +24,7 @@ import (
 var (
 	REDIS_SET_FAULT = response.MsgCode{50001, "redis存取SessionKey失败"}
 	GET_USER_ROLE   = response.MsgCode{50006, "获取用户角色失败"}
+	OPENID_EMPTY    = response.MsgCode{50007, "openid为空"}
 )
 
 const (
@@ -93,10 +94,23 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 	}(result.Body)
 
 	var C2S types.Code2SessionResp
-
 	if err = json.NewDecoder(result.Body).Decode(&C2S); err != nil {
 		zlog.CtxErrorf(ctx, "响应解析失败: %v", err)
 		return resp, response.ErrResp(err, response.COMMON_FAIL)
+	}
+	// 在WxLogin函数中添加调试日志：
+	zlog.CtxInfof(ctx, "微信返回原始数据: %+v", C2S) // 打印完整响应结构体
+
+	// 处理微信业务错误
+	if C2S.Errcode != 0 {
+		zlog.CtxErrorf(ctx, "微信接口业务错误: %d-%s", C2S.Errcode, C2S.Errmsg)
+		WECHAT_API_FAIL := response.MsgCode{C2S.Errcode, C2S.Errmsg}
+		return resp, response.ErrResp(err, WECHAT_API_FAIL)
+	}
+	// 增加空值保护
+	if C2S.Openid == "" {
+		zlog.CtxErrorf(ctx, "openid为空，微信响应数据: %+v", C2S)
+		return nil, response.ErrResp(err, OPENID_EMPTY)
 	}
 
 	//判断 该用户是否在数据库中,没有则存放数据库中
