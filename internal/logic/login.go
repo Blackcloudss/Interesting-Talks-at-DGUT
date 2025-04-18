@@ -104,11 +104,8 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 	// 处理微信业务错误
 	if C2S.Errcode != 0 {
 		zlog.CtxErrorf(ctx, "微信接口业务错误: %d-%s", C2S.Errcode, C2S.Errmsg)
-		return nil, &response.RespError{
-			Code:    C2S.Errcode, // 直接注入微信错误码
-			Message: C2S.Errmsg,  // 直接使用微信错误描述
-			Data:    nil,
-		}
+		WXAPI_ERROR := response.MsgCode{C2S.Errcode, C2S.Errmsg}
+		return nil, response.ErrResp(errors.New(WXAPI_ERROR.Msg), WXAPI_ERROR)
 	}
 	// 增加空值保护
 	if C2S.Openid == "" {
