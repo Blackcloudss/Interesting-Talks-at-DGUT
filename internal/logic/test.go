@@ -9,6 +9,7 @@ import (
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/internal/types"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/log/zlog"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils"
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/jwt"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/snowflake"
 	"gorm.io/gorm"
 	"time"
@@ -58,15 +59,30 @@ func (l *TestLogic) TestLogic(ctx context.Context, req types.TestO1Req) (resp *t
 
 func (l *TestLogic) CreateMember(ctx context.Context) (resp *types.CreateMemberResp, err error) {
 	defer utils.RecordTime(time.Now())()
+	resp = &types.CreateMemberResp{}
 	Testid := snowflake.GetString12Id(global.Node)
 	//判断 该用户是否在数据库中,没有则存放数据库中
-	userId, err := repo.NewUserRepo(global.DB).JudgeUser(Testid)
+	resp.UserId, err = repo.NewUserRepo(global.DB).JudgeUser(Testid)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "GenLoginData err: %v", err)
 		return resp, response.ErrResp(err, response.COMMON_FAIL)
 	}
-	resp = &types.CreateMemberResp{
-		UserId: userId,
+
+	//获取用户角色
+	resp.Role, err = repo.NewUserRepo(global.DB).GetUserRole(resp.UserId)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "获取用户角色失败: %v", err)
+		return resp, response.ErrResp(err, GET_USER_ROLE)
+	}
+
+	//制作 Atoken 和 Rtoken 自定义登陆态
+	resp.Atoken, err = jwt.GenToken(jwt.FullToken(global.AUTH_ENUMS_ATOKEN, resp.UserId))
+	if err != nil {
+		return resp, response.ErrResp(err, response.GET_ATOKEN_ERROR)
+	}
+	resp.Rtoken, err = jwt.GenToken(jwt.FullToken(global.AUTH_ENUMS_RTOKEN, resp.UserId))
+	if err != nil {
+		return resp, response.ErrResp(err, response.GET_RTOKEN_ERROR)
 	}
 	return
 }
