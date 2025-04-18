@@ -61,9 +61,9 @@ func (l *WechatLogic) WechatLogin(ctx context.Context, req types.WechatLoginReq)
 	resp, err = WxLogin(ctx, req.JsCode)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "调用微信code2Session接口失败：%v", err)
-		return nil, response.ErrResp(err, response.COMMON_FAIL)
+		return nil, err
 	}
-	return resp, nil
+	return resp, err
 }
 
 // 向微信服务器请求code2Session
