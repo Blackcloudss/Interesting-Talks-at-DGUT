@@ -52,18 +52,17 @@ func (l *WechatLogic) WechatLogin(ctx context.Context, req types.WechatLoginReq)
 		zlog.CtxErrorf(ctx, "获取微信access token失败: %v", err)
 		return nil, response.ErrResp(err, response.COMMON_FAIL)
 	}
-
 	if token == "" {
 		return nil, response.ErrResp(errors.New("access token为空"), response.COMMON_FAIL)
 	}
-
 	defer utils.RecordTime(time.Now())()
+
 	resp, err = WxLogin(ctx, req.JsCode)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "调用微信code2Session接口失败：%v", err)
 		return nil, err
 	}
-	return resp, err
+	return resp, nil
 }
 
 // 向微信服务器请求code2Session
@@ -105,8 +104,11 @@ func WxLogin(ctx context.Context, code string) (resp *types.WechatLoginResp, err
 	// 处理微信业务错误
 	if C2S.Errcode != 0 {
 		zlog.CtxErrorf(ctx, "微信接口业务错误: %d-%s", C2S.Errcode, C2S.Errmsg)
-		WECHAT_API_FAIL := response.MsgCode{C2S.Errcode, C2S.Errmsg}
-		return resp, response.ErrResp(errors.New(WECHAT_API_FAIL.Msg), WECHAT_API_FAIL)
+		return nil, &response.RespError{
+			Code:    C2S.Errcode, // 直接注入微信错误码
+			Message: C2S.Errmsg,  // 直接使用微信错误描述
+			Data:    nil,
+		}
 	}
 	// 增加空值保护
 	if C2S.Openid == "" {
