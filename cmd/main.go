@@ -12,6 +12,7 @@ import (
 // @Update       XdpCs 2025-02-01 下午7:10
 func main() {
 	initalize.Init()
+	// 程序退出时调用，释放资源
 	defer initalize.Eve()
 	router.RunServer()
 	zlog.Infof("程序运行完成！")
