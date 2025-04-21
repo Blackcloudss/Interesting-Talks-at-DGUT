@@ -47,7 +47,11 @@ var (
 	STUDENT_URLS = []string{}
 
 	MANAGER_URLS = []string{
-		"/api/profile/role", // 更改用户角色
+		"/api/profile/role",  // 更改用户角色
+		"/api/notice/create", // 创建公告
+		"/api/notice/update", // 更新公告
+		"/api/notice/delete", // 删除公告
+		"/api/notice/show",   // 获取公告
 	}
 
 	Filter = filter_swords.New()

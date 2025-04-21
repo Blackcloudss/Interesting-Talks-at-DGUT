@@ -49,7 +49,7 @@ type Choice struct {
 
 // 删除历史聊天记录 入参
 type DeleteHistoryMessagesReq struct {
-	Type string `form:"type" json:"type"` //类型
+	Type string `form:"type" json:"type" uri:"type"` //类型
 }
 
 // 删除历史聊天记录 出参
