@@ -29,7 +29,7 @@ type GetSearchHistoryResp struct {
 }
 
 type DeleteSearchHistoryReq struct {
-	HistoryID int64 `json:"history_id"` // 搜索历史记录ID
+	HistoryID int64 `json:"history_id" uri:"history_id"` // 搜索历史记录ID
 }
 
 type DeleteSearchHistoryResp struct{}
