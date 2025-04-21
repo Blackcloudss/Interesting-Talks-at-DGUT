@@ -38,7 +38,7 @@ func (l *NoticeLogic) CreateNotice(ctx context.Context, req types.CreateNoticeRe
 	zlog.CtxInfof(ctx, "Notice created successfully (noticeID: %d)", notice.ID)
 	return &types.CreateNoticeResp{
 		ID:       notice.ID,
-		CreateAt: notice.CreatedAt.Unix(),
+		CreateAt: notice.CreatedAt.Format("2006-01-02 15:04:05"),
 	}, nil
 }
 

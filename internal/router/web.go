@@ -142,11 +142,11 @@ func registerRoutes(routeManager *manager.RouteManager) {
 	//公告相关路由
 	routeManager.RegisterNoticeRoutes(func(rg *gin.RouterGroup) {
 		rg.Use(middleware.CheckAtoken())                         // 检查 Atoken
+		rg.GET("/show", api.GetNoticeHandler)                    //获取公告
 		rg.Use(middleware.PermissionMiddleware())                // 验证权限
 		rg.POST("/create", api.CreateNoticeHandler)              //创建公告
 		rg.PUT("/update", api.UpdateNoticeHandler)               //修改公告
 		rg.DELETE("/delete/:notice_id", api.DeleteNoticeHandler) //删除公告
-		rg.GET("/show", api.GetNoticeHandler)                    //获取公告
 	})
 
 	//关注相关路由

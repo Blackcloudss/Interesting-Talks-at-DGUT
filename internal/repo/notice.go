@@ -19,12 +19,21 @@ func NewNoticeRepo(db *gorm.DB) *NoticeRepo {
 }
 
 // CreateNotice 创建公告
-func (r *NoticeRepo) CreateNotice(req types.CreateNoticeReq) (notice model.Notice, err error) {
-	err = r.DB.Create(&model.Notice{
+func (r *NoticeRepo) CreateNotice(req types.CreateNoticeReq) (notice *model.Notice, err error) {
+	notice = &model.Notice{
 		Content: req.Content,
-	}).Error
+	}
+	err = r.DB.Create(notice).Error
 	if err != nil {
 		zlog.Errorf(fmt.Sprintf("创建公告失败: %v", err))
+		return
+	}
+	err = r.DB.Model(&model.Notice{}).
+		Where(fmt.Sprintf("%v = ?", ID), notice.ID).
+		First(&notice).
+		Error
+	if err != nil {
+		zlog.Errorf(fmt.Sprintf("获取公告失败: %v", err))
 		return
 	}
 	return notice, err

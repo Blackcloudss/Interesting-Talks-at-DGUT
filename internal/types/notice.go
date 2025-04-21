@@ -7,8 +7,8 @@ type CreateNoticeReq struct {
 
 // CreateNoticeResp 创建公告响应结构体
 type CreateNoticeResp struct {
-	ID       int64 `json:"notice_id"`
-	CreateAt int64 `json:"create_at"`
+	ID       int64  `json:"notice_id"`
+	CreateAt string `json:"create_at"`
 }
 
 // UpdateNoticeReq 更新公告请求结构体
@@ -24,7 +24,7 @@ type UpdateNoticeResp struct {
 
 // DeleteNoticeReq 删除公告请求结构体
 type DeleteNoticeReq struct {
-	ID int64 `json:"notice_id"` // 公告ID
+	ID int64 `uri:"notice_id" binding:"required"` // 公告ID
 }
 
 // DeleteNoticeResp 删除通知响应结构体
