@@ -122,11 +122,11 @@ func registerRoutes(routeManager *manager.RouteManager) {
 
 	//搜索模块相关路由
 	routeManager.RegisterSearchRoutes(func(rg *gin.RouterGroup) {
-		rg.Use(middleware.CheckAtoken())                      // 检查 Atoken
-		rg.GET("/blogs", api.SearchBlogsHandler)              //关键词搜索帖子
-		rg.GET("/history", api.GetSearchHistoryHandler)       //获取搜索历史
-		rg.DELETE("/history", api.DeleteSearchHistoryHandler) //删除搜索历史
-		rg.GET("/hot-blogs", api.GetHotSearch)                //热搜榜
+		rg.Use(middleware.CheckAtoken())                                 // 检查 Atoken
+		rg.GET("/blogs", api.SearchBlogsHandler)                         //关键词搜索帖子
+		rg.GET("/history", api.GetSearchHistoryHandler)                  //获取搜索历史
+		rg.DELETE("/delete/:history_id", api.DeleteSearchHistoryHandler) //删除搜索历史
+		rg.GET("/hot-blogs", api.GetHotSearch)                           //热搜榜
 	})
 
 	//评论相关路由
