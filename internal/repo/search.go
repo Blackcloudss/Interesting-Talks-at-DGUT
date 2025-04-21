@@ -112,7 +112,7 @@ func (r *SearchRepo) GetHotSearchRepo() (*types.GetHotSearchResp, error) {
 	var hotSearchList []string
 	if err := r.DB.Model(&model.Blog{}).
 		Select("title").
-		Order("created_at DESC, be_liked DESC").
+		Order("created_at DESC, like_count DESC").
 		Limit(HOT_BLOGS_LIMIT).
 		Scan(&hotSearchList).Error; err != nil {
 		return nil, err
