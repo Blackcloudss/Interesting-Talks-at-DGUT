@@ -85,6 +85,9 @@ func WebSocketHandler(c *gin.Context) {
 		return
 	}
 
+	// 协议升级成功
+	zlog.CtxInfof(ctx, "WebSocket连接建立成功, 客户端:%s", c.Request.RemoteAddr)
+
 	// 令牌桶算法
 	if !Limiter.Allow() {
 		_ = conn.WriteJSON(types.WSError{ERROR: "请求过于频繁"})
@@ -101,6 +104,7 @@ func WebSocketHandler(c *gin.Context) {
 
 	defer func() {
 		// 删除连接
+		zlog.CtxInfof(ctx, "连接关闭，用户ID：%d", UserId)
 		CM.RemoveClient(UserId)
 		conn.Close()
 	}()
