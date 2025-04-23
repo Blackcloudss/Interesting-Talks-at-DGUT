@@ -3,11 +3,12 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 	"io"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/global"
 
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/connect"
 	"github.com/Blackcloudss/Interesting-Talks-at-DGUT/utils/ratelimit"
@@ -79,7 +80,7 @@ func WebSocketHandler(c *gin.Context) {
 	// 升级 HTTP 连接为 WebSocket 连接
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		zlog.CtxErrorf(ctx, "WebSocketHandler error: %v", err)
+		zlog.CtxErrorf(ctx, "WebSocket协议升级失败: %v", err)
 		_ = conn.WriteJSON(types.WSError{ERROR: WEBSOCKET_UPGRADE_FAIL + err.Error()})
 		return
 	}
