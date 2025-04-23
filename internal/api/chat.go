@@ -24,9 +24,11 @@ import (
 )
 
 const (
-	WEBSOCKET_UPGRADE_FAIL       = "60007, websocket升级失败"
-	WEBSOCKET_READ_COMMENT_FAIL  = "60008, websocket读取消息失败"
-	WEBSOCKET_WRITE_COMMENT_FAIL = "60009, websocket发送消息失败"
+	WEBSOCKET_UPGRADE_FAIL       = "60007,  websocket升级失败"
+	WEBSOCKET_REQUSET_FAIL       = "60008,  请求过于频繁"
+	WEBSOCKET_SYSTEM_BUSY        = "600009, 连接数过大，系统繁忙"
+	WEBSOCKET_READ_COMMENT_FAIL  = "600010, websocket读取消息失败"
+	WEBSOCKET_WRITE_COMMENT_FAIL = "600011, websocket发送消息失败"
 )
 
 var (
@@ -90,14 +92,14 @@ func WebSocketHandler(c *gin.Context) {
 
 	// 令牌桶算法
 	if !Limiter.Allow() {
-		_ = conn.WriteJSON(types.WSError{ERROR: "请求过于频繁"})
+		_ = conn.WriteJSON(types.WSError{ERROR: WEBSOCKET_REQUSET_FAIL})
 		conn.Close()
 		return
 	}
 
 	// 限制连接数（修改为使用统计方法）
 	if CM.ConnectionCount() > 1000 {
-		_ = conn.WriteJSON(types.WSError{ERROR: "系统繁忙"})
+		_ = conn.WriteJSON(types.WSError{ERROR: WEBSOCKET_SYSTEM_BUSY})
 		conn.Close()
 		return
 	}
