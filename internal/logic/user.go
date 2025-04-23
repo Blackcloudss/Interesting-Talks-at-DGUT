@@ -27,7 +27,8 @@ var (
 	GET_PRIVATE_PROFILE    = response.MsgCode{50009, "获取用户隐私信息失败"}
 	UPDATE_PRIVATE_PROFILE = response.MsgCode{50010, "更改用户隐私信息失败"}
 	UPDATE_ROLE_FAILED     = response.MsgCode{50011, "更改用户身份失败"}
-	USER_ROLE_FAILED       = response.MsgCode{50012, "用户身份不是两个指定身份"}
+	USER_IS_TOURIST        = response.MsgCode{50012, "指定的用户是游客，不能变为管理员"}
+	USER_ROLE_FAILED       = response.MsgCode{50013, "用户身份不是指定的三个身份"}
 )
 
 // @Title        user.go
@@ -154,7 +155,14 @@ func (l *UserLogic) GetPrivateProfile(ctx context.Context, UserId int64) (resp t
 //	@return err
 func (l *UserLogic) UpdatePrivateProfile(ctx context.Context, UserId int64, req types.UpdatePrivateProfileReq) (resp types.UpdatePrivateProfileResp, err error) {
 	defer utils.RecordTime(time.Now())()
-	role, err := repo.NewUserRepo(global.DB).UpdatePrivateProfile(UserId, req)
+	// 获取用户当前身份
+	DRole, err := repo.NewUserRepo(global.DB).GetUserRole(UserId)
+	if err != nil {
+		zlog.CtxErrorf(ctx, "获取用户身份失败: %v", err)
+		return resp, response.ErrResp(err, GET_USER_ROLE)
+	}
+
+	role, err := repo.NewUserRepo(global.DB).UpdatePrivateProfile(UserId, DRole, req)
 	if err != nil {
 		zlog.CtxErrorf(ctx, "更改用户隐私信息失败: %v", err)
 		return resp, response.ErrResp(err, UPDATE_PRIVATE_PROFILE)
@@ -179,12 +187,16 @@ func (l *UserLogic) UpdateOtherRole(ctx context.Context, req types.UpdateOtherRo
 		zlog.CtxErrorf(ctx, "获取用户身份失败: %v", err)
 		return resp, response.ErrResp(err, GET_USER_ROLE)
 	}
-	if Role == "student" {
-		Role = "manager"
-	} else if Role == "manager" {
-		Role = "student"
+
+	if Role == global.TOURIST {
+		zlog.CtxErrorf(ctx, "游客不能变为管理员，请先实名验证: %v", err)
+		return resp, response.ErrResp(err, USER_IS_TOURIST)
+	} else if Role == global.STUDENT {
+		Role = global.MANAGER
+	} else if Role == global.MANAGER {
+		Role = global.STUDENT
 	} else {
-		zlog.CtxErrorf(ctx, "用户身份不对: %v", err)
+		zlog.CtxErrorf(ctx, "用户身份错误: %v", err)
 		return resp, response.ErrResp(err, USER_ROLE_FAILED)
 	}
 

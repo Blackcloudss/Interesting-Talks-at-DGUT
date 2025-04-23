@@ -267,7 +267,7 @@ func (r *UserRepo) GetPrivateProfile(UserId int64) (resp types.GetPrivateProfile
 //	@param UserId
 //	@param req
 //	@return err
-func (r *UserRepo) UpdatePrivateProfile(UserId int64, req types.UpdatePrivateProfileReq) (Role string, err error) {
+func (r *UserRepo) UpdatePrivateProfile(UserId int64, DRole string, req types.UpdatePrivateProfileReq) (Role string, err error) {
 	// 更改用户隐私信息
 	err = r.DB.Model(&model.UserPrivate{}).
 		Where(&model.UserPrivate{
@@ -285,23 +285,31 @@ func (r *UserRepo) UpdatePrivateProfile(UserId int64, req types.UpdatePrivatePro
 		zlog.Errorf("更新用户隐私信息失败：%v", err)
 		return "", err
 	}
-	//更改用户身份
-	err = r.DB.Model(&model.UserDisplay{}).
-		Where(&model.UserDisplay{
-			CommonModel: model.CommonModel{
-				ID: UserId,
-			},
-		}).
-		Updates(&model.UserDisplay{
-			Role: STUDENT,
-		}).Error
-	if err != nil {
-		zlog.Errorf("更新用户身份失败：%v", err)
-		return "", err
-	}
-	Role = STUDENT
 
-	return Role, nil
+	// 如果身份是学生或管理员，则返回原来身份
+	// 如果身份是游客，则变成学生身份
+	if DRole == global.MANAGER {
+		return DRole, nil
+	} else if DRole == global.STUDENT {
+		return DRole, nil
+	} else {
+		//更改用户身份
+		err = r.DB.Model(&model.UserDisplay{}).
+			Where(&model.UserDisplay{
+				CommonModel: model.CommonModel{
+					ID: UserId,
+				},
+			}).
+			Updates(&model.UserDisplay{
+				Role: global.STUDENT,
+			}).Error
+		if err != nil {
+			zlog.Errorf("更新用户身份失败：%v", err)
+			return "", err
+		}
+		Role = global.STUDENT
+		return Role, nil
+	}
 }
 
 // GetUserRole

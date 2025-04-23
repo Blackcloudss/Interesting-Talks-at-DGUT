@@ -10,12 +10,6 @@ import (
 	"time"
 )
 
-const (
-	TOURIST = "tourist"
-	STUDENT = "student"
-	MANAGER = "manager"
-)
-
 // @Title        casbin.go
 // @Description
 // @Create       XdpCs 2025-03-11 上午1:15
@@ -59,21 +53,21 @@ func (r *CasbinRepo) CheckUserPermission(Durl string, UserId int64) (IsExist boo
 		zlog.Errorf("查询用户对应的角色失败：%v", err)
 		return false, err
 	}
-	if Role == TOURIST {
+	if Role == global.TOURIST {
 		IsExist, err = r.Contains(global.TOURIST_URLS, Durl)
 		if err != nil {
 			zlog.Errorf("查询失败：: %v", err)
 			return false, err
 		}
 		return IsExist, nil
-	} else if Role == STUDENT {
+	} else if Role == global.STUDENT {
 		IsExist, err = r.Contains(global.STUDENT_URLS, Durl)
 		if err != nil {
 			zlog.Errorf("查询失败：: %v", err)
 			return false, err
 		}
 		return IsExist, nil
-	} else if Role == MANAGER {
+	} else if Role == global.MANAGER {
 		IsExist, err = r.Contains(global.MANAGER_URLS, Durl)
 		if err != nil {
 			zlog.Errorf("查询失败：: %v", err)

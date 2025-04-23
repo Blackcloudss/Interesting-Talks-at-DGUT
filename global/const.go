@@ -30,6 +30,10 @@ const (
 	DEFAULT_NODE_ID   = 1
 	TOKEN_USER_ID     = "UserId"
 
+	TOURIST = "tourist"
+	STUDENT = "student"
+	MANAGER = "manager"
+
 	MSGID        = "msg_id"
 	STATUS       = "status"       // 状态
 	MESSAGE      = "message"      // 消息
