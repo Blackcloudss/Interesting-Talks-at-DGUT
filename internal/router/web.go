@@ -68,9 +68,9 @@ func registerRoutes(routeManager *manager.RouteManager) {
 		rg.GET("/phone", api.GetPhone)        // 获取用户手机号（授权时使用）
 		CommonProfile := rg.Group("/common")
 		{
-			CommonProfile.GET("/show", api.GetCommonProfile)      // 获取用户基本信息
-			CommonProfile.GET("/other", api.GetOtherProfile)      // 获取他人基本信息
-			CommonProfile.PUT("/update", api.UpdateCommonProfile) // 更新基本信息
+			CommonProfile.GET("/show", api.GetCommonProfile)       // 获取用户基本信息
+			CommonProfile.GET("/other", api.GetOtherProfile)       // 获取他人基本信息
+			CommonProfile.POST("/update", api.UpdateCommonProfile) // 更新基本信息
 		}
 		PrivateProfile := rg.Group("/private")
 		{
